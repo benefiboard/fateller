@@ -20,20 +20,6 @@ import { generatePersonaFortune } from '../utils/fortuneGenerator';
 import { FortuneResultType } from '../data/types';
 import { getRandomImage } from '../constants/fortuneImages';
 import PersonaCarousel from './PersonaCarousel';
-import FaceAnalyzer from '@/app/face/FaceAnalyzer';
-import { motion } from 'framer-motion';
-
-type AnalysisMode = 'normal' | 'face' | null;
-
-export interface ApiResponse {
-  isFace: boolean;
-  description?: string;
-  condition: {
-    energy: string;
-    signs: string;
-  };
-  advice: string;
-}
 
 interface DailyTalkClientProps {
   userBasicData: {
@@ -93,12 +79,6 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPersona, setSelectedPersona] = useState<string>('original');
   const [shouldSave, setShouldSave] = useState(true);
-  // 새로운 상태들 추가
-  const [faceAnalysisComplete, setFaceAnalysisComplete] = useState(false);
-  const [faceAnalysisResult, setFaceAnalysisResult] = useState<ApiResponse | null>(null);
-  const [showFaceAnalysisFailAlert, setShowFaceAnalysisFailAlert] = useState(false);
-  const [showAnalysisResult, setShowAnalysisResult] = useState(false);
-  const [showPersonaSelection, setShowPersonaSelection] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -139,33 +119,6 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
 
     loadData();
   }, [userBasicData?.id]);
-
-  // 3단계: 얼굴 분석 실패 AlertDialog
-  const FaceAnalysisFailAlert = () => (
-    <AlertDialog open={showFaceAnalysisFailAlert} onOpenChange={setShowFaceAnalysisFailAlert}>
-      <AlertDialogContent className="border-brand-100">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="text-gradient-brand">얼굴 인식 실패</AlertDialogTitle>
-          <AlertDialogDescription>
-            얼굴이 제대로 인식되지 않았습니다. 다시 시도해주세요.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogAction className="bg-black hover:opacity-90" onClick={handleResetAnalysis}>
-            다시 시도하기
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-
-  // 4단계: 핸들러 함수들
-
-  const handleResetAnalysis = () => {
-    setFaceAnalysisComplete(false);
-    setFaceAnalysisResult(null);
-    setShowFaceAnalysisFailAlert(false);
-  };
 
   const handleSaveFortune = async (
     fortune: FortuneResultType,
@@ -250,44 +203,9 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
     validateAndGenerateFortune(saveToStorage);
   };
 
-  // FaceAnalyzer에서 onAnalysisComplete 함수가 호출되면
-  const handleAnalysisComplete = (result: ApiResponse) => {
-    setFaceAnalysisResult(result);
-    if (result.isFace) {
-      setFaceAnalysisComplete(true);
-      setShowAnalysisResult(true);
-    } else {
-      setShowFaceAnalysisFailAlert(true);
-    }
-  };
-
-  // 페르소나 선택으로 넘어가는 함수 추가
-  const handleMoveToPersona = () => {
-    setShowAnalysisResult(false);
-    setShowPersonaSelection(true);
-  };
-
-  const renderContent = () => {
-    if (isLoading) {
-      return <div className="min-h-[200px] flex items-center justify-center">{/* 로딩 UI */}</div>;
-    }
-
-    if (fortuneResult) {
-      return (
-        <div className="mt-6">
-          <FortuneTodayDisplay
-            fortuneData={fortuneResult}
-            userBasicData={{
-              id: shouldSave ? userBasicData?.id || 'local' : 'dev',
-            }}
-          />
-        </div>
-      );
-    }
-
-    // 페르소나 선택 화면
-    if (showPersonaSelection) {
-      return (
+  return (
+    <>
+      {!fortuneResult ? (
         <Card className="border-brand-100">
           <CardContent className="pt-6 space-y-6">
             <div className="space-y-4">
@@ -295,6 +213,7 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
                 <label className="font-medium text-brand-600">운세 스타일을 선택해주세요!</label>
                 <PersonaCarousel value={selectedPersona} onChange={setSelectedPersona} />
               </div>
+
               <div className="space-y-3">
                 <Button
                   onClick={() => handleFortuneGeneration(true)}
@@ -303,6 +222,7 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
                   <Sparkles className="w-4 h-4 mr-2" />
                   오늘 운세 보기
                 </Button>
+
                 {process.env.NODE_ENV === 'development' && (
                   <Button
                     onClick={() => handleFortuneGeneration(false)}
@@ -316,71 +236,16 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
             </div>
           </CardContent>
         </Card>
-      );
-    }
-
-    // 얼굴 분석 결과 화면
-    if (showAnalysisResult && faceAnalysisResult) {
-      return (
-        <Card className="border-brand-100">
-          <CardContent className="pt-6 space-y-6">
-            {/* 분석 결과 */}
-            <div className="space-y-4 tracking-tighter">
-              <h3 className="text-xl font-bold text-gradient-brand">사진 분석이 완료되었습니다</h3>
-              <p className="text-gray-600">{faceAnalysisResult.condition.signs}</p>
-              <p className="text-brand-600 font-medium">{faceAnalysisResult.advice}</p>
-            </div>
-
-            <hr />
-
-            {/* 페르소나 선택 */}
-            <div className="space-y-2">
-              <label className="font-medium text-brand-600">운세 스타일을 선택해주세요!</label>
-              <PersonaCarousel value={selectedPersona} onChange={setSelectedPersona} />
-            </div>
-
-            {/* 운세 보기 버튼들 */}
-            <div className="space-y-3">
-              <Button
-                onClick={() => handleFortuneGeneration(true)}
-                className="w-full bg-black hover:opacity-90 transition-opacity"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                오늘 운세 보기
-              </Button>
-
-              {process.env.NODE_ENV === 'development' && (
-                <Button
-                  onClick={() => handleFortuneGeneration(false)}
-                  variant="outline"
-                  className="w-full border-brand-200 text-brand-600 hover:bg-brand-50"
-                >
-                  개발용 운세 보기 (저장 안됨)
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    // 초기 얼굴 분석 화면
-    return (
-      <>
-        <h2 className="text-xl tracking-tighter">1.오늘의 사진 촬영하기</h2>
-        <FaceAnalyzer
-          currentUser_id={userBasicData?.id || ''}
-          onAnalysisComplete={handleAnalysisComplete}
-        />
-      </>
-    );
-  };
-
-  return (
-    <>
-      {renderContent()}
-
-      <FaceAnalysisFailAlert />
+      ) : (
+        <div className="mt-6">
+          <FortuneTodayDisplay
+            fortuneData={fortuneResult}
+            userBasicData={{
+              id: shouldSave ? userBasicData?.id || 'local' : 'dev',
+            }}
+          />
+        </div>
+      )}
 
       <AlertDialog open={showSajuAlert} onOpenChange={setShowSajuAlert}>
         <AlertDialogContent className="border-brand-100">
