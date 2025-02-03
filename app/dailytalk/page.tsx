@@ -3,6 +3,7 @@ import { DailyTalkClient } from './components/DailyTalkMainClient';
 import { FileWarning } from 'lucide-react';
 import { getUser } from '@/lib/supabse/server';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 export default async function DailyTalkPage() {
   const currentUser = await getUser();
@@ -14,11 +15,17 @@ export default async function DailyTalkPage() {
     hasMbtiData: false,
   };
 
+  if (!currentUser.saju_information) {
+    redirect('/user-info');
+  }
+
   if (currentUser) {
     initialData = {
       hasSajuData: currentUser.saju_information != null,
       hasMbtiData: currentUser.mbti_information != null,
     };
+  } else {
+    redirect('/user-info');
   }
 
   return (

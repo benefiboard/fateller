@@ -244,17 +244,23 @@ export const FortuneCharacterCard = ({
                   )}
 
                   {/* 타임 영역 */}
-                  {'timeRange' in currentCard && (
-                    <div className="bg-white/20 p-2 rounded-xl mb-2 text-white text-sm text-center">
+                  {/* {'timeRange' in currentCard && (
+                    <div className="bg-black/30 p-2  backdrop-blur-sm rounded-xl mb-2 text-white text-sm text-center">
                       {currentCard.timeRange}
                     </div>
-                  )}
-                  <p className="text-white tracking-tight text-sm bg-brand-600/60 p-2 rounded-xl backdrop-blur-sm whitespace-pre-line">
-                    {currentType === 'character'
-                      ? getFirstSentence(currentCard.description)
-                      : currentCard.description}
-                  </p>
-                  <p className="text-xs mt-2 text-center text-white">
+                  )} */}
+                  <div className="text-white tracking-tight text-sm bg-black/30 p-2 rounded-xl backdrop-blur-sm whitespace-pre-line flex items-center justify-center gap-1 ">
+                    <p className="col-span-4">
+                      {currentType === 'character'
+                        ? getFirstSentence(currentCard.description)
+                        : currentCard.description}
+                    </p>
+                    {'timeRange' in currentCard && <p className="col-span-1 text-center">:</p>}
+                    {'timeRange' in currentCard && (
+                      <p className="col-span-4 ">{currentCard.timeRange}</p>
+                    )}
+                  </div>
+                  <p className="text-xs mt-2 text-center text-white bg-black/30 p-1 rounded-xl backdrop-blur-sm">
                     {new Date().toLocaleDateString('ko-KR', {
                       year: 'numeric',
                       month: 'long',
@@ -279,7 +285,7 @@ export const FortuneCharacterCard = ({
             <div
               key={type}
               className={`w-2 h-2 rounded-full transition-colors ${
-                currentType === type ? 'bg-brand-400' : 'bg-brand-100'
+                currentType === type ? 'bg-black' : 'bg-gray-200'
               }`}
             />
           ))}

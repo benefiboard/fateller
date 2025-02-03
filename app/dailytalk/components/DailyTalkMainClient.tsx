@@ -215,7 +215,6 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
               </div>
 
               <div className="space-y-3">
-                <p>123</p>
                 <Button
                   onClick={() => handleFortuneGeneration(true)}
                   className="w-full bg-black hover:opacity-90 transition-opacity"

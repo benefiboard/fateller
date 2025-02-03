@@ -43,3 +43,19 @@ export type UserInfoType = {
   bigFive?: BigFiveDataType;
   riskAversion?: string;
 };
+
+export type SajuInformation = {
+  name: string;
+  gender: '남자' | '여자';
+  birthYear: string;
+  birthMonth: string;
+  birthDay: string;
+  birthHour: string;
+  birthMinute: string;
+  isTimeUnknown?: boolean; // 시간 모름 상태 추가
+};
+
+export type SaveSajuResponse = {
+  success: boolean;
+  error?: string;
+};
