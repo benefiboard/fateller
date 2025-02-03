@@ -1,12 +1,12 @@
+import { getUser } from '@/lib/supabse/server';
 import React from 'react';
-import { Home, Bell, User, Camera } from 'lucide-react';
 
-const HomePage = () => {
+export default async function Hompage() {
+  const currentUser = await getUser();
+  //console.log(currentUser);
   return (
-    <div className="min-h-screen bg-gray-50">
-      <h2>FaTeller123</h2>
+    <div>
+      <h2>Hompage</h2>
     </div>
   );
-};
-
-export default HomePage;
+}
