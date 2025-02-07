@@ -285,29 +285,81 @@ const FaceAnalyzer = ({
   };
 
   const AnalyzingWave = () => (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/20">
-      <div className="relative flex flex-col items-center justify-center">
-        {/* 중앙 원 */}
-        <div className="relative flex flex-col items-center justify-center w-32 h-32 bg-violet-50 rounded-full space-y-4">
-          <Brain className="h-12 w-12 text-violet-400 animate-ping" />
-          <p className="text-gray-700 text-center tracking-tighter text-sm whitespace-pre-line">{`오늘의 운세\n분석중`}</p>
-        </div>
+    <div className="fixed inset-0 bg-violet-950/80 backdrop-blur-sm flex flex-col items-center justify-center z-50">
+      <motion.div
+        className="relative flex items-center justify-center h-32"
+        initial={{ scale: 0.8 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0.8 }}
+      >
+        {/* 바깥 원 */}
+        <motion.div
+          className="absolute w-32 h-32 border-4 border-violet-400/30 rounded-full"
+          animate={{
+            rotate: 360,
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+        />
 
-        {/* 웨이브 효과 */}
-        {[0, 1, 2, 3].map((index) => (
-          <div
-            key={index}
-            className="absolute w-32 h-32 rounded-full"
-            style={{
-              background:
-                'linear-gradient(to right, rgba(239, 246, 255, 0.3), rgba(219, 234, 254, 0.3))',
-              animation: 'largeRipple 2s linear infinite',
-              animationDelay: `${index * 0.5}s`,
-              scale: `${1 + index * 0.5}`,
-            }}
-          />
-        ))}
-      </div>
+        {/* 중간 원 */}
+        <motion.div
+          className="absolute w-24 h-24 border-4 border-violet-400/50 rounded-full"
+          animate={{
+            rotate: -360,
+            scale: [1.2, 1, 1.2],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+        />
+
+        {/* 안쪽 원 */}
+        <motion.div
+          className="absolute w-16 h-16 border-4 border-violet-400/70 rounded-full"
+          animate={{
+            rotate: 360,
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+        />
+
+        {/* 중앙 별 */}
+        <motion.div
+          className="text-violet-200 text-4xl z-10"
+          animate={{
+            scale: [1, 1.5, 1],
+            opacity: [0.5, 1, 0.5],
+            rotate: [0, 180, 360],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        >
+          ✧
+        </motion.div>
+      </motion.div>
+
+      <motion.p
+        className="text-violet-200 text-lg font-medium tracking-wider mt-8"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        사진을 분석중입니다...
+      </motion.p>
     </div>
   );
 

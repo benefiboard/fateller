@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { Plus, Star } from 'lucide-react';
 import { SelectedCard } from './types/tarot';
+import Image from 'next/image';
 
 interface TarotResultProps {
   selectedCards: SelectedCard[];
@@ -77,11 +78,14 @@ const TarotResult = ({ selectedCards, analyzedImageUrl, filterType }: TarotResul
                 {/* 카드 이미지 */}
                 <div className="w-28 shrink-0">
                   <div className="aspect-[3/4] rounded-lg overflow-hidden">
-                    <img
-                      src={card.imageUrl}
-                      alt={card.name.ko}
-                      className="w-full h-full object-cover"
-                    />
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={card.imageUrl}
+                        alt={card.name.ko}
+                        fill
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
                   </div>
                 </div>
 

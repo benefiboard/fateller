@@ -99,6 +99,7 @@ const FortuneToday = () => {
             onSelectMode={handleModeSelection}
             title="오늘의 운세를 확인해보세요"
             subtitle="얼굴 분석으로 더 정확한 운세를 확인하실 수 있습니다"
+            quickAnimation={true} // 이 부분만 추가
           />
         )}
 
