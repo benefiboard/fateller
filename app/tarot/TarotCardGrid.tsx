@@ -37,8 +37,8 @@ const TarotCardGrid = ({ onComplete, analyzedImageUrl, filterType }: TarotCardGr
     // 로딩 상태 시작
     setLoadingCard({ type: currentType });
 
-    // 1.5초 후에 카드 선택 완료
-    setTimeout(() => {
+    // 이미지 로딩 완료 처리를 위한 함수
+    const completeLoading = () => {
       const selectedCard: SelectedCard = {
         ...card,
         type: currentType,
@@ -59,7 +59,20 @@ const TarotCardGrid = ({ onComplete, analyzedImageUrl, filterType }: TarotCardGr
 
       setCurrentType(nextType);
       setLoadingCard(null);
-    }, 1500);
+    };
+
+    // 이미지 프리로딩
+    const img = new Image();
+    img.src = card.imageUrl;
+
+    img.onload = completeLoading;
+
+    // 이미지 로딩이 3초 이상 걸리면 강제로 완료 처리
+    setTimeout(() => {
+      if (loadingCard) {
+        completeLoading();
+      }
+    }, 3000);
   };
 
   const LoadingAnimation = ({ type }: { type: FortuneType }) => (
