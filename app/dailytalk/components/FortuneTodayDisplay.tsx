@@ -111,7 +111,7 @@ const FortuneCard = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {children || <p className="whitespace-pre-line leading-relaxed">{content}</p>}
+            {children || <p className="whitespace-pre-line tracking-tighter text-sm">{content}</p>}
           </CardContent>
         </Card>
       </motion.div>
@@ -146,8 +146,8 @@ const ScoreDisplay = ({ label, value }: { label: string; value: number }) => (
 );
 
 const SummaryCard = ({ content }: { content?: string }) => (
-  <FortuneCard title="데일리 케어 요약" gradient={categoryColors.summary}>
-    <p className="whitespace-pre-line leading-relaxed ">{content}</p>
+  <FortuneCard title="오늘의 총운" gradient={categoryColors.summary}>
+    <p className="whitespace-pre-line tracking-tighter text-sm">{content}</p>
   </FortuneCard>
 );
 
@@ -165,13 +165,13 @@ const StatsCard = ({
   luckyColor?: { name: string; hex: string };
   luckyNumber?: string;
 }) => (
-  <FortuneCard title="데일리 지수" gradient={categoryColors.summary}>
+  <FortuneCard title="오늘의 행운지수" gradient={categoryColors.summary}>
     {/* 점수 표시 영역 */}
     <div className="space-y-2 mb-6">
       <ScoreDisplay label="종합지수" value={scores.fortune_score || 0} />
-      <ScoreDisplay label="머니지수" value={scores.finance_score || 0} />
-      <ScoreDisplay label="헬스지수" value={scores.health_score || 0} />
-      <ScoreDisplay label="러브지수" value={scores.love_score || 0} />
+      <ScoreDisplay label="금전지수" value={scores.finance_score || 0} />
+      <ScoreDisplay label="건강지수" value={scores.health_score || 0} />
+      <ScoreDisplay label="연애지수" value={scores.love_score || 0} />
     </div>
 
     {/* 행운 아이템 영역 */}
@@ -263,28 +263,28 @@ export default function FortuneTodayDisplay({
 
       {/* 각 카테고리별 카드 */}
       {mind_solution && (
-        <FortuneCard title="마인드 케어" content={mind_solution} gradient={categoryColors.mind} />
+        <FortuneCard title="심리 조언" content={mind_solution} gradient={categoryColors.mind} />
       )}
 
       {finance_solution && (
         <FortuneCard
-          title="머니 케어"
+          title="금전 조언"
           content={finance_solution}
           gradient={categoryColors.finance}
         />
       )}
 
       {health_solution && (
-        <FortuneCard title="헬스 케어" content={health_solution} gradient={categoryColors.health} />
+        <FortuneCard title="건강 조언" content={health_solution} gradient={categoryColors.health} />
       )}
 
       {love_solution && (
-        <FortuneCard title="러브 케어" content={love_solution} gradient={categoryColors.love} />
+        <FortuneCard title="연애 조언" content={love_solution} gradient={categoryColors.love} />
       )}
 
       {fashion_recommendation && (
         <FortuneCard
-          title="패션 케어"
+          title="패션 조언"
           content={fashion_recommendation}
           gradient={categoryColors.fashion}
         />
@@ -292,7 +292,7 @@ export default function FortuneTodayDisplay({
 
       {meal_recommendation && (
         <FortuneCard
-          title="푸드 케어"
+          title="식사 조언"
           content={meal_recommendation}
           gradient={categoryColors.meal}
         />

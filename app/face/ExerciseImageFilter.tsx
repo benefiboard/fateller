@@ -89,12 +89,12 @@ const ExerciseImageFilter: React.FC<ExerciseImageFilterProps> = ({
         <img
           src={imageUrl}
           alt="Exercise preview"
-          className="w-full aspect-square object-cover rounded-lg"
+          className="w-full aspect-square object-cover rounded-lg "
         />
       </div>
       <div className="w-full absolute -bottom-[88px] p-4">
         <Select value={filterType} onValueChange={handlePresetChange}>
-          <SelectTrigger className="z-50 bg-gray-100/60 backdrop-blur-sm text-gray-900 font-semibold border-2 border-black py-6">
+          <SelectTrigger className="z-50 bg-gray-100/60 backdrop-blur-sm text-gray-600 font-semibold border-2 border-blue-500 py-6">
             <SelectValue placeholder="필터 선택" />
           </SelectTrigger>
           <SelectContent>

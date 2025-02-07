@@ -10,6 +10,7 @@ import MysticSymbolsEffect from './layout-component/BubbleEffect/MysticSymbolsEf
 import AnalyticsTracker from './layout-component/AnalyticsTracker';
 import MobileDetector from './layout-component/MobileDetector';
 import BrowserRedirect from './layout-component/BrowserRedirect';
+import BottomNav from './BottomNav';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -82,6 +83,7 @@ export default async function RootLayout({
         <div className="min-h-screen  ">
           <div className="relative pb-16 min-h-screen max-w-[480px] flex flex-col mx-auto bg-white border border-gray-200">
             {children}
+            <BottomNav />
             <StoreInitializer currentUser={currentUser} />
             <MysticSymbolsEffect />
           </div>

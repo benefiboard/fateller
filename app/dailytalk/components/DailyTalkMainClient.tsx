@@ -33,6 +33,7 @@ export interface ApiResponse {
     signs: string;
   };
   advice: string;
+  imageDescription?: string;
 }
 
 interface DailyTalkClientProps {
@@ -98,7 +99,7 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
   const [faceAnalysisResult, setFaceAnalysisResult] = useState<ApiResponse | null>(null);
   const [showFaceAnalysisFailAlert, setShowFaceAnalysisFailAlert] = useState(false);
   const [showAnalysisResult, setShowAnalysisResult] = useState(false);
-  const [showPersonaSelection, setShowPersonaSelection] = useState(false);
+  const [showPersonaSelection, setShowPersonaSelection] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
@@ -252,11 +253,11 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
 
   // FaceAnalyzer에서 onAnalysisComplete 함수가 호출되면
   const handleAnalysisComplete = (result: ApiResponse) => {
-    setFaceAnalysisResult(result);
     if (result.isFace) {
-      setFaceAnalysisComplete(true);
-      setShowAnalysisResult(true);
+      // 얼굴 인식 성공시 바로 운세 생성
+      handleFortuneGeneration(shouldSave);
     } else {
+      // 얼굴 인식 실패시 알림만
       setShowFaceAnalysisFailAlert(true);
     }
   };
@@ -269,7 +270,17 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
 
   const renderContent = () => {
     if (isLoading) {
-      return <div className="min-h-[200px] flex items-center justify-center">{/* 로딩 UI */}</div>;
+      return (
+        <div className="min-h-[200px] flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="relative w-16 h-16 mx-auto">
+              <div className="absolute inset-0 rounded-full border-4 border-brand-100" />
+              <div className="absolute inset-0 rounded-full border-4 border-brand-400 border-t-transparent animate-spin" />
+            </div>
+            <p className="text-brand-600">운세를 확인하는 중...</p>
+          </div>
+        </div>
+      );
     }
 
     if (fortuneResult) {
@@ -285,7 +296,7 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
       );
     }
 
-    // 페르소나 선택 화면
+    // 페르소나 선택 화면 (초기 화면)
     if (showPersonaSelection) {
       return (
         <Card className="border-brand-100">
@@ -297,19 +308,25 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
               </div>
               <div className="space-y-3">
                 <Button
-                  onClick={() => handleFortuneGeneration(true)}
+                  onClick={() => {
+                    setShowPersonaSelection(false);
+                    setShouldSave(true);
+                  }}
                   className="w-full bg-black hover:opacity-90 transition-opacity"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  오늘 운세 보기
+                  다음으로 (저장)
                 </Button>
                 {process.env.NODE_ENV === 'development' && (
                   <Button
-                    onClick={() => handleFortuneGeneration(false)}
+                    onClick={() => {
+                      setShowPersonaSelection(false);
+                      setShouldSave(false);
+                    }}
                     variant="outline"
                     className="w-full border-brand-200 text-brand-600 hover:bg-brand-50"
                   >
-                    개발용 운세 보기 (저장 안됨)
+                    다음으로 (저장 안함)
                   </Button>
                 )}
               </div>
@@ -319,60 +336,17 @@ export function DailyTalkClient({ userBasicData }: DailyTalkClientProps) {
       );
     }
 
-    // 얼굴 분석 결과 화면
-    if (showAnalysisResult && faceAnalysisResult) {
-      return (
-        <Card className="border-brand-100">
-          <CardContent className="pt-6 space-y-6">
-            {/* 분석 결과 */}
-            <div className="space-y-4 tracking-tighter">
-              <h3 className="text-xl font-bold text-gradient-brand">사진 분석이 완료되었습니다</h3>
-              <p className="text-gray-600">{faceAnalysisResult.condition.signs}</p>
-              <p className="text-brand-600 font-medium">{faceAnalysisResult.advice}</p>
-            </div>
-
-            <hr />
-
-            {/* 페르소나 선택 */}
-            <div className="space-y-2">
-              <label className="font-medium text-brand-600">운세 스타일을 선택해주세요!</label>
-              <PersonaCarousel value={selectedPersona} onChange={setSelectedPersona} />
-            </div>
-
-            {/* 운세 보기 버튼들 */}
-            <div className="space-y-3">
-              <Button
-                onClick={() => handleFortuneGeneration(true)}
-                className="w-full bg-black hover:opacity-90 transition-opacity"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                오늘 운세 보기
-              </Button>
-
-              {process.env.NODE_ENV === 'development' && (
-                <Button
-                  onClick={() => handleFortuneGeneration(false)}
-                  variant="outline"
-                  className="w-full border-brand-200 text-brand-600 hover:bg-brand-50"
-                >
-                  개발용 운세 보기 (저장 안됨)
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    // 초기 얼굴 분석 화면
+    // 얼굴 분석 화면
     return (
-      <>
-        <h2 className="text-xl tracking-tighter">1.오늘의 사진 촬영하기</h2>
+      <Card>
+        <div className="pt-6 pl-6">
+          <h2 className=" tracking-tighter">오늘의 사진 촬영하기</h2>
+        </div>
         <FaceAnalyzer
           currentUser_id={userBasicData?.id || ''}
           onAnalysisComplete={handleAnalysisComplete}
         />
-      </>
+      </Card>
     );
   };
 
