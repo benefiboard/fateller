@@ -4,7 +4,7 @@
 export type FortuneType = '애정운' | '재물운' | '사업 및 직장운';
 
 // 싱글 운세 종류 (신규)
-export type SingleFortuneType = '연애운' | '취업운' | '금전운' | '짝사랑운';
+export type SingleFortuneType = '연애운' | '사업 및 직장운' | '금전운' | '짝사랑운';
 
 interface TimingAdvice {
   timing?: string; // "이번 달", "이번 주", "다가오는 주말" 등
@@ -77,3 +77,180 @@ export interface TarotReading {
 export interface SingleTarotReading {
   card: SelectedSingleCard | null;
 }
+
+/* {
+  id: 'fool',
+  name: {
+    ko: '광대',
+    en: 'THE FOOL',
+  },
+  imageUrl: '/tarot/fool.png',
+},
+{
+  id: 'magician',
+  name: {
+    ko: '마법사',
+    en: 'THE MAGICIAN',
+  },
+  imageUrl: '/tarot/magician.png',
+},
+{
+  id: 'highpriestess',
+  name: {
+    ko: '여사제',
+    en: 'THE HIGH PRIESTESS',
+  },
+  imageUrl: '/tarot/highpriestess.png',
+},
+{
+  id: 'empress',
+  name: {
+    ko: '여황제',
+    en: 'THE EMPRESS',
+  },
+  imageUrl: '/tarot/empress.png',
+},
+{
+  id: 'emperor',
+  name: {
+    ko: '황제',
+    en: 'THE EMPEROR',
+  },
+  imageUrl: '/tarot/emperor.png',
+},
+{
+  id: 'hierophant',
+  name: {
+    ko: '교황',
+    en: 'THE HIEROPHANT',
+  },
+  imageUrl: '/tarot/hierophant.png',
+},
+{
+  id: 'lovers',
+  name: {
+    ko: '연인들',
+    en: 'THE LOVERS',
+  },
+  imageUrl: '/tarot/lovers.png',
+},
+{
+  id: 'chariot',
+  name: {
+    ko: '전차',
+    en: 'THE CHARIOT',
+  },
+  imageUrl: '/tarot/chariot.png',
+},
+{
+  id: 'strength',
+  name: {
+    ko: '힘',
+    en: 'STRENGTH',
+  },
+  imageUrl: '/tarot/strength.png',
+},
+{
+  id: 'hermit',
+  name: {
+    ko: '은둔자',
+    en: 'THE HERMIT',
+  },
+  imageUrl: '/tarot/hermit.png',
+},
+{
+  id: 'wheelOfFortune',
+  name: {
+    ko: '운명의 수레바퀴',
+    en: 'WHEEL OF FORTUNE',
+  },
+  imageUrl: '/tarot/wheel-of-fortune.png',
+},
+{
+  id: 'justice',
+  name: {
+    ko: '정의',
+    en: 'JUSTICE',
+  },
+  imageUrl: '/tarot/justice.png',
+},
+{
+  id: 'hangedMan',
+  name: {
+    ko: '매달린 사람',
+    en: 'THE HANGED MAN',
+  },
+  imageUrl: '/tarot/hanged-man.png',
+},
+{
+  id: 'death',
+  name: {
+    ko: '죽음',
+    en: 'DEATH',
+  },
+  imageUrl: '/tarot/death.png',
+},
+{
+  id: 'temperance',
+  name: {
+    ko: '절제',
+    en: 'TEMPERANCE',
+  },
+  imageUrl: '/tarot/temperance.png',
+},
+{
+  id: 'devil',
+  name: {
+    ko: '악마',
+    en: 'THE DEVIL',
+  },
+  imageUrl: '/tarot/devil.png',
+},
+{
+  id: 'tower',
+  name: {
+    ko: '탑',
+    en: 'THE TOWER',
+  },
+  imageUrl: '/tarot/tower.png',
+},
+{
+  id: 'star',
+  name: {
+    ko: '별',
+    en: 'THE STAR',
+  },
+  imageUrl: '/tarot/star.png',
+},
+{
+  id: 'moon',
+  name: {
+    ko: '달',
+    en: 'THE MOON',
+  },
+  imageUrl: '/tarot/moon.png',
+},
+{
+  id: 'sun',
+  name: {
+    ko: '태양',
+    en: 'THE SUN',
+  },
+  imageUrl: '/tarot/sun.png',
+},
+{
+  id: 'judgement',
+  name: {
+    ko: '심판',
+    en: 'JUDGEMENT',
+  },
+  imageUrl: '/tarot/judgement.png',
+},
+{
+  id: 'world',
+  name: {
+    ko: '세계',
+    en: 'THE WORLD',
+  },
+  imageUrl: '/tarot/world.png',
+} */

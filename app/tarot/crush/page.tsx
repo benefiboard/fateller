@@ -88,6 +88,7 @@ const CrushTarotPage = () => {
         {currentStep === 'selection' && (
           <StartSelection
             onSelectMode={handleModeSelection}
+            category="타로"
             title="타로로 보는 짝사랑운"
             subtitle="당신의 짝사랑과 고백운을 타로카드로 알아보세요"
           />

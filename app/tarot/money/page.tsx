@@ -88,6 +88,7 @@ const MoneyTarotPage = () => {
         {currentStep === 'selection' && (
           <StartSelection
             onSelectMode={handleModeSelection}
+            category="타로"
             title="타로로 보는 금전운"
             subtitle="당신의 재물과 투자운을 타로카드로 알아보세요"
           />

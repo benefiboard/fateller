@@ -88,6 +88,7 @@ const TodayTarotPage = () => {
         {currentStep === 'selection' && (
           <StartSelection
             onSelectMode={handleModeSelection}
+            category="타로"
             title="타로로 보는 오늘의 운세"
             subtitle="당신의 하루를 타로카드로 알아보세요"
           />

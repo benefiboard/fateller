@@ -10,13 +10,13 @@ import TopNav from '@/app/TopNav';
 import StartSelection from '@/app/layout-component/StartSelection';
 import TarotResultSingle from '../TarotResultSingle';
 import TarotCardGridSingle from '../TarotCardGridSingle';
-import { CAREER_TAROT_CARDS } from '../data/career';
+import { BUSINESS_TAROT_CARDS } from '../data/business';
 
 // 상태 타입 확장
 type AnalysisStep = 'selection' | 'face' | 'card-selection' | 'result';
 type AnalysisPath = 'face' | 'quick';
 
-const CareerTarotPage = () => {
+const BusinessTarotPage = () => {
   const [currentStep, setCurrentStep] = useState<AnalysisStep>('selection');
   const [selectedCard, setSelectedCard] = useState<SelectedSingleCard | null>(null);
   const [analysisPath, setAnalysisPath] = useState<AnalysisPath>('quick');
@@ -88,8 +88,9 @@ const CareerTarotPage = () => {
         {currentStep === 'selection' && (
           <StartSelection
             onSelectMode={handleModeSelection}
-            title="타로로 보는 취업운"
-            subtitle="당신의 취업과 이직운을 타로카드로 알아보세요"
+            category="타로"
+            title="타로로 보는 사업 및 직장운"
+            subtitle="당신의 사업과 직장운을 타로카드로 알아보세요"
           />
         )}
 
@@ -97,7 +98,7 @@ const CareerTarotPage = () => {
           <FaceAnalyzer
             currentUser_id="local"
             onAnalysisComplete={handleAnalysisComplete}
-            title="당신의 취업운은 어떨까요?"
+            title="당신의 사업과 직장운은 어떨까요?"
             subTitle="얼굴 분석이 완료되면 타로 카드를 선택하실 수 있습니다."
           />
         )}
@@ -105,9 +106,9 @@ const CareerTarotPage = () => {
         {currentStep === 'card-selection' && (
           <TarotCardGridSingle
             onComplete={handleCardSelectComplete}
-            cards={CAREER_TAROT_CARDS}
-            fortuneType="취업운" // SingleFortuneType에 정의된 값만 사용 가능
-            title="당신의 취업운은 어떨까요?"
+            cards={BUSINESS_TAROT_CARDS}
+            fortuneType="사업 및 직장운" // SingleFortuneType에 정의된 값만 사용 가능
+            title="당신의 사업과 직장운은 어떨까요?"
             subtitle="카드 한 장을 선택해주세요"
           />
         )}
@@ -115,8 +116,8 @@ const CareerTarotPage = () => {
         {currentStep === 'result' && selectedCard && (
           <TarotResultSingle
             selectedCard={selectedCard}
-            title="당신의 취업운"
-            subtitle="선택하신 카드가 보여주는 당신의 취업과 이직운입니다"
+            title="당신의 사업 및 직장운"
+            subtitle="선택하신 카드가 보여주는 당신의 사업과 직장운입니다"
           />
         )}
       </main>
@@ -124,4 +125,4 @@ const CareerTarotPage = () => {
   );
 };
 
-export default CareerTarotPage;
+export default BusinessTarotPage;
