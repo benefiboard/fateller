@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { FortuneType, SelectedCard, TarotCard } from './types/tarot';
 import { getRandomInterpretation, TAROT_CARDS } from './data/tarotCards';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 interface TarotCardGridProps {
   onComplete: (selectedCards: SelectedCard[]) => void;
@@ -128,11 +129,15 @@ const TarotCardGrid = ({ onComplete, analyzedImageUrl, filterType }: TarotCardGr
                   `}
                 >
                   {isSelected ? (
-                    <img
-                      src={card.imageUrl}
-                      alt={card.name.ko}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={card.imageUrl}
+                        alt={card.name.ko}
+                        fill
+                        className="object-cover rounded-lg"
+                        priority
+                      />
+                    </div>
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-indigo-900 to-indigo-700 rounded-lg flex items-center justify-center">
                       <div className="text-yellow-300 text-lg">✧</div>
@@ -199,14 +204,16 @@ const TarotCardGrid = ({ onComplete, analyzedImageUrl, filterType }: TarotCardGr
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="relative"
+                        className="relative w-full h-full"
                       >
-                        <img
+                        <Image
                           src={card.imageUrl}
                           alt={card.name.ko}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
                         />
-                        <p className="w-full absolute -bottom-[15px] text-xs text-center text-white tracking-tighter bg-violet-900/50">
+
+                        <p className="w-full absolute bottom-0 z-50 text-xs text-center text-white tracking-tighter bg-violet-900/50">
                           {card.name.ko}
                         </p>
                       </motion.div>
