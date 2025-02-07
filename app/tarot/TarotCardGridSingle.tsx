@@ -46,7 +46,8 @@ const TarotCardGridSingle = ({
 
     setLoadingCard(true);
 
-    setTimeout(() => {
+    // 이미지 로딩 완료 처리를 위한 함수
+    const completeLoading = () => {
       const newSelectedCard: SelectedSingleCard = {
         ...card,
         type: fortuneType,
@@ -58,7 +59,20 @@ const TarotCardGridSingle = ({
 
       setSelectedCard(newSelectedCard);
       setLoadingCard(false);
-    }, 1500);
+    };
+
+    // 이미지 프리로딩
+    const img = new Image();
+    img.src = card.imageUrl;
+
+    img.onload = completeLoading;
+
+    // 3초 타임아웃
+    setTimeout(() => {
+      if (loadingCard) {
+        completeLoading();
+      }
+    }, 3000);
   };
 
   const LoadingAnimation = () => (
@@ -223,10 +237,22 @@ const TarotCardGridSingle = ({
           <button
             onClick={() => {
               setShowFinalLoading(true);
-              setTimeout(() => {
+
+              // 선택된 카드 이미지 로드
+              const img = new Image();
+              img.onload = () => {
                 setShowFinalLoading(false);
                 onComplete(selectedCard);
-              }, 1500);
+              };
+              img.src = selectedCard.imageUrl;
+
+              // 3초 타임아웃
+              setTimeout(() => {
+                if (showFinalLoading) {
+                  setShowFinalLoading(false);
+                  onComplete(selectedCard);
+                }
+              }, 3000);
             }}
             className="px-6 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 shadow-md"
           >

@@ -245,10 +245,21 @@ const TarotCardGrid = ({ onComplete, analyzedImageUrl, filterType }: TarotCardGr
           <button
             onClick={() => {
               setShowFinalLoading(true);
-              setTimeout(() => {
+
+              // 선택된 3개 카드의 이미지를 모두 로드
+              const imageLoadPromises = selectedCards.map((card) => {
+                return new Promise((resolve) => {
+                  const img = new Image();
+                  img.onload = () => resolve(true);
+                  img.src = card.imageUrl;
+                });
+              });
+
+              // 모든 이미지가 로드되면 결과 화면으로 전환
+              Promise.all(imageLoadPromises).then(() => {
                 setShowFinalLoading(false);
                 onComplete(selectedCards);
-              }, 1500);
+              });
             }}
             className="px-6 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 shadow-md"
           >
