@@ -9,7 +9,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '광대',
       en: 'THE FOOL',
     },
-    imageUrl: '/tarot/fool.png',
+    imageUrl: '/tarot/fool.webp',
     keywords: ['#시작', '#모험', '#자유'],
     interpretation: {
       love: [
@@ -119,7 +119,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '마법사',
       en: 'THE MAGICIAN',
     },
-    imageUrl: '/tarot/magician.png',
+    imageUrl: '/tarot/magician.webp',
     keywords: ['#창조', '#의지', '#실현'],
     interpretation: {
       love: [
@@ -191,7 +191,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '여사제',
       en: 'THE HIGH PRIESTESS',
     },
-    imageUrl: '/tarot/highpriestess.png',
+    imageUrl: '/tarot/highpriestess.webp',
     keywords: ['#직감', '#신비', '#지혜'],
     interpretation: {
       love: [
@@ -263,7 +263,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '여황제',
       en: 'THE EMPRESS',
     },
-    imageUrl: '/tarot/empress.png',
+    imageUrl: '/tarot/empress.webp',
     keywords: ['#풍요', '#창조', '#모성'],
     interpretation: {
       love: [
@@ -335,7 +335,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '황제',
       en: 'THE EMPEROR',
     },
-    imageUrl: '/tarot/emperor.png',
+    imageUrl: '/tarot/emperor.webp',
     keywords: ['#권위', '#책임', '#안정'],
     interpretation: {
       love: [
@@ -406,7 +406,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '교황',
       en: 'THE HIEROPHANT',
     },
-    imageUrl: '/tarot/hierophant.png',
+    imageUrl: '/tarot/hierophant.webp',
     keywords: ['#가르침', '#전통', '#지혜'],
     interpretation: {
       love: [
@@ -477,7 +477,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '연인들',
       en: 'THE LOVERS',
     },
-    imageUrl: '/tarot/lovers.png',
+    imageUrl: '/tarot/lovers.webp',
     keywords: ['#선택', '#조화', '#사랑'],
     interpretation: {
       love: [
@@ -548,7 +548,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '전차',
       en: 'THE CHARIOT',
     },
-    imageUrl: '/tarot/chariot.png',
+    imageUrl: '/tarot/chariot.webp',
     keywords: ['#승리', '#전진', '#의지'],
     interpretation: {
       love: [
@@ -619,7 +619,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '힘',
       en: 'STRENGTH',
     },
-    imageUrl: '/tarot/strength.png',
+    imageUrl: '/tarot/strength.webp',
     keywords: ['#내면의힘', '#인내', '#용기'],
     interpretation: {
       love: [
@@ -690,7 +690,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '은둔자',
       en: 'THE HERMIT',
     },
-    imageUrl: '/tarot/hermit.png',
+    imageUrl: '/tarot/hermit.webp',
     keywords: ['#성찰', '#고독', '#지혜'],
     interpretation: {
       love: [
@@ -761,7 +761,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '운명의 수레바퀴',
       en: 'WHEEL OF FORTUNE',
     },
-    imageUrl: '/tarot/wheel-of-fortune.png',
+    imageUrl: '/tarot/wheel-of-fortune.webp',
     keywords: ['#변화', '#운명', '#순환'],
     interpretation: {
       love: [
@@ -832,7 +832,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '정의',
       en: 'JUSTICE',
     },
-    imageUrl: '/tarot/justice.png',
+    imageUrl: '/tarot/justice.webp',
     keywords: ['#균형', '#공정', '#진실'],
     interpretation: {
       love: [
@@ -903,7 +903,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '매달린 사람',
       en: 'THE HANGED MAN',
     },
-    imageUrl: '/tarot/hanged-man.png',
+    imageUrl: '/tarot/hanged-man.webp',
     keywords: ['#희생', '#관점전환', '#인내'],
     interpretation: {
       love: [
@@ -974,7 +974,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '죽음',
       en: 'DEATH',
     },
-    imageUrl: '/tarot/death.png',
+    imageUrl: '/tarot/death.webp',
     keywords: ['#변화', '#종료', '#재생'],
     interpretation: {
       love: [
@@ -1045,7 +1045,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '절제',
       en: 'TEMPERANCE',
     },
-    imageUrl: '/tarot/temperance.png',
+    imageUrl: '/tarot/temperance.webp',
     keywords: ['#균형', '#조화', '#절제'],
     interpretation: {
       love: [
@@ -1116,7 +1116,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '악마',
       en: 'THE DEVIL',
     },
-    imageUrl: '/tarot/devil.png',
+    imageUrl: '/tarot/devil.webp',
     keywords: ['#속박', '#유혹', '#집착'],
     interpretation: {
       love: [
@@ -1187,7 +1187,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '탑',
       en: 'THE TOWER',
     },
-    imageUrl: '/tarot/tower.png',
+    imageUrl: '/tarot/tower.webp',
     keywords: ['#파괴', '#각성', '#해방'],
     interpretation: {
       love: [
@@ -1258,7 +1258,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '별',
       en: 'THE STAR',
     },
-    imageUrl: '/tarot/star.png',
+    imageUrl: '/tarot/star.webp',
     keywords: ['#희망', '#영감', '#치유'],
     interpretation: {
       love: [
@@ -1329,7 +1329,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '달',
       en: 'THE MOON',
     },
-    imageUrl: '/tarot/moon.png',
+    imageUrl: '/tarot/moon.webp',
     keywords: ['#불안', '#환상', '#직관'],
     interpretation: {
       love: [
@@ -1400,7 +1400,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '태양',
       en: 'THE SUN',
     },
-    imageUrl: '/tarot/sun.png',
+    imageUrl: '/tarot/sun.webp',
     keywords: ['#성공', '#행복', '#활력'],
     interpretation: {
       love: [
@@ -1471,7 +1471,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '심판',
       en: 'JUDGEMENT',
     },
-    imageUrl: '/tarot/judgement.png',
+    imageUrl: '/tarot/judgement.webp',
     keywords: ['#각성', '#부활', '#소명'],
     interpretation: {
       love: [
@@ -1543,7 +1543,7 @@ export const TAROT_CARDS: TarotCard[] = [
       ko: '세계',
       en: 'THE WORLD',
     },
-    imageUrl: '/tarot/world.png',
+    imageUrl: '/tarot/world.webp',
     keywords: ['#완성', '#통합', '#성취'],
     interpretation: {
       love: [
