@@ -6,6 +6,8 @@ import { getRandomInterpretation, TAROT_CARDS } from './data/tarotCards';
 
 interface TarotCardGridProps {
   onComplete: (selectedCards: SelectedCard[]) => void;
+  analyzedImageUrl?: string | null;
+  filterType?: string;
 }
 
 interface CardItemProps {
@@ -23,7 +25,7 @@ const shuffleCards = (array: TarotCard[]) => {
   return shuffled;
 };
 
-const TarotCardGrid = ({ onComplete }: TarotCardGridProps) => {
+const TarotCardGrid = ({ onComplete, analyzedImageUrl, filterType }: TarotCardGridProps) => {
   const [currentType, setCurrentType] = useState<FortuneType>('애정운');
   const [selectedCards, setSelectedCards] = useState<SelectedCard[]>([]);
   const [shuffledCards, setShuffledCards] = useState<TarotCard[]>([]);
@@ -122,6 +124,8 @@ const TarotCardGrid = ({ onComplete }: TarotCardGridProps) => {
     return <div className="p-4 text-center">카드를 준비중입니다...</div>;
   }
 
+  console.log('ft : ', filterType);
+
   return (
     <div className=" flex flex-col bg-white pb-8">
       {/* 메시지 영역 */}
@@ -132,6 +136,22 @@ const TarotCardGrid = ({ onComplete }: TarotCardGridProps) => {
           카드를 선택하세요.
         </p>
       </div>
+
+      {analyzedImageUrl && (
+        <div className="flex justify-center items-center mb-4">
+          <div
+            className={`border-2 border-violet-400 w-32 h-32 rounded-full overflow-hidden ${
+              filterType !== 'none' ? `filter-${filterType}` : ''
+            }`}
+          >
+            <img
+              src={analyzedImageUrl}
+              alt="Analyzed face"
+              className="w-full h-full object-cover rounded-full"
+            />
+          </div>
+        </div>
+      )}
 
       {/* 카드 선택 영역 - 상단 50% */}
       <div className=" w-full flex flex-col justify-center py-4">

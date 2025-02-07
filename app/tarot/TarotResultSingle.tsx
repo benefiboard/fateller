@@ -8,12 +8,16 @@ interface TarotResultSingleProps {
   selectedCard: SelectedSingleCard;
   title?: string;
   subtitle?: string;
+  analyzedImageUrl?: string | null;
+  filterType?: string;
 }
 
 const TarotResultSingle = ({
   selectedCard,
   title = '당신의 운세는 어떨까요?',
   subtitle = '선택하신 카드를 바탕으로 한 분석결과입니다.',
+  analyzedImageUrl,
+  filterType,
 }: TarotResultSingleProps) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
@@ -36,6 +40,22 @@ const TarotResultSingle = ({
         <h2 className="text-xl font-medium text-center">{title}</h2>
         <p className="text-gray-600 text-center mt-1 text-sm">{subtitle}</p>
       </div>
+
+      {analyzedImageUrl && (
+        <div className="flex justify-center items-center mb-4">
+          <div
+            className={`border-2 border-violet-400 w-32 h-32 rounded-full overflow-hidden ${
+              filterType !== 'none' ? `filter-${filterType}` : ''
+            }`}
+          >
+            <img
+              src={analyzedImageUrl}
+              alt="Analyzed face"
+              className="w-full h-full object-cover rounded-full "
+            />
+          </div>
+        </div>
+      )}
 
       {/* 카드 결과 */}
       <div className="mx-4 p-4 rounded-xl border transition-all">

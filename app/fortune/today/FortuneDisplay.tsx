@@ -52,7 +52,15 @@ const DetailFortuneCard = ({ title, fortune }: { title: string; fortune: Fortune
 };
 
 // 메인 FortuneDisplay 컴포넌트
-const FortuneDisplay = ({ fortune }: { fortune: TotalFortune }) => {
+const FortuneDisplay = ({
+  fortune,
+  analyzedImageUrl,
+  filterType,
+}: {
+  fortune: TotalFortune;
+  analyzedImageUrl: string | null;
+  filterType: string;
+}) => {
   console.log('fortune', fortune);
   return (
     <div className="flex flex-col min-h-screen bg-white gap-4">
@@ -61,13 +69,35 @@ const FortuneDisplay = ({ fortune }: { fortune: TotalFortune }) => {
         <div className="w-full aspect-video flex flex-col items-center justify-center">
           {/* 총운 점수 */}
           <div className="  relative z-10">
-            <div className="relative  p-4 ">
-              <Star className="w-8 h-8 text-gray-400 absolute top-2 left-1/2 translate-x-10" />
-              <p className="text-8xl font-bold tracking-tighter text-center ">
-                {fortune.total.score}
-              </p>
+            <div className="relative flex items-center justify-center gap-4 p-4 ">
+              <div className="relative">
+                <Star className="w-8 h-8 text-gray-400 absolute -top-2 left-1/2 translate-x-10" />
+                <p className="text-8xl font-bold tracking-tighter text-center ">
+                  {fortune.total.score}
+                </p>
+              </div>
+              {analyzedImageUrl && (
+                <>
+                  <p className="text-4xl text-gray-600 ml-2">&</p>
+                  <div className="flex justify-center items-center mb-4 ">
+                    <div
+                      className={`border-2 border-violet-400 w-32 h-32 rounded-full overflow-hidden ${
+                        filterType !== 'none' ? `filter-${filterType}` : ''
+                      }`}
+                    >
+                      <img
+                        src={analyzedImageUrl}
+                        alt="Analyzed face"
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-            <p className="text-gray-600 px-6 mt-4">{fortune.total.message}</p>
+            <p className="text-gray-600 tracking-tighter text-sm px-6 mt-4">
+              {fortune.total.message}
+            </p>
           </div>
         </div>
       </Card>
@@ -107,31 +137,13 @@ const FortuneDisplay = ({ fortune }: { fortune: TotalFortune }) => {
       </Card>
 
       {/* 세부 운세 리스트 */}
-      <div className="px-4 space-y-1 mb-20">
+      <div className="px-4 space-y-1 tracking-tighter mb-20">
         <DetailFortuneCard title="금전운" fortune={fortune.money} />
         <DetailFortuneCard title="연애운" fortune={fortune.love} />
         <DetailFortuneCard title="사업운" fortune={fortune.business} />
         <DetailFortuneCard title="건강운" fortune={fortune.health} />
         <DetailFortuneCard title="대인운" fortune={fortune.people} />
       </div>
-
-      {/* 하단 네비게이션 */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t bg-white">
-        <div className="grid grid-cols-5 p-4">
-          {[
-            { icon: '🏠', label: '홈' },
-            { icon: '🌟', label: '2024 운세' },
-            { icon: '🎴', label: '타로' },
-            { icon: '💬', label: '상담' },
-            { icon: '👤', label: '정보확인' },
-          ].map((item, i) => (
-            <div key={i} className="flex flex-col items-center gap-1">
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-xs">{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </nav>
     </div>
   );
 };

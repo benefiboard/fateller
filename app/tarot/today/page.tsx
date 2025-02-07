@@ -19,6 +19,8 @@ const TodayTarotPage = () => {
   const [currentStep, setCurrentStep] = useState<AnalysisStep>('selection');
   const [selectedCards, setSelectedCards] = useState<SelectedCard[]>([]);
   const [analysisPath, setAnalysisPath] = useState<AnalysisPath>('quick');
+  const [analyzedImageUrl, setAnalyzedImageUrl] = useState<string | null>(null);
+  const [imageFilterType, setImageFilterType] = useState<string>('none');
   const router = useRouter();
 
   // 시작 모드 선택 핸들러
@@ -31,8 +33,10 @@ const TodayTarotPage = () => {
     }
   };
 
-  const handleAnalysisComplete = (result: ApiResponse) => {
+  const handleAnalysisComplete = (result: ApiResponse, imageUrl: string, filterType: string) => {
     if (result.isFace) {
+      setAnalyzedImageUrl(imageUrl);
+      setImageFilterType(filterType);
       setCurrentStep('card-selection');
     }
   };
@@ -104,11 +108,19 @@ const TodayTarotPage = () => {
         )}
 
         {currentStep === 'card-selection' && (
-          <TarotCardGrid onComplete={handleCardSelectComplete} />
+          <TarotCardGrid
+            onComplete={handleCardSelectComplete}
+            analyzedImageUrl={analyzedImageUrl}
+            filterType={imageFilterType}
+          />
         )}
 
         {currentStep === 'result' && selectedCards.length === 3 && (
-          <TarotResult selectedCards={selectedCards} />
+          <TarotResult
+            selectedCards={selectedCards}
+            analyzedImageUrl={analyzedImageUrl}
+            filterType={imageFilterType}
+          />
         )}
       </main>
     </div>

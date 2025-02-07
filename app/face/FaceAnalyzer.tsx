@@ -55,7 +55,7 @@ interface Filters {
 
 interface FaceAnalyzerProps {
   currentUser_id: string;
-  onAnalysisComplete?: (result: ApiResponse) => void;
+  onAnalysisComplete?: (result: ApiResponse, imageUrl: string, filterType: string) => void;
   title?: string;
   subTitle?: string;
   description?: string;
@@ -185,19 +185,16 @@ const FaceAnalyzer = ({
       // 필터 적용
       const filteredImage = await applyFiltersAndSave(selectedImage, currentFilters);
       setFilteredDisplayImage(filteredImage);
-      setImageUrl(URL.createObjectURL(filteredImage));
 
-      // 이미지 압축 및 분석용 이미지 생성
-      setStep('compress');
-      const { displayImage, analysisImage } = await createDualQualityImages(filteredImage);
+      // 여기서 필터 적용된 이미지의 URL을 바로 사용
+      const filteredImageUrl = URL.createObjectURL(filteredImage);
+      setImageUrl(filteredImageUrl);
 
-      // displayImage는 고품질 버전으로 저장
-      setDisplayImage(displayImage);
-      // analysisImage는 저품질 버전으로 API 호출에 사용
-      setAnalysisImage(analysisImage);
+      // 분석용 이미지는 원본에서 생성
+      const { analysisImage } = await createDualQualityImages(selectedImage);
 
-      // 분석 시작
-      await analyzeImage(analysisImage);
+      // 분석 시작 - 필터 적용된 이미지 URL 전달
+      await analyzeImage(analysisImage, filteredImageUrl);
     } catch (error) {
       console.error('Error applying filters:', error);
       setError('이미지 처리 중 오류가 발생했습니다.');
@@ -206,7 +203,7 @@ const FaceAnalyzer = ({
   };
 
   // 이미지 분석 함수
-  const analyzeImage = async (imageToAnalyze: File) => {
+  const analyzeImage = async (imageToAnalyze: File, filteredImageUrl: string) => {
     try {
       setStep('analyzing');
 
@@ -277,7 +274,7 @@ const FaceAnalyzer = ({
         setShowImageDialog(true); // AlertDialog 표시
       } else {
         if (onAnalysisComplete) {
-          onAnalysisComplete(result);
+          onAnalysisComplete(result, filteredImageUrl, filterType);
         }
       }
     } catch (error) {
@@ -291,8 +288,8 @@ const FaceAnalyzer = ({
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/20">
       <div className="relative flex flex-col items-center justify-center">
         {/* 중앙 원 */}
-        <div className="relative flex flex-col items-center justify-center w-32 h-32 bg-blue-50 rounded-full space-y-4">
-          <Brain className="h-12 w-12 text-blue-400 animate-ping" />
+        <div className="relative flex flex-col items-center justify-center w-32 h-32 bg-violet-50 rounded-full space-y-4">
+          <Brain className="h-12 w-12 text-violet-400 animate-ping" />
           <p className="text-gray-700 text-center tracking-tighter text-sm whitespace-pre-line">{`오늘의 운세\n분석중`}</p>
         </div>
 
@@ -374,12 +371,12 @@ const FaceAnalyzer = ({
                     />
                   </div>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-blue-50/50 relative">
+                  <div className="w-full h-full flex items-center justify-center bg-violet-50/50 relative">
                     {/* 모서리 프레임 */}
-                    <div className="absolute top-6 left-6 w-16 h-16 border-l-4 border-t-4 rounded-tl-3xl border-blue-200"></div>
-                    <div className="absolute top-6 right-6 w-16 h-16 border-r-4 border-t-4 rounded-tr-3xl border-blue-200"></div>
-                    <div className="absolute bottom-6 left-6 w-16 h-16 border-l-4 border-b-4 rounded-bl-3xl border-blue-200"></div>
-                    <div className="absolute bottom-6 right-6 w-16 h-16 border-r-4 border-b-4 rounded-br-3xl border-blue-200"></div>
+                    <div className="absolute top-6 left-6 w-16 h-16 border-l-4 border-t-4 rounded-tl-3xl border-violet-200"></div>
+                    <div className="absolute top-6 right-6 w-16 h-16 border-r-4 border-t-4 rounded-tr-3xl border-violet-200"></div>
+                    <div className="absolute bottom-6 left-6 w-16 h-16 border-l-4 border-b-4 rounded-bl-3xl border-violet-200"></div>
+                    <div className="absolute bottom-6 right-6 w-16 h-16 border-r-4 border-b-4 rounded-br-3xl border-violet-200"></div>
                     <span className="text-gray-500">오늘의 얼굴 사진을 주세요</span>
                   </div>
                 )}
@@ -401,7 +398,7 @@ const FaceAnalyzer = ({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogAction
-                  className="w-full bg-blue-500 text-white hover:bg-blue-600"
+                  className="w-full bg-violet-500 text-white hover:bg-violet-600"
                   onClick={handleAlertClose}
                 >
                   다시 시도하기
@@ -415,7 +412,7 @@ const FaceAnalyzer = ({
             {step === 'initial' && (
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
-                  <button className="w-full bg-blue-500 text-white rounded-xl py-4 text-lg font-medium flex items-center justify-center gap-2">
+                  <button className="w-full bg-violet-500 text-white rounded-xl py-4 text-lg font-medium flex items-center justify-center gap-2">
                     <Camera className="w-6 h-6" />
                     <p>촬영하기 / 불러오기</p>
                   </button>
@@ -433,7 +430,7 @@ const FaceAnalyzer = ({
                         onChange={handleImageSelect}
                         className="hidden"
                       />
-                      <div className="w-full p-4 bg-blue-500 text-white rounded-xl flex items-center justify-center gap-2 cursor-pointer">
+                      <div className="w-full p-4 bg-violet-500 text-white rounded-xl flex items-center justify-center gap-2 cursor-pointer">
                         <Camera className="w-5 h-5" />
                         <span>카메라로 촬영하기</span>
                       </div>
@@ -446,7 +443,7 @@ const FaceAnalyzer = ({
                         onChange={handleImageSelect}
                         className="hidden"
                       />
-                      <div className="w-full p-4 bg-blue-50 text-gray-600 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
+                      <div className="w-full p-4 bg-violet-50 text-gray-600 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
                         <ImageIcon className="w-5 h-5" />
                         <span>갤러리에서 선택하기</span>
                       </div>
@@ -458,7 +455,7 @@ const FaceAnalyzer = ({
 
             {step === 'filter-selection' && (
               <button
-                className="w-full bg-blue-500 text-white rounded-xl py-4 text-lg font-medium flex items-center justify-center gap-2 mt-[72px]"
+                className="w-full bg-violet-500 text-white rounded-xl py-4 text-lg font-medium flex items-center justify-center gap-2 mt-[72px]"
                 onClick={applyFilters}
               >
                 <Focus className="w-6 h-6" />

@@ -20,6 +20,8 @@ const CrushTarotPage = () => {
   const [currentStep, setCurrentStep] = useState<AnalysisStep>('selection');
   const [selectedCard, setSelectedCard] = useState<SelectedSingleCard | null>(null);
   const [analysisPath, setAnalysisPath] = useState<AnalysisPath>('quick');
+  const [analyzedImageUrl, setAnalyzedImageUrl] = useState<string | null>(null);
+  const [imageFilterType, setImageFilterType] = useState<string>('none');
   const router = useRouter();
 
   const handleModeSelection = (mode: 'face' | 'quick') => {
@@ -31,8 +33,10 @@ const CrushTarotPage = () => {
     }
   };
 
-  const handleAnalysisComplete = (result: ApiResponse) => {
+  const handleAnalysisComplete = (result: ApiResponse, imageUrl: string, filterType: string) => {
     if (result.isFace) {
+      setAnalyzedImageUrl(imageUrl);
+      setImageFilterType(filterType);
       setCurrentStep('card-selection');
     }
   };
@@ -110,6 +114,8 @@ const CrushTarotPage = () => {
             fortuneType="짝사랑운"
             title="당신의 짝사랑운은 어떨까요?"
             subtitle="카드 한 장을 선택해주세요"
+            analyzedImageUrl={analyzedImageUrl}
+            filterType={imageFilterType}
           />
         )}
 
@@ -118,6 +124,8 @@ const CrushTarotPage = () => {
             selectedCard={selectedCard}
             title="당신의 짝사랑운"
             subtitle="선택하신 카드가 보여주는 당신의 짝사랑 결과입니다"
+            analyzedImageUrl={analyzedImageUrl}
+            filterType={imageFilterType}
           />
         )}
       </main>

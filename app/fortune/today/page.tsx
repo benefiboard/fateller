@@ -26,6 +26,8 @@ const FortuneToday = () => {
   const [fortune, setFortune] = useState<TotalFortune | null>(null);
   const [currentStep, setCurrentStep] = useState<AnalysisStep>('selection');
   const [analysisPath, setAnalysisPath] = useState<AnalysisPath>('quick');
+  const [analyzedImageUrl, setAnalyzedImageUrl] = useState<string | null>(null);
+  const [imageFilterType, setImageFilterType] = useState<string>('none');
   const router = useRouter();
 
   // 시작 모드 선택 핸들러
@@ -41,13 +43,15 @@ const FortuneToday = () => {
     }
   };
 
-  const handleAnalysisComplete = (result: ApiResponse) => {
+  const handleAnalysisComplete = (result: ApiResponse, imageUrl: string, filterType: string) => {
     if (result.isFace) {
       const energyLevel = checkEnergyLevel(result.condition.energy);
       const todayFortune = calculateFortune(energyLevel);
       console.log('energyLevel', energyLevel);
       setFortune(todayFortune);
       setCurrentStep('result');
+      setAnalyzedImageUrl(imageUrl);
+      setImageFilterType(filterType);
     }
   };
 
@@ -108,7 +112,13 @@ const FortuneToday = () => {
           />
         )}
 
-        {currentStep === 'result' && fortune && <FortuneDisplay fortune={fortune} />}
+        {currentStep === 'result' && fortune && (
+          <FortuneDisplay
+            fortune={fortune}
+            analyzedImageUrl={analyzedImageUrl}
+            filterType={imageFilterType}
+          />
+        )}
       </main>
     </div>
   );

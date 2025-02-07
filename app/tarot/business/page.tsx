@@ -20,6 +20,8 @@ const BusinessTarotPage = () => {
   const [currentStep, setCurrentStep] = useState<AnalysisStep>('selection');
   const [selectedCard, setSelectedCard] = useState<SelectedSingleCard | null>(null);
   const [analysisPath, setAnalysisPath] = useState<AnalysisPath>('quick');
+  const [analyzedImageUrl, setAnalyzedImageUrl] = useState<string | null>(null);
+  const [imageFilterType, setImageFilterType] = useState<string>('none');
   const router = useRouter();
 
   const handleModeSelection = (mode: 'face' | 'quick') => {
@@ -31,8 +33,10 @@ const BusinessTarotPage = () => {
     }
   };
 
-  const handleAnalysisComplete = (result: ApiResponse) => {
+  const handleAnalysisComplete = (result: ApiResponse, imageUrl: string, filterType: string) => {
     if (result.isFace) {
+      setAnalyzedImageUrl(imageUrl);
+      setImageFilterType(filterType);
       setCurrentStep('card-selection');
     }
   };
@@ -110,6 +114,8 @@ const BusinessTarotPage = () => {
             fortuneType="사업 및 직장운" // SingleFortuneType에 정의된 값만 사용 가능
             title="당신의 사업과 직장운은 어떨까요?"
             subtitle="카드 한 장을 선택해주세요"
+            analyzedImageUrl={analyzedImageUrl}
+            filterType={imageFilterType}
           />
         )}
 
@@ -118,6 +124,8 @@ const BusinessTarotPage = () => {
             selectedCard={selectedCard}
             title="당신의 사업 및 직장운"
             subtitle="선택하신 카드가 보여주는 당신의 사업과 직장운입니다"
+            analyzedImageUrl={analyzedImageUrl}
+            filterType={imageFilterType}
           />
         )}
       </main>

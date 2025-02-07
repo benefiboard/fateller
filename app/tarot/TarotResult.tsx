@@ -7,9 +7,11 @@ import { SelectedCard } from './types/tarot';
 
 interface TarotResultProps {
   selectedCards: SelectedCard[];
+  analyzedImageUrl?: string | null;
+  filterType?: string;
 }
 
-const TarotResult = ({ selectedCards }: TarotResultProps) => {
+const TarotResult = ({ selectedCards, analyzedImageUrl, filterType }: TarotResultProps) => {
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   // 별점 렌더링 헬퍼 함수
@@ -39,6 +41,21 @@ const TarotResult = ({ selectedCards }: TarotResultProps) => {
         </p>
       </div>
       {/* <p>오늘의 사진과 선택하신 카드를 바탕으로 한 분석결과입니다.</p> */}
+      {analyzedImageUrl && (
+        <div className="flex justify-center items-center mb-4">
+          <div
+            className={`border-2 border-violet-400 w-32 h-32 rounded-full overflow-hidden ${
+              filterType !== 'none' ? `filter-${filterType}` : ''
+            }`}
+          >
+            <img
+              src={analyzedImageUrl}
+              alt="Analyzed face"
+              className="w-full h-full object-cover rounded-full"
+            />
+          </div>
+        </div>
+      )}
 
       {/* 카드별 결과 */}
       <div className="space-y-4">
