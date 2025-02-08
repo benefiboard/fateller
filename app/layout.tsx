@@ -81,12 +81,12 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {/* <MobileDetector> */}
         <div className="min-h-screen  ">
-          <div className="relative pb-16 min-h-screen max-w-[480px] flex flex-col mx-auto bg-white border border-gray-200">
+          <div className="relative pb-20  max-w-[480px] flex flex-col mx-auto bg-white border border-gray-200">
             {children}
-            <BottomNav />
             <StoreInitializer currentUser={currentUser} />
             <MysticSymbolsEffect />
           </div>
+          <BottomNav />
         </div>
         {/* <BrowserRedirect />
         </MobileDetector> */}
