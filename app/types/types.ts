@@ -4,4 +4,5 @@ export type CurrentUserType = {
   email: string | null;
   avatar_url: string | null;
   user_type: string | null;
+  saju_information?: object | null;
 };

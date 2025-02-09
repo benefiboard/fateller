@@ -1,7 +1,7 @@
 // app/user-info/UserInfoForm.tsx
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { saveSajuInformation } from './actions';
 import { SajuInformation } from '../dailytalk/types/user';
+import { useUserStore } from '../store/userStore';
+import createSupabaseBrowserClient from '@/lib/supabse/client';
 
 interface UserInfoFormProps {
   userId: string;
@@ -25,6 +27,7 @@ interface UserInfoFormProps {
 
 export function UserInfoForm({ userId }: UserInfoFormProps) {
   const router = useRouter();
+  const setCurrentUser = useUserStore((state) => state.setCurrentUser);
   const [formData, setFormData] = useState<SajuInformation>({
     name: '',
     gender: '남자',
@@ -37,6 +40,43 @@ export function UserInfoForm({ userId }: UserInfoFormProps) {
   });
   const [isTimeUnknown, setIsTimeUnknown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 기존 데이터 불러오기
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data: userData } = await supabase
+          .from('userdata')
+          .select('saju_information')
+          .eq('id', userId)
+          .single();
+
+        if (userData?.saju_information) {
+          const sajuInfo = userData.saju_information;
+          setFormData({
+            name: sajuInfo.name || '',
+            gender: sajuInfo.gender || '남자',
+            birthYear: sajuInfo.birthYear || '2000',
+            birthMonth: sajuInfo.birthMonth || '',
+            birthDay: sajuInfo.birthDay || '',
+            birthHour: sajuInfo.birthHour || '',
+            birthMinute: sajuInfo.birthMinute || '',
+            isTimeUnknown: sajuInfo.isTimeUnknown || false,
+          });
+
+          // 시간 모름 상태도 설정
+          if (sajuInfo.birthHour === '10' && sajuInfo.birthMinute === '10') {
+            setIsTimeUnknown(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
 
   // Select에 사용될 년도 범위 생성 (1925-현재)
   const years = Array.from({ length: new Date().getFullYear() - 1924 }, (_, i) =>
@@ -76,7 +116,18 @@ export function UserInfoForm({ userId }: UserInfoFormProps) {
       console.log('Response:', response);
 
       if (response.success === true) {
-        router.push('/dailytalk');
+        const supabase = createSupabaseBrowserClient();
+        const { data: userData } = await supabase
+          .from('userdata')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (userData) {
+          setCurrentUser(userData);
+        }
+
+        router.back();
       } else {
         alert(response.error || '저장 중 오류가 발생했습니다.');
       }

@@ -1,4 +1,3 @@
-// app/user-info/actions.ts
 'use server';
 
 import { createSupabaseServerClient } from '@/lib/supabse/server';
@@ -11,12 +10,34 @@ export async function saveSajuInformation(
   try {
     const supabase = await createSupabaseServerClient();
 
+    // 먼저 현재 사용자의 데이터를 조회
+    const { data: currentUserData, error: fetchError } = await supabase
+      .from('userdata')
+      .select('saju_information')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // 기존 specialNumber 확인 또는 새로 생성
+    let specialNumber: number;
+
+    if (currentUserData?.saju_information?.specialNumber) {
+      // 기존 specialNumber가 있으면 그대로 사용
+      specialNumber = currentUserData.saju_information.specialNumber;
+    } else {
+      // 없으면 1~3 중 랜덤 생성
+      specialNumber = Math.floor(Math.random() * 3) + 1;
+    }
+
+    // 업데이트 실행
     const { error } = await supabase
       .from('userdata')
       .update({
         saju_information: {
           ...sajuInfo,
-          location: 'seoul', // 기본값 설정
+          location: 'seoul',
+          specialNumber: specialNumber,
         },
       })
       .eq('id', userId);

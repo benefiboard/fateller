@@ -52,8 +52,24 @@ export type SajuInformation = {
   birthDay: string;
   birthHour: string;
   birthMinute: string;
-  isTimeUnknown?: boolean; // 시간 모름 상태 추가
+  isTimeUnknown?: boolean;
+  specialNumber?: number;
 };
+
+export interface FortuneData {
+  lifelong_fortune: string;
+  major_fortune: string;
+  prime_time: string;
+  caution_period: string;
+  health_fortune: string;
+  early_years: string;
+  middle_age: string;
+  senior_years: string;
+  spouse_fortune: string;
+  wealth_fortune: string;
+  career_fortune: string;
+  children_fortune: string;
+}
 
 export type SaveSajuResponse = {
   success: boolean;
