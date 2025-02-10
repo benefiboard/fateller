@@ -1,28 +1,28 @@
-// fortune/total/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/app/store/userStore';
 import TopNav from '@/app/TopNav';
-import UserInfoDisplay from './UserInfoDisplay';
+import UserInfoDisplayDetail from '../components/UserInfoDisplayDetail';
 import LoadingAnimation from '../components/LoadingAnimation';
-import FortuneResultDisplay from './FortuneResultDisplay';
-import { FortuneData, SajuInformation } from '../types/fortune';
+import FortuneResultDisplayDetail from '../components/FortuneResultDisplayDetail';
+import { DetailFortuneData, SajuInformation } from '../types/fortune';
 import { Loader } from 'lucide-react';
 
 type AnalysisStep = 'info' | 'loading' | 'result';
 
-export default function FortuneTotalPage() {
+export default function FortuneMoneyPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<AnalysisStep>('info');
   const currentUser = useUserStore(
     (state) => state.currentUser as { saju_information: SajuInformation } | null
   );
   const isInitialized = useUserStore((state) => state.isInitialized);
-  const [fortuneData, setFortuneData] = useState<{ number: number; data: FortuneData } | null>(
-    null
-  );
+  const [fortuneData, setFortuneData] = useState<{
+    number: number;
+    data: DetailFortuneData;
+  } | null>(null);
 
   const userName = currentUser?.saju_information?.name || '';
 
@@ -52,7 +52,7 @@ export default function FortuneTotalPage() {
   const getFortuneModuleByNumber = async (number: number) => {
     const moduleNumber = number.toString();
     try {
-      const module = await import(`@/app/fortune/data/total/${moduleNumber}`);
+      const module = await import(`@/app/fortune/data/detail/money/${moduleNumber}`);
       return module.data;
     } catch (error) {
       console.error('운세 데이터 로딩 오류:', error);
@@ -60,23 +60,19 @@ export default function FortuneTotalPage() {
     }
   };
 
-  // handleLoadingComplete 함수 수정
   const handleLoadingComplete = async () => {
     if (!currentUser?.saju_information) return;
 
-    const { birthYear, birthMonth, birthDay, gender } = currentUser.saju_information;
+    const { birthYear, birthMonth, birthDay } = currentUser.saju_information;
     const dateString = `${birthYear}${birthMonth}${birthDay}`;
     const fortuneNumber = calculateSingleDigit(dateString);
 
     const fortuneModule = await getFortuneModuleByNumber(fortuneNumber);
     if (!fortuneModule) return;
 
-    // 성별에 따른 데이터 선택
-    const genderData = gender === '남자' ? fortuneModule.male : fortuneModule.female;
-
     setFortuneData({
       number: fortuneNumber,
-      data: genderData,
+      data: fortuneModule,
     });
     setCurrentStep('result');
   };
@@ -119,7 +115,7 @@ export default function FortuneTotalPage() {
   return (
     <div className="min-h-screen bg-white">
       <TopNav
-        title="평생운세"
+        title="재물운"
         subTitle="사주 운세"
         currentStep={getCurrentStepNumber()}
         totalSteps={3}
@@ -128,9 +124,10 @@ export default function FortuneTotalPage() {
 
       <main className="max-w-lg mx-auto p-4 mb-20">
         {currentStep === 'info' && (
-          <UserInfoDisplay
+          <UserInfoDisplayDetail
             userInfo={currentUser.saju_information}
             onViewFortune={handleViewFortune}
+            fortuneType="money"
           />
         )}
 
@@ -138,8 +135,14 @@ export default function FortuneTotalPage() {
           <LoadingAnimation onLoadingComplete={handleLoadingComplete} />
         )}
 
-        {currentStep === 'result' && fortuneData && (
-          <FortuneResultDisplay fortuneData={fortuneData} userName={userName} />
+        {currentStep === 'result' && fortuneData && currentUser.saju_information.specialNumber && (
+          <FortuneResultDisplayDetail
+            fortuneData={fortuneData}
+            userName={userName}
+            fortuneType="money"
+            gender={currentUser.saju_information.gender}
+            specialNumber={currentUser.saju_information.specialNumber}
+          />
         )}
       </main>
     </div>

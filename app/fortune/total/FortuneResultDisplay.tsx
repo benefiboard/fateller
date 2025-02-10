@@ -1,6 +1,6 @@
-// fortune/total/FortuneResultDisplay.tsx
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { ChevronDown, ChevronUp, Loader } from 'lucide-react';
 import type { FortuneData } from '@/app/dailytalk/types/user';
 
 interface FortuneResultDisplayProps {
@@ -8,50 +8,91 @@ interface FortuneResultDisplayProps {
     number: number;
     data: FortuneData;
   };
+  userName: string;
 }
 
-const FortuneSection = ({ title, content }: { title: string; content: string }) => (
-  <Card className="mb-6">
-    <CardHeader>
-      <CardTitle className="text-lg">{title}</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <p className="text-gray-700 whitespace-pre-wrap">{content}</p>
-    </CardContent>
-  </Card>
-);
+// DetailFortuneCard component following the same style as the original
+const DetailFortuneCard = ({ title, content }: { title: string; content: string }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
 
-const FortuneResultDisplay = ({ fortuneData }: FortuneResultDisplayProps) => {
+  return (
+    <div className="py-4">
+      <div className="w-full text-left p-4 flex flex-col gap-4 border-b border-gray-100">
+        <div
+          className="flex justify-between items-center cursor-pointer"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <h3 className="font-medium text-xl">{title}</h3>
+          <div className="flex items-center gap-2">
+            {isExpanded ? (
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            ) : (
+              <ChevronUp className="w-5 h-5 text-gray-400" />
+            )}
+          </div>
+        </div>
+        <div
+          className={`overflow-hidden transition-all duration-300 ${
+            isExpanded ? 'max-h-96' : 'line-clamp-3'
+          }`}
+        >
+          <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{content}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FortuneResultDisplay = ({ fortuneData, userName }: FortuneResultDisplayProps) => {
+  console.log('fortuneData', fortuneData);
   if (!fortuneData || !fortuneData.data) {
-    return <div>데이터를 불러오는 중...</div>;
+    return (
+      <div className="p-4 flex flex-col justify-center items-center gap-4 w-screen h-screen ">
+        <Loader className="animate-spin w-8 h-8" />
+        <p>데이터를 불러오는 중...</p>
+      </div>
+    );
   }
 
   const titles = {
-    lifelong_fortune: '평생운세',
+    lifelong_fortune: '평생운세 요약',
     major_fortune: '대운',
     prime_time: '전성기',
     caution_period: '주의할 시기',
-    health_fortune: '건강운',
     early_years: '초년운',
     middle_age: '중년운',
     senior_years: '말년운',
-    spouse_fortune: '배우자운',
     wealth_fortune: '재물운',
-    career_fortune: '직장운',
+    career_fortune: '직업운',
+    health_fortune: '건강운',
+    spouse_fortune: '배우자운',
     children_fortune: '자녀운',
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold mb-6">운세 분석 결과</h2>
+    <div className="flex flex-col min-h-screen bg-white gap-4 tracking-tighter">
+      {/* Header Card */}
+      <Card className="mt-6 flex flex-col mx-4 p-6 gap-6">
+        <div className="w-full flex flex-col items-center justify-center py-8 ">
+          <h2 className="text-2xl font-bold ">
+            {userName.length > 8 ? `${userName.slice(0, 8)}...` : userName}
+            <span className="text-sm text-gray-400"> 님의</span>
+          </h2>
+          <hr className="w-4/5 border border-gray-200 my-1" />
+          <h2 className="text-lg font-semibold">평생운세 분석결과</h2>
+        </div>
+      </Card>
 
-      {Object.entries(titles).map(([key, title]) => (
-        <FortuneSection
-          key={key}
-          title={title}
-          content={fortuneData.data[key as keyof FortuneData] || '데이터가 없습니다.'}
-        />
-      ))}
+      {/* Fortune Details */}
+      <div className=" space-y-1 tracking-tighter mb-20">
+        {Object.entries(titles).map(([key, title]) => (
+          <DetailFortuneCard
+            key={key}
+            title={title}
+            content={fortuneData.data[key as keyof FortuneData] || '데이터가 없습니다.'}
+          />
+        ))}
+      </div>
     </div>
   );
 };

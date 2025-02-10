@@ -1,10 +1,10 @@
 // types/tarot.ts
 
 // 멀티 운세 종류 (기존)
-export type FortuneType = '애정운' | '재물운' | '사업 및 직장운';
+export type FortuneType = '애정운' | '재물운' | '직업운';
 
 // 싱글 운세 종류 (신규)
-export type SingleFortuneType = '연애운' | '사업 및 직장운' | '금전운' | '짝사랑운';
+export type SingleFortuneType = '연애운' | '직업운' | '금전운' | '짝사랑운';
 
 interface TimingAdvice {
   timing?: string; // "이번 달", "이번 주", "다가오는 주말" 등

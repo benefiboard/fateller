@@ -60,7 +60,7 @@ const TarotResult = ({ selectedCards, analyzedImageUrl, filterType }: TarotResul
 
       {/* 카드별 결과 */}
       <div className="space-y-4">
-        {['애정운', '재물운', '사업 및 직장운'].map((type) => {
+        {['애정운', '재물운', '직업운'].map((type) => {
           const card = getCardByType(type);
           if (!card) return null;
 

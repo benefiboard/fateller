@@ -93,8 +93,8 @@ const BusinessTarotPage = () => {
           <StartSelection
             onSelectMode={handleModeSelection}
             category="타로"
-            title="타로로 보는 사업 및 직장운"
-            subtitle="당신의 사업과 직장운을 타로카드로 알아보세요"
+            title="타로로 보는 직업운"
+            subtitle="당신의 직업운을 타로카드로 알아보세요"
           />
         )}
 
@@ -102,7 +102,7 @@ const BusinessTarotPage = () => {
           <FaceAnalyzer
             currentUser_id="local"
             onAnalysisComplete={handleAnalysisComplete}
-            title="당신의 사업과 직장운은 어떨까요?"
+            title="당신의 직업운은 어떨까요?"
             subTitle="얼굴 분석이 완료되면 타로 카드를 선택하실 수 있습니다."
           />
         )}
@@ -111,8 +111,8 @@ const BusinessTarotPage = () => {
           <TarotCardGridSingle
             onComplete={handleCardSelectComplete}
             cards={BUSINESS_TAROT_CARDS}
-            fortuneType="사업 및 직장운" // SingleFortuneType에 정의된 값만 사용 가능
-            title="당신의 사업과 직장운은 어떨까요?"
+            fortuneType="직업운" // SingleFortuneType에 정의된 값만 사용 가능
+            title="당신의 직업운은 어떨까요?"
             subtitle="카드 한 장을 선택해주세요"
             analyzedImageUrl={analyzedImageUrl}
             filterType={imageFilterType}
@@ -122,8 +122,8 @@ const BusinessTarotPage = () => {
         {currentStep === 'result' && selectedCard && (
           <TarotResultSingle
             selectedCard={selectedCard}
-            title="당신의 사업 및 직장운"
-            subtitle="선택하신 카드가 보여주는 당신의 사업과 직장운입니다"
+            title="당신의 직업운"
+            subtitle="선택하신 카드가 보여주는 당신의 직업운입니다"
             analyzedImageUrl={analyzedImageUrl}
             filterType={imageFilterType}
           />

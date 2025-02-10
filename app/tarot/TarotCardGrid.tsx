@@ -54,7 +54,7 @@ const TarotCardGrid = ({ onComplete, analyzedImageUrl, filterType }: TarotCardGr
       if (currentType === '애정운') {
         nextType = '재물운';
       } else if (currentType === '재물운') {
-        nextType = '사업 및 직장운';
+        nextType = '직업운';
       }
 
       setCurrentType(nextType);
@@ -197,7 +197,7 @@ const TarotCardGrid = ({ onComplete, analyzedImageUrl, filterType }: TarotCardGr
 
       <div className="w-full">
         <div className="grid grid-cols-3 gap-8 w-full h-full p-8">
-          {['애정운', '재물운', '사업 및 직장운'].map((type) => {
+          {['애정운', '재물운', '직업운'].map((type) => {
             const card = selectedCards.find((c) => c.type === type);
             const isLoading = loadingCard?.type === type;
 
@@ -246,7 +246,7 @@ const TarotCardGrid = ({ onComplete, analyzedImageUrl, filterType }: TarotCardGr
             onClick={() => {
               setShowFinalLoading(true);
 
-              // 선택된 3개 카드의 이미지를 모두 로드
+              // 이미지 로딩 Promise
               const imageLoadPromises = selectedCards.map((card) => {
                 return new Promise((resolve) => {
                   const img = new Image();
@@ -255,8 +255,13 @@ const TarotCardGrid = ({ onComplete, analyzedImageUrl, filterType }: TarotCardGr
                 });
               });
 
-              // 모든 이미지가 로드되면 결과 화면으로 전환
-              Promise.all(imageLoadPromises).then(() => {
+              // 3초 타이머 Promise
+              const timerPromise = new Promise((resolve) => {
+                setTimeout(resolve, 3000);
+              });
+
+              // 이미지 로딩과 타이머가 모두 완료될 때까지 기다림
+              Promise.all([Promise.all(imageLoadPromises), timerPromise]).then(() => {
                 setShowFinalLoading(false);
                 onComplete(selectedCards);
               });

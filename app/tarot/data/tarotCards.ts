@@ -1620,9 +1620,7 @@ export const getCardById = (id: string): TarotCard | undefined => {
 // 해당 운세 유형에 맞는 랜덤 해석 선택
 export const getRandomInterpretation = (card: TarotCard, type: FortuneType) => {
   const interpretations =
-    card.interpretation[
-      type === '사업 및 직장운' ? 'business' : type === '재물운' ? 'money' : 'love'
-    ];
+    card.interpretation[type === '직업운' ? 'business' : type === '재물운' ? 'money' : 'love'];
   const randomIndex = Math.floor(Math.random() * interpretations.length);
   return interpretations[randomIndex];
 };

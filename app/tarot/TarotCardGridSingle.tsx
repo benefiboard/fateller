@@ -235,26 +235,28 @@ const TarotCardGridSingle = ({
       {selectedCard && (
         <div className="flex justify-center mt-2">
           <button
+            className="px-6 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 shadow-md"
             onClick={() => {
               setShowFinalLoading(true);
 
-              // 선택된 카드 이미지 로드
-              const img = new Image();
-              img.onload = () => {
+              // 이미지 로딩 Promise
+              const imageLoadPromise = new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(true);
+                img.src = selectedCard.imageUrl;
+              });
+
+              // 3초 타이머 Promise
+              const timerPromise = new Promise((resolve) => {
+                setTimeout(resolve, 3000);
+              });
+
+              // 이미지 로딩과 타이머가 모두 완료될 때까지 기다림
+              Promise.all([imageLoadPromise, timerPromise]).then(() => {
                 setShowFinalLoading(false);
                 onComplete(selectedCard);
-              };
-              img.src = selectedCard.imageUrl;
-
-              // 3초 타임아웃
-              setTimeout(() => {
-                if (showFinalLoading) {
-                  setShowFinalLoading(false);
-                  onComplete(selectedCard);
-                }
-              }, 3000);
+              });
             }}
-            className="px-6 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 shadow-md"
           >
             결과 보기
           </button>

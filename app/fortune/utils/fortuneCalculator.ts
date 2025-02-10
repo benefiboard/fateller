@@ -1,10 +1,10 @@
 // utils/fortuneCalculator.ts
-import { businessFortune } from '../data/business_fortune';
-import { healthFortune } from '../data/health_fortune';
-import { loveFortune } from '../data/love_fortune';
-import { moneyFortune } from '../data/money_fortune';
-import { peopleFortune } from '../data/people_fortune';
-import { totalFortune } from '../data/total_fortune';
+import { businessFortune } from '../data/today/business_fortune';
+import { healthFortune } from '../data/today/health_fortune';
+import { loveFortune } from '../data/today/love_fortune';
+import { moneyFortune } from '../data/today/money_fortune';
+import { peopleFortune } from '../data/today/people_fortune';
+import { totalFortune } from '../data/today/total_fortune';
 import { FortuneGrade, FortuneResult, TotalFortune } from './types';
 import {
   CRYSTAL_BACKGROUNDS,
