@@ -1,74 +1,97 @@
-import { getUser } from '@/lib/supabse/server';
-import { Rocket } from 'lucide-react';
+import React from 'react';
+import {
+  Activity,
+  BriefcaseBusiness,
+  CalendarHeart,
+  CircleDollarSign,
+  CircleHelp,
+  Contact,
+  Heart,
+  HeartHandshake,
+  MoonStar,
+  Sparkles,
+} from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import React from 'react';
+import { getUser } from '@/lib/supabse/server';
 import TopNav from './TopNav';
 
-export default async function Homepage() {
+export default async function MainPage() {
   const currentUser = await getUser();
+  const userName = currentUser?.saju_information?.name || '';
 
   if (!currentUser) {
-    redirect('/start');
+    redirect('/login');
   }
-  //console.log(currentUser);
+
+  const linkOptions = [
+    {
+      href: '/today',
+      icon: CalendarHeart,
+      mainText: '오늘의 운세',
+      subText: '#오늘의운세 #오늘',
+    },
+
+    {
+      href: '/fortune',
+      icon: MoonStar,
+      mainText: '사주',
+      subText: '#사주 #정통운세',
+    },
+    {
+      href: '/tarot',
+      icon: Sparkles,
+      mainText: '타로',
+      subText: '#타로 #타로마스터',
+    },
+    {
+      href: '/mirror',
+      icon: CircleHelp,
+      mainText: '해결의 거울',
+      subText: '#고민 #3초해결',
+    },
+  ];
+
   return (
-    <div className="flex flex-col   min-h-screen gap-6 ">
-      <TopNav title="셀시" subTitle="운명 시그널" />
-      {/* 타이틀 */}
-      <div className="py-2 px-6">
-        <h2 className="text-2xl font-bold tracking-tighter">
-          {currentUser?.saju_information.name}
-          <span className="text-sm text-gray-600 font-normal"> 님</span>
-        </h2>
-        <p className="text-gray-600  mt-1 text-base tracking-tighter">
-          반가워요! 오늘도 가득한 행운...🍀
-        </p>
+    <div>
+      <TopNav title="페이스텔러" />
+      <div className="p-6  tracking-tighter flex flex-col gap-4 justify-center">
+        {/* <h2 className="text-2xl font-semibold ">오늘의 운세</h2> */}
+        {/* <hr className="mt-4 border-1 border-gray-200" /> */}
+        <div className="flex flex-col  pb-4 border-b">
+          <h2 className="text-2xl font-semibold">
+            {userName}
+            <span className="text-base text-gray-400"> 님</span>
+          </h2>
+          <p className="text-lg">행운 가득한 하루 되세요!!</p>
+        </div>
       </div>
-      {/* 이동 버튼 */}
-      <div className="w-full px-6 flex flex-col items-center justify-center gap-4 ">
-        <Link href="/fortune" className="w-full">
-          <div className="w-full aspect-[3/1] flex items-center justify-center gap-2 text-gray-600 tracking-tighter border-2">
-            <div className="flex items-center gap-2">
-              {' '}
-              {/* 여기에 div 추가 */}
-              <Rocket className="w-16 h-16" />
-              <span className="text-gray-600 text-3xl font-semibold">운세</span>
-            </div>
-          </div>
-        </Link>
-        <Link href="/fortune" className="w-full">
-          <div className="w-full aspect-[3/1] flex items-center justify-center gap-2 text-gray-600 tracking-tighter border-2">
-            <div className="flex items-center gap-2">
-              {' '}
-              {/* 여기에 div 추가 */}
-              <Rocket className="w-16 h-16" />
-              <span className="text-gray-600 text-3xl font-semibold">운세</span>
-            </div>
-          </div>
-        </Link>
-        <Link href="/fortune" className="w-full">
-          <div className="w-full aspect-[3/1] flex items-center  gap-2 text-gray-600 tracking-tighter border-2">
-            <div className="w-full flex items-center gap-2">
-              <Rocket className="w-16 h-16 ml-8 mr-4" />
-              <div className="flex flex-col flex-1 ">
-                <p className=" text-gray-600 text-3xl font-semibold">운세</p>
-                <hr className="w-full border-1 border-gray-300 py-1" />
-                <p className=" text-gray-600 text-base ">운세</p>
+      {/* Background Image */}
+      <div className="w-full aspect-[2/1]  relative overflow-hidden shadow-sm">
+        <div
+          className="absolute inset-0 bg-cover bg-center border-y-2 border-violet-100 "
+          style={{
+            backgroundImage: "url('/main/main-image-main.webp')",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-50/30 to-violet-50/20" />
+      </div>
+      {/* <hr className="mb-1 mx-6 border-violet-200" /> */}
+      <div className="p-6 tracking-tighter flex flex-col justify-center gap-4">
+        {linkOptions.map(({ href, icon: Icon, mainText, subText }) => (
+          <Link key={href} href={href}>
+            <div className="w-full aspect-[5/1] bg-gradient-to-br from-violet-50 to-pastel-50 rounded-xl flex items-center justify-between shadow-md gap-2 px-6">
+              <div className="flex items-center gap-2">
+                <Icon className="text-gray-400 w-6 h-6" />
+                <p className="text-xl font-semibold text-gray-900">
+                  {mainText}
+                  {/* <span className="text-base text-gray-400 font-normal">{subText}</span> */}
+                </p>
               </div>
+              <p className="text-xs text-violet-400 tracking-tighter">{subText}</p>
             </div>
-          </div>
-        </Link>
-        <Link href="/fortune" className="w-full">
-          <div className="w-full aspect-[3/1] flex items-center justify-center gap-2 text-gray-600 tracking-tighter border-2">
-            <div className="flex items-center gap-2">
-              {' '}
-              {/* 여기에 div 추가 */}
-              <Rocket className="w-16 h-16" />
-              <span className="text-gray-600 text-3xl font-semibold">운세</span>
-            </div>
-          </div>
-        </Link>
+          </Link>
+        ))}
       </div>
     </div>
   );

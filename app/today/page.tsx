@@ -43,11 +43,11 @@ export default function TodayPage() {
         </div>
       </div>
       {/* Background Image */}
-      <div className="w-full aspect-[2/1]  relative overflow-hidden">
+      <div className="w-full aspect-[2/1]  relative overflow-hidden shadow-sm">
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover bg-center border-y-2 border-violet-100 "
           style={{
-            backgroundImage: "url('/today/today-main-image-today.jpg')",
+            backgroundImage: "url('/main/main-image-today.webp')",
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-violet-50/30 to-violet-50/20" />
