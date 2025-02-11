@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { FortuneResult, TotalFortune } from '../utils/types';
-import { ChevronDown, ChevronUp, ScanFace, Star } from 'lucide-react';
+import { ChevronDown, ChevronUp, CircleCheckBig, ScanFace, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { FortuneCharacterCardBasic } from './FortuneCharacterCardBasic';
@@ -39,7 +39,7 @@ const DetailFortuneCard = ({ title, fortune }: { title: string; fortune: Fortune
         <div className="flex justify-between items-center">
           <h3 className="font-medium text-xl">{title}</h3>
           <div className="flex items-center gap-2">
-            <p className="text-base font-semibold text-gray-600">
+            <p className="text-xl font-semibold text-gray-600">
               {fortune.score}
               <span className="text-xs text-gray-400">점</span>
             </p>
@@ -54,7 +54,9 @@ const DetailFortuneCard = ({ title, fortune }: { title: string; fortune: Fortune
               (text, index) =>
                 text.trim() && (
                   <div key={index} className="flex">
-                    <span className="w-4 flex-shrink-0 text-sm">○</span>
+                    <span className="w-4 flex-shrink-0 text-sm flex ">
+                      <CircleCheckBig className="w-3 h-3 mt-1" />
+                    </span>
                     <span className="flex-1">{text.trim()}.</span>
                   </div>
                 )
