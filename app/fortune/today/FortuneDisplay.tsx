@@ -95,9 +95,21 @@ const FortuneDisplay = ({
                 </>
               )}
             </div>
-            <p className="text-gray-600 tracking-tighter text-sm px-6 mt-4">
-              {fortune.total.message}
-            </p>
+            {/* message */}
+            <div className="space-y-1 text-gray-600 tracking-tighter text-base mt-4">
+              {fortune.total.message
+                .split('.')
+                .filter((text) => text.trim())
+                .map(
+                  (text, index) =>
+                    text.trim() && (
+                      <div key={index} className="flex">
+                        <span className="w-4 flex-shrink-0">○</span>
+                        <span className="flex-1">{text.trim()}.</span>
+                      </div>
+                    )
+                )}
+            </div>
           </div>
         </div>
       </Card>
