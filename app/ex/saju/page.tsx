@@ -142,9 +142,10 @@ export default function SajuCalculator() {
           day: lunar.lunarDay,
         },
       };
-    } catch (err) {
-      console.error('Calculation error:', err);
-      throw new Error(`사주 계산 중 오류가 발생했습니다: ${err.message}`);
+    } catch (error: unknown) {
+      console.error('Calculation error:', error);
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+      throw new Error(`사주 계산 중 오류가 발생했습니다: ${errorMessage}`);
     }
   };
 
