@@ -24,26 +24,26 @@ export const DetailFortuneCard = ({ title, content }: { title: string; content: 
 
   return (
     <div className="">
-      <div className="w-full text-left p-4 flex flex-col gap-4 border-b border-gray-100">
+      <div className="mb-4 w-full text-left p-4 flex flex-col gap-4 border-b border-violet-200">
         <div
           className="flex justify-between items-center cursor-pointer"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <h3 className="font-medium text-xl">{title}</h3>
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             {isExpanded ? (
               <ChevronDown className="w-5 h-5 text-gray-400" />
             ) : (
               <ChevronUp className="w-5 h-5 text-gray-400" />
             )}
-          </div>
+          </div> */}
         </div>
         <div
           className={`overflow-hidden transition-all duration-300 ${
             isExpanded ? 'max-h-[1200px]' : 'max-h-[120px]'
           }`}
         >
-          <div className="space-y-1 text-gray-600 tracking-tighter text-base mt-4">
+          <div className="space-y-2 text-gray-600 tracking-tighter text-base mt-4">
             {contentArray.slice(0, isExpanded ? contentArray.length : 3).map(
               (text, index) =>
                 text && (
@@ -61,6 +61,22 @@ export const DetailFortuneCard = ({ title, content }: { title: string; content: 
               <span>{contentArray.length - 3}개 더보기</span>
               <ChevronDown className="w-4 h-4" />
             </div>
+          )}
+        </div>
+        <div
+          className="flex justify-center items-center gap-2"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded ? (
+            <>
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+              <p className="text-sm text-gray-400">접기</p>
+            </>
+          ) : (
+            <>
+              <ChevronUp className="w-5 h-5 text-gray-400" />
+              <p className="text-sm text-gray-400">더 보기</p>
+            </>
           )}
         </div>
       </div>
