@@ -45,7 +45,21 @@ const DetailFortuneCard = ({ title, fortune }: { title: string; fortune: Fortune
             </p>
           </div>
         </div>
-        <p className="text-sm text-gray-600 mt-2 ">{fortune.message}</p>
+        {/* message */}
+        <div className="space-y-1 text-gray-600 tracking-tighter text-base mt-2">
+          {fortune.message
+            .split('.')
+            .filter((text) => text.trim())
+            .map(
+              (text, index) =>
+                text.trim() && (
+                  <div key={index} className="flex">
+                    <span className="w-4 flex-shrink-0 text-sm">○</span>
+                    <span className="flex-1">{text.trim()}.</span>
+                  </div>
+                )
+            )}
+        </div>
       </div>
     </div>
   );
@@ -104,7 +118,7 @@ const FortuneDisplay = ({
                   (text, index) =>
                     text.trim() && (
                       <div key={index} className="flex">
-                        <span className="w-4 flex-shrink-0">○</span>
+                        <span className="w-4 flex-shrink-0 text-sm">○</span>
                         <span className="flex-1">{text.trim()}.</span>
                       </div>
                     )
