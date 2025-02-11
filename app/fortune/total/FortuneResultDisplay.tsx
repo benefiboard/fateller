@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { ChevronDown, ChevronUp, Loader } from 'lucide-react';
+import { ChevronDown, ChevronUp, CircleCheckBig, Loader } from 'lucide-react';
 import type { FortuneData } from '@/app/dailytalk/types/user';
 
 interface FortuneResultDisplayProps {
@@ -12,11 +12,18 @@ interface FortuneResultDisplayProps {
 }
 
 // DetailFortuneCard component following the same style as the original
-const DetailFortuneCard = ({ title, content }: { title: string; content: string }) => {
+export const DetailFortuneCard = ({ title, content }: { title: string; content: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const contentArray = content
+    .split('.')
+    .filter((text) => text.trim())
+    .map((text) => text.trim());
+
+  const hasMoreContent = contentArray.length > 3;
+
   return (
-    <div className="py-4">
+    <div className="">
       <div className="w-full text-left p-4 flex flex-col gap-4 border-b border-gray-100">
         <div
           className="flex justify-between items-center cursor-pointer"
@@ -33,10 +40,28 @@ const DetailFortuneCard = ({ title, content }: { title: string; content: string 
         </div>
         <div
           className={`overflow-hidden transition-all duration-300 ${
-            isExpanded ? 'max-h-96' : 'line-clamp-3'
+            isExpanded ? 'max-h-[1200px]' : 'max-h-[120px]'
           }`}
         >
-          <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{content}</p>
+          <div className="space-y-1 text-gray-600 tracking-tighter text-base mt-4">
+            {contentArray.slice(0, isExpanded ? contentArray.length : 3).map(
+              (text, index) =>
+                text && (
+                  <div key={index} className="flex">
+                    <span className="w-4 flex-shrink-0 text-sm flex">
+                      <CircleCheckBig className="w-3 h-3 mt-1" />
+                    </span>
+                    <span className="flex-1">{text}.</span>
+                  </div>
+                )
+            )}
+          </div>
+          {!isExpanded && hasMoreContent && (
+            <div className="text-sm text-gray-400 mt-2 flex items-center gap-1">
+              <span>{contentArray.length - 3}개 더보기</span>
+              <ChevronDown className="w-4 h-4" />
+            </div>
+          )}
         </div>
       </div>
     </div>
