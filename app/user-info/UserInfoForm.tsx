@@ -65,10 +65,7 @@ export function UserInfoForm({ userId }: UserInfoFormProps) {
             isTimeUnknown: sajuInfo.isTimeUnknown || false,
           });
 
-          // 시간 모름 상태도 설정
-          if (sajuInfo.birthHour === '10' && sajuInfo.birthMinute === '10') {
-            setIsTimeUnknown(true);
-          }
+          setIsTimeUnknown(sajuInfo.isTimeUnknown || false);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -99,11 +96,12 @@ export function UserInfoForm({ userId }: UserInfoFormProps) {
         return;
       }
 
-      // 시간 모름이 체크되어 있으면 10:10으로 설정
+      // 시간 모름이 체크되어 있으면 10:60으로 설정
       const submitData = {
         ...formData,
-        birthHour: isTimeUnknown ? '10' : formData.birthHour,
-        birthMinute: isTimeUnknown ? '10' : formData.birthMinute,
+        birthHour: isTimeUnknown ? '25' : formData.birthHour,
+        birthMinute: isTimeUnknown ? '60' : formData.birthMinute,
+        isTimeUnknown,
       };
 
       // 시간 모름이 체크되어 있지 않을 때는 시간/분 필수
