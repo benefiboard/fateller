@@ -28,6 +28,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "app/components/shared/ui/NutritionCardMaintsx"
-  ],
+, "app/mirror/career/change"  ],
   "exclude": ["node_modules", ".next"]
 }

@@ -1,35 +1,28 @@
+//app/mirror/page.tsx
+
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import TopNav from '../TopNav';
 import { useUserStore } from '../store/userStore';
 import { SajuInformation } from '../fortune/types/fortune';
-import {
-  Activity,
-  BriefcaseBusiness,
-  CircleDollarSign,
-  Contact,
-  Heart,
-  HeartHandshake,
-  MoonStar,
-  Sparkles,
-} from 'lucide-react';
 import Link from 'next/link';
+import { categories, linkOptions } from './data/title';
 
 export default function MirrorPage() {
+  const [selectedCategory, setSelectedCategory] = useState('all'); // 'all' 또는 category.id 값
   const currentUser = useUserStore(
     (state) => state.currentUser as { saju_information: SajuInformation } | null
   );
   const userName = currentUser?.saju_information?.name || '';
 
-  const linkOptions = [
-    {
-      href: '/mirror/when',
-      icon: MoonStar,
-      mainText: '언제가 좋을까?',
-      subText: '#언제 #최적시기',
-    },
-  ];
+  // 필터링된 질문들을 가져오는 함수
+  const getFilteredQuestions = () => {
+    if (selectedCategory === 'all') {
+      return linkOptions;
+    }
+    return linkOptions.filter((option) => option.category === selectedCategory);
+  };
 
   return (
     <div>
@@ -56,18 +49,53 @@ export default function MirrorPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-violet-50/30 to-violet-50/20" />
       </div>
       {/* <hr className="mb-1 mx-6 border-violet-200" /> */}
-      <div className="p-6 tracking-tighter flex flex-col justify-center gap-4">
-        {linkOptions.map(({ href, icon: Icon, mainText, subText }) => (
+      {/* 카테고리 선택 버튼들 */}
+      <div className="px-6 pt-6">
+        <div className="grid grid-cols-4 gap-1">
+          <button
+            onClick={() => setSelectedCategory('all')}
+            className={`py-2  rounded-lg text-sm  tracking-tighter transition-colors
+              ${
+                selectedCategory === 'all'
+                  ? 'bg-violet-500 text-white'
+                  : 'bg-violet-50 text-violet-600'
+              }`}
+          >
+            전체
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`py-2  rounded-lg text-sm  tracking-tighter transition-colors
+                ${
+                  selectedCategory === category.id
+                    ? 'bg-violet-500 text-white'
+                    : 'bg-violet-50 text-violet-600'
+                }`}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <hr className="mt-4 mx-6" />
+
+      {/* 질문 목록 */}
+      <div className="p-6 pt-4 tracking-tighter flex flex-col justify-center gap-4">
+        {getFilteredQuestions().map(({ href, icon: Icon, mainText, subText }) => (
           <Link key={href} href={href}>
-            <div className="w-full aspect-[5/1] bg-gradient-to-br from-violet-50 to-pastel-50 rounded-xl flex items-center justify-between shadow-md gap-2 px-6">
-              <div className="flex items-center gap-2">
-                <Icon className="text-gray-400 w-6 h-6" />
-                <p className="text-xl font-semibold text-gray-900">
-                  {mainText}
-                  {/* <span className="text-base text-gray-400 font-normal">{subText}</span> */}
-                </p>
+            <div className="w-full aspect-[4/1] bg-gradient-to-br from-violet-50 to-pastel-50 rounded-xl flex items-center justify-between shadow-md gap-2 px-6">
+              <div className="w-full grid grid-cols-5 items-center gap-2">
+                <Icon className="text-violet-300 w-8 h-8 col-span-1" />
+                <div className="flex flex-col col-span-4">
+                  <p className="text-base tracking-tighter text-gray-900 whitespace-pre-line">
+                    {mainText}
+                  </p>
+                  <p className="text-xs text-violet-400 tracking-tighter">{subText}</p>
+                </div>
               </div>
-              <p className="text-xs text-violet-400 tracking-tighter">{subText}</p>
             </div>
           </Link>
         ))}

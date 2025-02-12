@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MirrorMessage } from './data/when';
+import { MirrorMessage } from './data/daily/when';
 import { CircleHelp } from 'lucide-react';
 
 interface MirrorPushProps {

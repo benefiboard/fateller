@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Quote } from 'lucide-react';
-import { MirrorMessage } from './data/when';
+import { MirrorMessage } from './data/daily/when';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -107,9 +107,9 @@ const MirrorResult = ({
               <Quote />
             </motion.h2>
 
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col justify-center t tracking-tighter gap-2">
               <motion.h3
-                className="text-2xl font-bold tracking-tight text-white"
+                className="text-3xl font-bold whitespace-pre-line text-white"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
@@ -117,9 +117,15 @@ const MirrorResult = ({
                 {message.message}
               </motion.h3>
 
+              <motion.hr
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              />
+
               {message.subMessage && (
                 <motion.p
-                  className="text-gray-200 text-base"
+                  className="text-gray-200 text-base "
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.6 }}
