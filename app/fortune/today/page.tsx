@@ -105,7 +105,7 @@ const FortuneToday = () => {
               subtitle="얼굴 분석으로 더 정확한 운세를 확인하실 수 있습니다"
               quickAnimation={true} // 이 부분만 추가
             />
-            <div className="w-full px-6 mt-24">
+            {/* <div className="w-full px-6 mt-24">
               <hr className=" border-t-1 border-gray-100 mb-1" />
               <hr className=" border-t-1 border-gray-100 mb-4" />
               <Link href="/user-info">
@@ -113,7 +113,7 @@ const FortuneToday = () => {
                   유저 정보 수정
                 </Button>
               </Link>
-            </div>
+            </div> */}
           </>
         )}
 
