@@ -1,5 +1,5 @@
 // app/components/StartSelection.tsx
-import { Rocket, ScanFace } from 'lucide-react';
+import { Rocket, ScanFace, SmilePlus } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -119,11 +119,22 @@ const StartSelection = ({
           className="w-full flex flex-col items-center justify-center"
           onClick={() => onSelectMode('face')}
         >
-          <div className="w-full aspect-[2/1] flex items-center justify-center gap-2 text-violet-600 tracking-tighter border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-violet-200 rounded-xl shadow-lg">
+          {/* <div className="w-full aspect-[2/1] flex items-center justify-center gap-2 text-violet-600 tracking-tighter border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-violet-200 rounded-xl shadow-lg">
             <ScanFace className="w-20 h-20" />
             <p className="text-sm text-gray-600 w-36">
               <span className="text-violet-600 text-2xl font-semibold">얼굴+{category}</span>로 분석
             </p>
+          </div> */}
+          <div className="w-full aspect-[3/1] bg-gradient-to-br from-violet-50 to-pastel-50 rounded-xl flex items-center justify-between shadow-md gap-2 ">
+            <div className=" flex items-center gap-2 mx-auto">
+              <SmilePlus className="text-violet-600 w-12 h-12 col-span-1" />
+              <div className="flex flex-col col-span-4">
+                <p className="text-2xl tracking-tighter text-violet-600 font-semibold whitespace-pre-line">
+                  얼굴+{category}
+                  <span className="text-base text-violet-400 tracking-tighter"> 로 분석하기</span>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -137,12 +148,26 @@ const StartSelection = ({
           className="w-full flex flex-col items-center justify-center"
           onClick={handleQuickClick}
         >
-          <div className="w-full aspect-[2/1] flex items-center justify-center gap-2 text-violet-600 tracking-tighter border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-violet-200 rounded-xl shadow-lg">
+          {/* <div className="w-full aspect-[2/1] flex items-center justify-center gap-2 text-violet-600 tracking-tighter border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-violet-200 rounded-xl shadow-lg">
             <Rocket className="w-20 h-20" />
             <p className="text-sm text-gray-600 w-36">
               <span className="text-violet-600 text-2xl font-semibold">{category}</span>로 빠른
               시작하기
             </p>
+          </div> */}
+          <div className="w-full aspect-[3/1] bg-gradient-to-br from-violet-50 to-pastel-50 rounded-xl flex items-center justify-between shadow-md gap-2 ">
+            <div className=" flex items-center gap-2 mx-auto">
+              <Rocket className="text-violet-600 w-12 h-12 col-span-1" />
+              <div className="flex flex-col col-span-4">
+                <p className="text-2xl tracking-tighter text-violet-600 font-semibold whitespace-pre-line">
+                  {category}
+                  <span className="text-base text-violet-400 tracking-tighter">
+                    {' '}
+                    로 빠른 시작하기
+                  </span>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
