@@ -24,35 +24,10 @@ export default function MirrorPage() {
 
   const linkOptions = [
     {
-      href: '/tarot/today',
+      href: '/mirror/when',
       icon: MoonStar,
-      mainText: '오늘의 운세',
-      subText: '#오늘의운세 #오늘',
-    },
-
-    {
-      href: '/tarot/money',
-      icon: CircleDollarSign,
-      mainText: '금전운',
-      subText: '#금전운 #대박',
-    },
-    {
-      href: '/tarot/business',
-      icon: BriefcaseBusiness,
-      mainText: '직업운',
-      subText: '#직업운 #취업 #이직',
-    },
-    {
-      href: '/tarot/love',
-      icon: Heart,
-      mainText: '연애운',
-      subText: '#연애운 #사랑',
-    },
-    {
-      href: '/tarot/crush',
-      icon: HeartHandshake,
-      mainText: '짝사랑운',
-      subText: '#짝사랑 #상대방',
+      mainText: '언제가 좋을까?',
+      subText: '#언제 #최적시기',
     },
   ];
 
