@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Star } from 'lucide-react';
+import { CircleCheckBig, Plus, Star } from 'lucide-react';
 import { SelectedSingleCard } from './types/tarot';
 
 interface TarotResultSingleProps {
@@ -110,11 +110,27 @@ const TarotResultSingle = ({
           <div className="space-y-4 mt-4">
             {/* 기존 조언 섹션 */}
             {selectedCard.selectedInterpretation.advice && (
-              <div className="bg-white p-4 pt-2 rounded-lg tracking-tighter">
-                <p className="text-sm font-medium text-gray-900">조언</p>
-                <p className="text-sm text-gray-600 mt-1">
+              <div className="bg-white p-4  rounded-lg tracking-tighter">
+                {/* <p className="text-lg font-medium text-gray-900">조언</p> */}
+                <div className="mt-2 space-y-2 text-gray-600 tracking-tighter text-base">
+                  {selectedCard.selectedInterpretation.advice
+                    .split('.')
+                    .filter((text) => text.trim())
+                    .map(
+                      (text, index) =>
+                        text.trim() && (
+                          <div key={index} className="flex">
+                            <span className="w-4 flex-shrink-0 text-sm flex ">
+                              <CircleCheckBig className="w-3 h-3 mt-1" />
+                            </span>
+                            <span className="flex-1">{text.trim()}.</span>
+                          </div>
+                        )
+                    )}
+                </div>
+                {/* <p className="text-sm text-gray-600 mt-1">
                   {selectedCard.selectedInterpretation.advice}
-                </p>
+                </p> */}
               </div>
             )}
 

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { DetailFortuneData, FortuneType } from '../types/fortune';
-import { Loader } from 'lucide-react';
+import { CircleCheckBig, Loader } from 'lucide-react';
 
 interface FortuneResultDisplayDetailProps {
   fortuneData: {
@@ -58,9 +58,25 @@ const FortuneResultDisplayDetail = ({
       {/* Fortune Content - 전체 내용을 바로 표시 */}
       <div className="p-6 bg-white rounded-lg ">
         <hr className="-mt-2 pt-8 border-t-2 border-gray-200" />
-        <p className="text-gray-600 whitespace-pre-wrap tracking-tighter">
+        <div className="space-y-2 text-gray-600 tracking-tighter text-base">
+          {genderData[specialKey]
+            .split('.')
+            .filter((text) => text.trim())
+            .map(
+              (text, index) =>
+                text.trim() && (
+                  <div key={index} className="flex">
+                    <span className="w-4 flex-shrink-0 text-sm flex ">
+                      <CircleCheckBig className="w-3 h-3 mt-1" />
+                    </span>
+                    <span className="flex-1">{text.trim()}.</span>
+                  </div>
+                )
+            )}
+        </div>
+        {/* <p className="text-gray-600 whitespace-pre-wrap tracking-tighter">
           {(genderData[specialKey] || '데이터가 없습니다.').split('.').join('.\n')}
-        </p>
+        </p> */}
       </div>
     </div>
   );
