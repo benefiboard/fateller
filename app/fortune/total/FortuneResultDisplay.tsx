@@ -56,12 +56,6 @@ export const DetailFortuneCard = ({ title, content }: { title: string; content: 
                 )
             )}
           </div>
-          {!isExpanded && hasMoreContent && (
-            <div className="text-sm text-gray-400 mt-2 flex items-center gap-1">
-              <span>{contentArray.length - 3}개 더보기</span>
-              <ChevronDown className="w-4 h-4" />
-            </div>
-          )}
         </div>
         <div
           className="flex justify-center items-center gap-2"
