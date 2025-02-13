@@ -1,3 +1,5 @@
+//app/tarot/TarotResultSingle.tsx
+
 'use client';
 
 import React, { useState } from 'react';
@@ -137,20 +139,20 @@ const TarotResultSingle = ({
             {/* 타이밍 & 액션 아이템 섹션 */}
             {selectedCard.selectedInterpretation.timing && (
               <div className="bg-white p-4 pt-2 rounded-lg tracking-tighter">
-                <p className="text-sm font-medium text-gray-900">추천하는 시기와 장소</p>
+                <p className="text-sm font-medium text-gray-900">추천하는 시기</p>
                 <div className="mt-2 space-y-1">
                   <p className="text-sm text-gray-600">
                     <span className="text-violet-600">시기:</span>{' '}
                     {selectedCard.selectedInterpretation.timing.timing}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  {/* <p className="text-sm text-gray-600">
                     <span className="text-violet-600">추천 장소:</span>{' '}
                     {selectedCard.selectedInterpretation.timing.place}
-                  </p>
+                  </p> */}
                 </div>
 
                 {selectedCard.selectedInterpretation.timing.actionItems && (
-                  <div className="mt-4">
+                  <div className="mt-8">
                     <p className="text-sm font-medium text-gray-900">추천하는 행동</p>
                     <ul className="mt-2 space-y-2">
                       {selectedCard.selectedInterpretation.timing.actionItems.map((item, index) => (

@@ -1,22 +1,34 @@
-//app/tarot/TarotCardGridSingle.tsx
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { SingleFortuneType, SingleTarotCard, SelectedSingleCard } from './types/tarot';
+import {
+  BaseCardInfo,
+  LoveTarotCard,
+  SelectedSingleCardGPT,
+  SingleFortuneType,
+} from './types/tarot';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface TarotCardGridSingleProps {
-  onComplete: (selectedCard: SelectedSingleCard) => void;
-  cards: SingleTarotCard[];
+interface TarotCardGridSingleGPTProps {
+  onComplete: (selectedCard: SelectedSingleCardGPT) => void;
+  cards: BaseCardInfo[];
   title?: string;
   subtitle?: string;
-  fortuneType: SingleFortuneType;
+  fortuneType: SingleFortuneType; // string에서 SingleFortuneType으로 변경
   analyzedImageUrl?: string | null;
   filterType?: string;
+  userAge?: number;
+  userGender?: 'male' | 'female';
+  userName?: string;
 }
 
-const shuffleCards = (array: SingleTarotCard[]) => {
+interface GPTInterpretation {
+  currentSituation: string;
+  advice: string;
+  future: string;
+}
+
+const shuffleCards = (array: LoveTarotCard[]) => {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -25,56 +37,109 @@ const shuffleCards = (array: SingleTarotCard[]) => {
   return shuffled;
 };
 
-const TarotCardGridSingle = ({
+const TarotCardGridSingleGPT = ({
   onComplete,
   cards,
-  title = '당신의 운세는 어떨까요?',
+  title,
   subtitle = '카드를 선택해주세요',
   fortuneType,
   analyzedImageUrl,
   filterType,
-}: TarotCardGridSingleProps) => {
-  const [selectedCard, setSelectedCard] = useState<SelectedSingleCard | null>(null);
-  const [shuffledCards, setShuffledCards] = useState<SingleTarotCard[]>([]);
+  userAge,
+  userGender,
+  userName,
+}: TarotCardGridSingleGPTProps) => {
+  const [selectedCard, setSelectedCard] = useState<BaseCardInfo | null>(null); // LoveTarotCard에서 BaseCardInfo로 변경
+  const [shuffledCards, setShuffledCards] = useState<BaseCardInfo[]>([]);
   const [loadingCard, setLoadingCard] = useState(false);
   const [showFinalLoading, setShowFinalLoading] = useState(false);
+  const [gptInterpretation, setGptInterpretation] = useState<GPTInterpretation | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setShuffledCards(shuffleCards(cards));
   }, [cards]);
 
-  const handleCardClick = (card: SingleTarotCard) => {
+  const getGPTInterpretation = async (card: LoveTarotCard) => {
+    try {
+      const startTime = Date.now();
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `당신은 타로카드 전문가입니다. 사용자의 나이와 성별, 선택한 카드의 정보를 바탕으로 상세한 운세를 제공해주세요.`,
+            },
+            {
+              role: 'user',
+              content: `다음 정보를 바탕으로 타로 해석을 JSON 형식으로 제공해주세요 반드시 주제에 관련된 내용만 말해주세요:
+         주제: ${title}             
+        선택된 카드: ${card.name.en}
+        카드 키워드: ${card.keywords.join(', ')}
+        사용자 나이: ${userAge}
+        사용자 성별: ${userGender}
+        
+        다음 형식으로 응답해주세요:
+        {
+          "currentSituation": "현재 상황에 대한 250자 정도의 해석",
+          "advice": "조언을 담은 250자 정도의 해석",
+          "future": "앞으로의 전망에 대한 250자 정도의 해석"
+        }`,
+            },
+          ],
+          max_tokens: 1000,
+          temperature: 0.2,
+          response_format: { type: 'json_object' },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('API 요청 실패');
+      }
+
+      const data = await response.json();
+      const result = JSON.parse(data.choices[0].message.content);
+      console.log(result);
+
+      // 최소 3초 대기
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < 3000) {
+        await new Promise((resolve) => setTimeout(resolve, 3000 - elapsedTime));
+      }
+
+      return result as GPTInterpretation;
+    } catch (error) {
+      console.error('GPT 해석 요청 중 오류:', error);
+      setError('타로 해석 중 오류가 발생했습니다.');
+      return {
+        currentSituation: '현재 상황을 분석할 수 없습니다.',
+        advice: '조언을 제공할 수 없습니다.',
+        future: '미래 전망을 예측할 수 없습니다.',
+      };
+    }
+  };
+
+  const handleCardClick = async (card: LoveTarotCard) => {
     if (selectedCard) return;
 
     setLoadingCard(true);
-
-    // 이미지 로딩 완료 처리를 위한 함수
-    const completeLoading = () => {
-      const newSelectedCard: SelectedSingleCard = {
-        ...card,
-        type: fortuneType,
-        selected: true,
-        flipped: true,
-        selectedInterpretation:
-          card.interpretation[Math.floor(Math.random() * card.interpretation.length)],
-      };
-
-      setSelectedCard(newSelectedCard);
-      setLoadingCard(false);
-    };
+    setSelectedCard(card);
 
     // 이미지 프리로딩
     const img = new Image();
     img.src = card.imageUrl;
 
-    img.onload = completeLoading;
+    const interpretation = await getGPTInterpretation(card);
+    setGptInterpretation(interpretation);
 
-    // 3초 타임아웃
-    setTimeout(() => {
-      if (loadingCard) {
-        completeLoading();
-      }
-    }, 3000);
+    setLoadingCard(false);
   };
 
   const LoadingAnimation = () => (
@@ -234,30 +299,25 @@ const TarotCardGridSingle = ({
         </div>
       </div>
 
-      {selectedCard && (
+      {error && <div className="text-red-500 text-center mt-4">{error}</div>}
+
+      {selectedCard && gptInterpretation && (
         <div className="flex justify-center mt-2">
           <button
             className="px-6 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 shadow-md"
             onClick={() => {
               setShowFinalLoading(true);
-
-              // 이미지 로딩 Promise
-              const imageLoadPromise = new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => resolve(true);
-                img.src = selectedCard.imageUrl;
-              });
-
-              // 3초 타이머 Promise
-              const timerPromise = new Promise((resolve) => {
-                setTimeout(resolve, 3000);
-              });
-
-              // 이미지 로딩과 타이머가 모두 완료될 때까지 기다림
-              Promise.all([imageLoadPromise, timerPromise]).then(() => {
-                setShowFinalLoading(false);
-                onComplete(selectedCard);
-              });
+              if (selectedCard && gptInterpretation) {
+                const completeCard: SelectedSingleCardGPT = {
+                  ...selectedCard,
+                  type: fortuneType,
+                  selected: true,
+                  flipped: true,
+                  gptInterpretation,
+                };
+                onComplete(completeCard);
+              }
+              setShowFinalLoading(false);
             }}
           >
             결과 보기
@@ -350,4 +410,4 @@ const TarotCardGridSingle = ({
   );
 };
 
-export default TarotCardGridSingle;
+export default TarotCardGridSingleGPT;

@@ -64,6 +64,18 @@ export interface SelectedSingleCard extends SingleTarotCard {
   selectedInterpretation?: FortuneInterpretation;
 }
 
+export interface SelectedSingleCardGPT extends BaseCardInfo {
+  type: SingleFortuneType;
+  selected: boolean;
+  flipped: boolean;
+  gptInterpretation: GPTInterpretation;
+}
+export interface GPTInterpretation {
+  currentSituation: string;
+  advice: string;
+  future: string;
+}
+
 // 멀티 타로 리딩 결과
 export interface TarotReading {
   cards: {
@@ -77,6 +89,20 @@ export interface TarotReading {
 export interface SingleTarotReading {
   card: SelectedSingleCard | null;
 }
+
+// interpretation을 제거한 기본 타로 카드 타입
+export interface BaseCardInfo {
+  id: string;
+  name: {
+    ko: string;
+    en: string;
+  };
+  imageUrl: string;
+  keywords: string[];
+}
+
+// 사랑 타로 카드에 대한 타입 (interpretation 없음)
+export type LoveTarotCard = BaseCardInfo;
 
 /* {
   id: 'fool',

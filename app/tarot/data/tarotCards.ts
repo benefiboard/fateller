@@ -111,7 +111,6 @@ export const TAROT_CARDS: TarotCard[] = [
         },
       ],
     },
-    defaultScore: 4,
   },
   {
     id: 'magician',
@@ -183,7 +182,6 @@ export const TAROT_CARDS: TarotCard[] = [
         },
       ],
     },
-    defaultScore: 4,
   },
   {
     id: 'highpriestess',
@@ -255,7 +253,6 @@ export const TAROT_CARDS: TarotCard[] = [
         },
       ],
     },
-    defaultScore: 4,
   },
   {
     id: 'empress',

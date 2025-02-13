@@ -25,7 +25,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나는 새로운 기회를 잘 활용할 수 있어요',
         },
-        successRate: '도전적으로 시작한 사용자의 85%가 긍정적인 결과를 얻었어요',
+        successRate: '도전적으로 시작한 사용자의 55%가 긍정적인 결과를 얻었어요',
       },
       {
         message: '자유로운 발상이 큰 수익으로 이어질 수 있습니다. 창의적으로 생각하세요.',
@@ -44,7 +44,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나만의 방식으로 성공할 수 있어요',
         },
-        successRate: '창의적 접근을 한 사용자의 82%가 새로운 수익을 창출했어요',
+        successRate: '창의적 접근을 한 사용자의 52%가 새로운 수익을 창출했어요',
       },
       {
         message: '모험적인 투자가 높은 수익을 가져올 수 있습니다. 신중하게 결정하세요.',
@@ -59,7 +59,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '현명한 모험으로 성공할 수 있어요',
         },
-        successRate: '전략적으로 도전한 사용자의 80%가 수익을 얻었어요',
+        successRate: '전략적으로 도전한 사용자의 50%가 수익을 얻었어요',
       },
     ],
     defaultScore: 4,
@@ -86,7 +86,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 능력으로 부를 창출할 수 있어요',
         },
-        successRate: '적극적으로 행동한 사용자의 90%가 새로운 수익을 창출했어요',
+        successRate: '적극적으로 행동한 사용자의 60%가 새로운 수익을 창출했어요',
       },
       {
         message: '재물운이 상승하는 시기입니다. 자신감을 가지고 도전하세요.',
@@ -101,7 +101,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나는 성공적인 투자자가 될 수 있어요',
         },
-        successRate: '계획적으로 도전한 사용자의 88%가 목표를 달성했어요',
+        successRate: '계획적으로 도전한 사용자의 55%가 목표를 달성했어요',
       },
       {
         message: '당신의 실행력이 부를 창출할 것입니다. 행동으로 옮기세요.',
@@ -116,7 +116,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '행동하는 자만이 결과를 얻을 수 있어요',
         },
-        successRate: '즉시 실행한 사용자의 92%가 가시적인 성과를 얻었어요',
+        successRate: '즉시 실행한 사용자의 62%가 가시적인 성과를 얻었어요',
       },
     ],
     defaultScore: 4,
@@ -143,7 +143,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 직관이 최선의 선택으로 이끌어줄 거예요',
         },
-        successRate: '직관을 따른 사용자의 87%가 현명한 선택을 했어요',
+        successRate: '직관을 따른 사용자의 57%가 현명한 선택을 했어요',
       },
       {
         message: '숨겨진 재물의 기회를 발견할 수 있습니다. 섬세한 관찰이 필요해요.',
@@ -158,7 +158,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나는 숨겨진 기회를 발견할 수 있어요',
         },
-        successRate: '꼼꼼한 관찰을 한 사용자의 89%가 좋은 기회를 발견했어요',
+        successRate: '꼼꼼한 관찰을 한 사용자의 56%가 좋은 기회를 발견했어요',
       },
       {
         message: '비밀스러운 조언자가 도움을 줄 것입니다. 조언에 귀 기울이세요.',
@@ -173,7 +173,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '배움을 통해 재물의 지혜를 얻을 수 있어요',
         },
-        successRate: '멘토의 조언을 받은 사용자의 93%가 재정적 성장을 이루었어요',
+        successRate: '멘토의 조언을 받은 사용자의 63%가 재정적 성장을 이루었어요',
       },
     ],
     defaultScore: 4,
@@ -204,7 +204,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '풍요로운 재물이 자연스럽게 찾아올 거예요',
         },
-        successRate: '기회를 잡은 사용자의 94%가 수익을 증대했어요',
+        successRate: '기회를 잡은 사용자의 64%가 수익을 증대했어요',
       },
       {
         message: '재물이 지속적으로 증가하는 시기입니다. 안정적으로 관리하세요.',
@@ -219,7 +219,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 재물은 안정적으로 증가할 거예요',
         },
-        successRate: '안정적 관리를 한 사용자의 92%가 자산을 증식했어요',
+        successRate: '안정적 관리를 한 사용자의 62%가 자산을 증식했어요',
       },
       {
         message: '창의적인 수익 창출이 가능한 시기입니다. 직관을 믿으세요.',
@@ -234,7 +234,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 창의력이 부를 가져올 거예요',
         },
-        successRate: '창의적 접근을 한 사용자의 88%가 새로운 수익을 창출했어요',
+        successRate: '창의적 접근을 한 사용자의 55%가 새로운 수익을 창출했어요',
       },
     ],
     defaultScore: 4,
@@ -261,7 +261,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '체계적인 관리로 안정적인 자산을 만들 수 있어요',
         },
-        successRate: '계획적 관리를 한 사용자의 95%가 재정 안정을 이루었어요',
+        successRate: '계획적 관리를 한 사용자의 65%가 재정 안정을 이루었어요',
       },
       {
         message: '권위있는 위치에서 수익을 창출할 수 있습니다. 리더십을 발휘하세요.',
@@ -276,7 +276,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 권위가 재물을 끌어들일 거예요',
         },
-        successRate: '리더십을 발휘한 사용자의 90%가 수익을 증대했어요',
+        successRate: '리더십을 발휘한 사용자의 60%가 수익을 증대했어요',
       },
       {
         message: '확고한 원칙으로 재물을 관리하세요. 규율이 성공을 가져올 것입니다.',
@@ -291,7 +291,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '원칙 있는 투자가 성공을 가져올 거예요',
         },
-        successRate: '원칙을 지킨 사용자의 93%가 안정적인 수익을 얻었어요',
+        successRate: '원칙을 지킨 사용자의 63%가 안정적인 수익을 얻었어요',
       },
     ],
     defaultScore: 4,
@@ -322,7 +322,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '검증된 방식이 안정적인 수익을 가져올 거예요',
         },
-        successRate: '전통적 방식을 선택한 사용자의 96%가 안정적 수익을 얻었어요',
+        successRate: '전통적 방식을 선택한 사용자의 66%가 안정적 수익을 얻었어요',
       },
       {
         message: '제도권 금융을 활용한 재테크가 유리합니다. 공식적인 경로를 이용하세요.',
@@ -337,7 +337,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '안전한 제도권 금융으로 미래를 준비할 수 있어요',
         },
-        successRate: '제도권 금융을 활용한 사용자의 97%가 안정적인 자산을 형성했어요',
+        successRate: '제도권 금융을 활용한 사용자의 67%가 안정적인 자산을 형성했어요',
       },
       {
         message: '재물에 대한 깊은 지혜를 얻을 수 있습니다. 배움의 자세를 가지세요.',
@@ -352,7 +352,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '배움을 통해 재물의 지혜를 얻을 수 있어요',
         },
-        successRate: '금융 교육을 받은 사용자의 94%가 더 나은 투자 결정을 내렸어요',
+        successRate: '금융 교육을 받은 사용자의 64%가 더 나은 투자 결정을 내렸어요',
       },
     ],
     defaultScore: 4,
@@ -379,7 +379,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나는 현명한 재정적 결정을 내릴 수 있어요',
         },
-        successRate: '신중한 선택을 한 사용자의 92%가 만족스러운 결과를 얻었어요',
+        successRate: '신중한 선택을 한 사용자의 62%가 만족스러운 결과를 얻었어요',
       },
       {
         message: '파트너십을 통한 재물 증식이 가능합니다. 협력자를 찾으세요.',
@@ -394,7 +394,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '좋은 파트너와 함께 성공할 수 있어요',
         },
-        successRate: '협력 관계를 맺은 사용자의 88%가 수익을 증대했어요',
+        successRate: '협력 관계를 맺은 사용자의 55%가 수익을 증대했어요',
       },
       {
         message: '재물과 가치관의 조화가 필요합니다. 균형을 찾으세요.',
@@ -409,7 +409,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '내 가치관에 맞는 성공을 이룰 수 있어요',
         },
-        successRate: '가치 중심적 접근을 한 사용자의 95%가 지속적인 성공을 이루었어요',
+        successRate: '가치 중심적 접근을 한 사용자의 65%가 지속적인 성공을 이루었어요',
       },
     ],
     defaultScore: 4,
@@ -436,7 +436,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 도전은 반드시 성공할 거예요',
         },
-        successRate: '도전적으로 임한 사용자의 85%가 목표를 달성했어요',
+        successRate: '도전적으로 임한 사용자의 55%가 목표를 달성했어요',
       },
       {
         message: '재정적 목표를 향해 꾸준히 전진하세요. 승리가 가까워지고 있습니다.',
@@ -451,7 +451,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '꾸준한 노력이 반드시 결실을 맺을 거예요',
         },
-        successRate: '꾸준히 노력한 사용자의 90%가 목표에 도달했어요',
+        successRate: '꾸준히 노력한 사용자의 60%가 목표에 도달했어요',
       },
       {
         message: '전략적인 움직임이 필요한 시기입니다. 계획을 세워 실행하세요.',
@@ -466,7 +466,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '전략적인 접근으로 성공을 이룰 수 있어요',
         },
-        successRate: '전략적으로 접근한 사용자의 93%가 목표를 달성했어요',
+        successRate: '전략적으로 접근한 사용자의 63%가 목표를 달성했어요',
       },
     ],
     defaultScore: 4,
@@ -493,7 +493,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나는 어떤 어려움도 극복할 수 있어요',
         },
-        successRate: '인내심을 가진 사용자의 94%가 위기를 극복했어요',
+        successRate: '인내심을 가진 사용자의 64%가 위기를 극복했어요',
       },
       {
         message: '장기적인 안목이 필요한 시기입니다. 인내심을 가지세요.',
@@ -508,7 +508,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '꾸준한 노력이 큰 결실을 맺을 거예요',
         },
-        successRate: '장기적 접근을 한 사용자의 96%가 안정적인 성장을 이루었어요',
+        successRate: '장기적 접근을 한 사용자의 66%가 안정적인 성장을 이루었어요',
       },
       {
         message: '감정을 조절하며 재물을 관리하세요. 냉철함이 필요합니다.',
@@ -523,7 +523,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '냉철한 판단으로 성공적인 투자를 할 수 있어요',
         },
-        successRate: '감정을 조절한 사용자의 91%가 안정적인 수익을 얻었어요',
+        successRate: '감정을 조절한 사용자의 61%가 안정적인 수익을 얻었어요',
       },
     ],
     defaultScore: 4,
@@ -550,7 +550,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '철저한 분석이 현명한 판단을 만들어요',
         },
-        successRate: '철저한 분석을 한 사용자의 95%가 재정 건전성을 높였어요',
+        successRate: '철저한 분석을 한 사용자의 65%가 재정 건전성을 높였어요',
       },
       {
         message: '시장을 관찰하며 기회를 찾으세요. 성급한 판단은 금물입니다.',
@@ -565,7 +565,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '냉철한 관찰이 최고의 투자 기회를 찾아줄 거예요',
         },
-        successRate: '충분한 관찰 후 투자한 사용자의 92%가 성공적인 결과를 얻었어요',
+        successRate: '충분한 관찰 후 투자한 사용자의 62%가 성공적인 결과를 얻었어요',
       },
       {
         message: '혼자만의 시간을 통해 재테크의 지혜를 얻을 수 있습니다.',
@@ -580,7 +580,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '스스로의 연구가 최고의 투자 전략이 될 거예요',
         },
-        successRate: '자기 학습을 한 사용자의 94%가 더 나은 투자 결정을 내렸어요',
+        successRate: '자기 학습을 한 사용자의 64%가 더 나은 투자 결정을 내렸어요',
       },
     ],
     defaultScore: 4,
@@ -607,7 +607,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '좋은 기회가 나를 기다리고 있어요',
         },
-        successRate: '기회를 잡은 사용자의 88%가 큰 수익을 얻었어요',
+        successRate: '기회를 잡은 사용자의 55%가 큰 수익을 얻었어요',
       },
       {
         message: '재정적 상황이 급변할 수 있습니다. 변화에 대비하세요.',
@@ -622,7 +622,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '변화 속에서도 안정을 찾을 수 있어요',
         },
-        successRate: '변화에 대비한 사용자의 90%가 안정적으로 자산을 지켰어요',
+        successRate: '변화에 대비한 사용자의 60%가 안정적으로 자산을 지켰어요',
       },
       {
         message: '운명적인 재물의 기회가 찾아옵니다. 준비된 자세로 기다리세요.',
@@ -637,7 +637,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '준비된 자에게 기회가 찾아올 거예요',
         },
-        successRate: '준비된 사용자의 93%가 큰 기회를 잡았어요',
+        successRate: '준비된 사용자의 63%가 큰 기회를 잡았어요',
       },
     ],
     defaultScore: 4,
@@ -664,7 +664,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '공정한 거래가 최선의 결과를 가져올 거예요',
         },
-        successRate: '신중한 검토를 한 사용자의 96%가 안전한 거래를 했어요',
+        successRate: '신중한 검토를 한 사용자의 66%가 안전한 거래를 했어요',
       },
       {
         message: '수입과 지출의 균형을 맞춰야 할 때입니다. 재정 상태를 점검하세요.',
@@ -679,7 +679,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '균형 잡힌 재정 관리로 안정을 이룰 수 있어요',
         },
-        successRate: '균형적 관리를 한 사용자의 94%가 재정 안정을 이루었어요',
+        successRate: '균형적 관리를 한 사용자의 64%가 재정 안정을 이루었어요',
       },
       {
         message: '모든 거래에서 책임감이 필요합니다. 정직하게 행동하세요.',
@@ -694,7 +694,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '정직한 재물 관리가 진정한 부를 가져올 거예요',
         },
-        successRate: '윤리적 기준을 지킨 사용자의 97%가 장기적 성공을 이루었어요',
+        successRate: '윤리적 기준을 지킨 사용자의 67%가 장기적 성공을 이루었어요',
       },
     ],
     defaultScore: 4,
@@ -721,7 +721,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '기다림도 현명한 투자 전략이에요',
         },
-        successRate: '인내심을 가진 사용자의 89%가 더 나은 기회를 잡았어요',
+        successRate: '인내심을 가진 사용자의 56%가 더 나은 기회를 잡았어요',
       },
       {
         message: '기존의 관점을 바꿔야 할 때입니다. 새로운 시각으로 보세요.',
@@ -736,7 +736,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '새로운 관점이 새로운 기회를 만들어줄 거예요',
         },
-        successRate: '관점을 전환한 사용자의 86%가 돌파구를 찾았어요',
+        successRate: '관점을 전환한 사용자의 56%가 돌파구를 찾았어요',
       },
       {
         message: '현재의 손실이나 정체는 미래를 위한 준비 기간입니다.',
@@ -751,7 +751,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '현재의 희생이 미래의 성공을 만들어요',
         },
-        successRate: '학습에 투자한 사용자의 92%가 장기적 성과를 얻었어요',
+        successRate: '학습에 투자한 사용자의 62%가 장기적 성과를 얻었어요',
       },
     ],
     defaultScore: 4,
@@ -778,7 +778,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '모든 끝은 새로운 시작이 될 수 있어요',
         },
-        successRate: '냉정하게 대처한 사용자의 85%가 위기를 극복했어요',
+        successRate: '냉정하게 대처한 사용자의 55%가 위기를 극복했어요',
       },
       {
         message: '기존의 재무 구조를 완전히 개편해야 합니다. 과감한 결단이 필요해요.',
@@ -793,7 +793,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '과감한 변화가 새로운 성공을 가져올 거예요',
         },
-        successRate: '과감한 결단을 내린 사용자의 83%가 재도약에 성공했어요',
+        successRate: '과감한 결단을 내린 사용자의 53%가 재도약에 성공했어요',
       },
       {
         message: '재정적 위기가 변화의 기회가 될 것입니다. 두려워하지 마세요.',
@@ -808,7 +808,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '위기를 통해 더 강해질 수 있어요',
         },
-        successRate: '위기를 기회로 삼은 사용자의 88%가 성공적으로 회복했어요',
+        successRate: '위기를 기회로 삼은 사용자의 55%가 성공적으로 회복했어요',
       },
     ],
     defaultScore: 4,
@@ -835,7 +835,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '현명한 절제가 진정한 부를 만들어요',
         },
-        successRate: '균형 잡힌 관리를 한 사용자의 94%가 재정 안정을 이루었어요',
+        successRate: '균형 잡힌 관리를 한 사용자의 64%가 재정 안정을 이루었어요',
       },
       {
         message: '점진적인 자산 증식이 필요합니다. 서두르지 마세요.',
@@ -850,7 +850,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '안정적인 성장이 진정한 부를 만들어요',
         },
-        successRate: '안정적 투자를 한 사용자의 92%가 꾸준한 수익을 얻었어요',
+        successRate: '안정적 투자를 한 사용자의 62%가 꾸준한 수익을 얻었어요',
       },
       {
         message: '감정과 이성의 균형이 필요합니다. 합리적으로 판단하세요.',
@@ -865,7 +865,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '균형 잡힌 판단이 현명한 선택을 만들어요',
         },
-        successRate: '균형적 판단을 한 사용자의 93%가 올바른 결정을 내렸어요',
+        successRate: '균형적 판단을 한 사용자의 63%가 올바른 결정을 내렸어요',
       },
     ],
     defaultScore: 4,
@@ -892,7 +892,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '안전한 투자만이 진정한 부를 가져와요',
         },
-        successRate: '유혹을 이겨낸 사용자의 95%가 위험을 피했어요',
+        successRate: '유혹을 이겨낸 사용자의 65%가 위험을 피했어요',
       },
       {
         message: '재물에 대한 중독이나 집착에서 벗어나세요. 자유가 필요합니다.',
@@ -907,7 +907,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '돈에서 자유로워질 때 진정한 부자가 돼요',
         },
-        successRate: '집착에서 벗어난 사용자의 89%가 더 나은 삶을 찾았어요',
+        successRate: '집착에서 벗어난 사용자의 56%가 더 나은 삶을 찾았어요',
       },
       {
         message: '불건전한 재테크나 사업 제안을 조심하세요. 함정이 있습니다.',
@@ -922,7 +922,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '정직하고 안전한 방법으로 성공할 수 있어요',
         },
-        successRate: '신중히 검토한 사용자의 93%가 사기를 피했어요',
+        successRate: '신중히 검토한 사용자의 63%가 사기를 피했어요',
       },
     ],
     defaultScore: 4,
@@ -949,7 +949,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '위기 속에서도 생존할 수 있는 힘이 있어요',
         },
-        successRate: '미리 대비한 사용자의 87%가 위기를 극복했어요',
+        successRate: '미리 대비한 사용자의 57%가 위기를 극복했어요',
       },
       {
         message: '기존의 재무 구조가 완전히 무너질 수 있습니다. 변화를 받아들이세요.',
@@ -964,7 +964,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '이 위기를 새로운 기회로 만들 수 있어요',
         },
-        successRate: '변화를 수용한 사용자의 85%가 재기에 성공했어요',
+        successRate: '변화를 수용한 사용자의 55%가 재기에 성공했어요',
       },
       {
         message: '급격한 시장 변화로 큰 손실이 예상됩니다. 빠르게 대응하세요.',
@@ -979,7 +979,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '빠른 대응으로 위기를 극복할 수 있어요',
         },
-        successRate: '신속하게 대응한 사용자의 82%가 큰 손실을 피했어요',
+        successRate: '신속하게 대응한 사용자의 52%가 큰 손실을 피했어요',
       },
     ],
     defaultScore: 4,
@@ -1006,7 +1006,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '더 나은 재정적 미래가 기다리고 있어요',
         },
-        successRate: '긍정적 태도를 유지한 사용자의 94%가 성공적으로 회복했어요',
+        successRate: '긍정적 태도를 유지한 사용자의 64%가 성공적으로 회복했어요',
       },
       {
         message: '영감이 가득한 수익 창출의 기회가 옵니다. 창의력을 발휘하세요.',
@@ -1021,7 +1021,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 창의력이 새로운 부를 창출할 거예요',
         },
-        successRate: '창의적 시도를 한 사용자의 91%가 새로운 수익을 창출했어요',
+        successRate: '창의적 시도를 한 사용자의 61%가 새로운 수익을 창출했어요',
       },
       {
         message: '재물운이 점차 회복되는 시기입니다. 희망을 가지세요.',
@@ -1036,7 +1036,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '한 걸음씩 나아가며 더 큰 성공을 이룰 수 있어요',
         },
-        successRate: '차분히 회복한 사용자의 96%가 안정적인 성장을 이루었어요',
+        successRate: '차분히 회복한 사용자의 66%가 안정적인 성장을 이루었어요',
       },
     ],
     defaultScore: 4,
@@ -1063,7 +1063,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '신중한 판단으로 위험을 피할 수 있어요',
         },
-        successRate: '경계심을 가진 사용자의 92%가 사기를 피했어요',
+        successRate: '경계심을 가진 사용자의 62%가 사기를 피했어요',
       },
       {
         message: '숨겨진 위험이나 함정을 조심하세요. 직관을 믿으세요.',
@@ -1078,7 +1078,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 직관이 올바른 길로 인도해줄 거예요',
         },
-        successRate: '직관을 믿은 사용자의 89%가 위험을 피했어요',
+        successRate: '직관을 믿은 사용자의 56%가 위험을 피했어요',
       },
       {
         message: '환상과 현실을 구분해야 합니다. 객관적으로 판단하세요.',
@@ -1093,7 +1093,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '현실적인 판단이 안전한 수익을 가져와요',
         },
-        successRate: '객관적 판단을 한 사용자의 93%가 올바른 결정을 내렸어요',
+        successRate: '객관적 판단을 한 사용자의 63%가 올바른 결정을 내렸어요',
       },
     ],
     defaultScore: 4,
@@ -1120,7 +1120,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 모든 도전이 성공으로 이어질 거예요',
         },
-        successRate: '적극적으로 도전한 사용자의 98%가 성공을 거두었어요',
+        successRate: '적극적으로 도전한 사용자의 65%가 성공을 거두었어요',
       },
       {
         message: '풍요와 번영의 시기가 찾아옵니다. 마음껏 성장하세요.',
@@ -1135,7 +1135,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '무한한 성장과 번영이 나를 기다리고 있어요',
         },
-        successRate: '적극적으로 확장한 사용자의 96%가 큰 성과를 이루었어요',
+        successRate: '적극적으로 확장한 사용자의 66%가 큰 성과를 이루었어요',
       },
       {
         message: '모든 것이 당신의 뜻대로 이루어질 것입니다. 자신감을 가지세요.',
@@ -1150,7 +1150,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 모든 계획이 성공적으로 이루어질 거예요',
         },
-        successRate: '자신감을 가진 사용자의 97%가 목표를 달성했어요',
+        successRate: '자신감을 가진 사용자의 67%가 목표를 달성했어요',
       },
     ],
     defaultScore: 4,
@@ -1177,7 +1177,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '정직한 평가가 더 나은 미래를 만들어요',
         },
-        successRate: '객관적 재평가를 한 사용자의 94%가 더 나은 결정을 내렸어요',
+        successRate: '객관적 재평가를 한 사용자의 64%가 더 나은 결정을 내렸어요',
       },
       {
         message: '과거의 실패에서 부활할 기회입니다. 새로운 시작을 하세요.',
@@ -1192,7 +1192,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '이제 새로운 성공을 시작할 수 있어요',
         },
-        successRate: '재도전한 사용자의 91%가 성공적으로 회복했어요',
+        successRate: '재도전한 사용자의 61%가 성공적으로 회복했어요',
       },
       {
         message: '중요한 재정적 깨달음이 있을 것입니다. 마음을 열어두세요.',
@@ -1207,7 +1207,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '새로운 깨달음이 더 큰 성공으로 이끌어줄 거예요',
         },
-        successRate: '인식을 전환한 사용자의 95%가 새로운 기회를 발견했어요',
+        successRate: '인식을 전환한 사용자의 65%가 새로운 기회를 발견했어요',
       },
     ],
     defaultScore: 4,
@@ -1234,7 +1234,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 모든 노력이 완벽한 결실을 맺었어요',
         },
-        successRate: '이 단계에 도달한 사용자의 99%가 재정적 자유를 얻었어요',
+        successRate: '이 단계에 도달한 사용자의 66%가 재정적 자유를 얻었어요',
       },
       {
         message: '재물의 순환이 완성되는 시기입니다. 풍요를 나누세요.',
@@ -1249,7 +1249,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '나의 풍요가 더 큰 풍요를 만들어내요',
         },
-        successRate: '선순환을 이룬 사용자의 98%가 지속적인 번영을 누렸어요',
+        successRate: '선순환을 이룬 사용자의 65%가 지속적인 번영을 누렸어요',
       },
       {
         message: '글로벌한 재물의 기회가 찾아옵니다. 시야를 넓히세요.',
@@ -1264,7 +1264,7 @@ export const MONEY_TAROT_CARDS: SingleTarotCard[] = [
         affirmation: {
           message: '세계를 무대로 더 큰 성공을 이룰 수 있어요',
         },
-        successRate: '글로벌 시장에 도전한 사용자의 96%가 성공적으로 확장했어요',
+        successRate: '글로벌 시장에 도전한 사용자의 66%가 성공적으로 확장했어요',
       },
     ],
     defaultScore: 4,
