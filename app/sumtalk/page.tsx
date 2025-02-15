@@ -102,9 +102,10 @@ export default function SumTalk() {
       if (messageError) throw messageError;
 
       // 3. 임베딩 생성 및 저장
+      const embeddingText = `${message}\n\n컨텍스트: ${analysis.summary}`;
       const embedding = await openai.embeddings.create({
         model: 'text-embedding-3-small',
-        input: message,
+        input: embeddingText,
         encoding_format: 'float',
       });
 
@@ -180,7 +181,7 @@ export default function SumTalk() {
       // 3. 벡터 검색
       const { data: results, error } = await supabase.rpc('match_messages', {
         query_embedding: searchEmbedding.data[0].embedding,
-        match_threshold: 0.3,
+        match_threshold: 0.1,
         match_count: 5,
       });
 
