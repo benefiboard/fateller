@@ -50,6 +50,18 @@ export default function MemoPage() {
         ]}
         bgColor="from-gray-900 to-gray-600"
       />
+      <ThumbnailCardAnimation
+        title="요약의 힘: 글쓰기와 삶을 이끄는 능력"
+        subject="요약 능력이 글쓰기와 삶의 질을 높인다"
+        keywords={['#요약', '#정의', '#본질', '#글쓰기', '#패턴', '#우선순위', '#핵심문장']}
+        keyPoints={[
+          '세상은 요약하는 사람이 이끌어간다.',
+          '요약은 본질이나 원리, 근본, 바탕을 파악하는 일이기도 하다.',
+          '요약을 잘해야 글을 잘 쓸 수 있다',
+          '요약 능력이 뛰어난 사람은 글쓰기와 일 처리에서 유능하다.',
+        ]}
+        bgColor="from-gray-900 to-gray-800"
+      />
     </div>
   );
 }

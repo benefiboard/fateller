@@ -44,6 +44,14 @@ export const ThumbnailCardAnimation: React.FC<ThumbnailCardProps> = ({
 
         {/* 전체 컨텐츠를 flex column으로 배치 */}
         <div className="relative h-full flex flex-col">
+          {/* 텍스트 컨텐츠: 기존 스타일 유지 */}
+          <div className="px-4 py-2 sm:p-6 tracking-tighter">
+            <p className=" sm:text-xl text-gray-400 font-medium">{subject}</p>
+            <h1 className="text-xl sm:text-3xl md:text-4xl font-bold text-white leading-tight">
+              {title}
+            </h1>
+          </div>
+          <hr className="border-t border-gray-300 " />
           {/* 애니메이션 영역: flex-1로 남는 공간 모두 차지 */}
           <div className="flex-1 flex items-center justify-center tracking-tighter">
             <AnimatePresence mode="wait">
@@ -64,14 +72,6 @@ export const ThumbnailCardAnimation: React.FC<ThumbnailCardProps> = ({
                 )}
               </motion.div>
             </AnimatePresence>
-          </div>
-          <hr className="border-t border-gray-300 " />
-          {/* 텍스트 컨텐츠: 기존 스타일 유지 */}
-          <div className="px-4 py-2 sm:p-6 tracking-tighter">
-            <p className="text-lg sm:text-xl text-gray-400 font-medium">{subject}</p>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight">
-              {title}
-            </h1>
           </div>
         </div>
       </div>
