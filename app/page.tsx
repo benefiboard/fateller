@@ -21,7 +21,7 @@ export default async function MainPage() {
   const userName = currentUser?.saju_information?.name || '';
 
   if (!currentUser) {
-    redirect('/login');
+    redirect('/auth');
   }
 
   const linkOptions = [
