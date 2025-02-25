@@ -20,7 +20,19 @@ import { toast } from 'sonner';
 
 type AnalysisStep = 'initial' | 'analyzing' | 'complete';
 
-// 기본 카드 인터페이스 (부모와 자식 카드 모두에 적용)
+// 구조적 특성 인터페이스
+interface StructuralCharacteristic {
+  type: 'sequential' | 'comparison' | 'cause_effect' | 'problem_solution';
+  description: string;
+}
+
+// 논리적 관계 인터페이스
+interface LogicalRelationship {
+  type: 'parallel' | 'causal' | 'opposing' | 'inclusive';
+  description: string;
+}
+
+// 기본 카드 인터페이스
 interface CardData {
   title: string;
   content: string;
@@ -28,7 +40,7 @@ interface CardData {
   type: 'parent' | 'child';
 }
 
-// 부모 카드 추가 속성
+// 부모 카드 인터페이스
 interface ParentCardData extends CardData {
   type: 'parent';
   category?: {
@@ -37,19 +49,23 @@ interface ParentCardData extends CardData {
   };
   key_sentence?: string;
   document_type?: 'simple' | 'complex' | 'article';
+  structural_characteristic?: StructuralCharacteristic;
+  logical_relationship?: LogicalRelationship;
 }
 
-// 자식 카드 추가 속성
+// 자식 카드 인터페이스
 interface ChildCardData extends CardData {
   type: 'child';
+  structural_characteristic?: StructuralCharacteristic;
+  logical_relationship?: LogicalRelationship;
 }
 
-// 중심 아이디어 (부모-자식 카드 연결)
+// 중심 아이디어 인터페이스
 interface CenterIdea {
   content: string;
   linked: boolean;
-  parent_card_index: number; // 인덱스 기반으로 변경
-  child_card_index: number; // 인덱스 기반으로 변경
+  parent_card_index: number;
+  child_card_index: number;
 }
 
 // API 응답 인터페이스
@@ -75,9 +91,8 @@ const BrainLabelingDemo = () => {
   const supabase = createSupabaseBrowserClient();
 
   const user_id = currentUser?.id || '';
-  console.log(user_id);
 
-  // 아이디어 확장/축소 토글 (인덱스 기반)
+  // 아이디어 토글 함수
   const toggleIdea = (index: number) => {
     setExpandedIdeas((prev) => ({
       ...prev,
@@ -85,12 +100,12 @@ const BrainLabelingDemo = () => {
     }));
   };
 
-  // 인덱스로 자식 카드 찾기
+  // 자식 카드 찾기 함수
   const findChildCardByIndex = (index: number): ChildCardData | undefined => {
     return analysisResult?.child_cards[index];
   };
 
-  // Supabase에 저장하는 함수
+  // Supabase 저장 함수
   const saveToSupabase = async () => {
     if (!analysisResult || !user_id) {
       toast.error('저장할 데이터가 없거나 로그인 상태가 아닙니다.');
@@ -128,6 +143,13 @@ const BrainLabelingDemo = () => {
           category_sub: analysisResult.parent_card.category?.sub,
           key_sentence: analysisResult.parent_card.key_sentence,
           document_type: analysisResult.parent_card.document_type,
+          structural_characteristic_type:
+            analysisResult.parent_card.structural_characteristic?.type,
+          structural_characteristic_description:
+            analysisResult.parent_card.structural_characteristic?.description,
+          logical_relationship_type: analysisResult.parent_card.logical_relationship?.type,
+          logical_relationship_description:
+            analysisResult.parent_card.logical_relationship?.description,
         })
         .select()
         .single();
@@ -136,11 +158,9 @@ const BrainLabelingDemo = () => {
 
       const parent_id = parentCardData.id;
 
-      // 3. 자식 카드와 중심 아이디어 저장
+      // 3. 자식 카드 저장
       if (analysisResult.child_cards.length > 0) {
-        // 모든 자식 카드를 저장하기 위한 배열
         const childCardsToInsert = analysisResult.child_cards.map((childCard, index) => {
-          // 연결된 중심 아이디어 찾기
           const relatedIdea = analysisResult.center_ideas.find(
             (idea) => idea.child_card_index === index
           );
@@ -153,15 +173,18 @@ const BrainLabelingDemo = () => {
             keywords: childCard.keywords,
             type: 'child',
             parent_id,
-            category_main: analysisResult.parent_card.category?.main, // 부모 카테고리 상속
-            category_sub: analysisResult.parent_card.category?.sub, // 부모 카테고리 상속
+            category_main: analysisResult.parent_card.category?.main,
+            category_sub: analysisResult.parent_card.category?.sub,
             center_idea: relatedIdea?.content || '',
             is_linked: relatedIdea?.linked || false,
-            display_order: index, // 순서 유지
+            display_order: index,
+            structural_characteristic_type: childCard.structural_characteristic?.type,
+            structural_characteristic_description: childCard.structural_characteristic?.description,
+            logical_relationship_type: childCard.logical_relationship?.type,
+            logical_relationship_description: childCard.logical_relationship?.description,
           };
         });
 
-        // 한 번의 요청으로 모든 자식 카드 저장
         const { error: childCardsError } = await supabase.from('cards').insert(childCardsToInsert);
 
         if (childCardsError) throw childCardsError;
@@ -188,89 +211,100 @@ const BrainLabelingDemo = () => {
       setStep('analyzing');
       setError(null);
 
-      // API 요청 바디 생성
       const requestBody = {
         model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
             content: `넌 메모 분석 전문가야.
-          주어진 메모에서 핵심을 파악해 나중에 쉽게 찾아보고 활용할 수 있게 정리해줘.
-        
-          
-          카테고리 옵션:
-          1. 학습/공부
-             - 강의/수업 내용
-             - 책/아티클 요약
-             - 개념/용어 정리
-          2. 업무/프로젝트
-             - 회의/미팅 내용
-             - 기획/아이디어
-             - 할일/체크리스트
-          3. 영감/아이디어
-             - 창작 아이디어
-             - 참고할 내용
-             - 흥미로운 발견
-          4. 문제해결/의사결정
-             - 고민 정리
-             - 대안 분석
-             - 결정 사항
-          5. 리서치/조사
-             - 시장/트렌드 조사
-             - 제품/서비스 분석
-             - 경쟁사 정보
-          6. 개인/일상
-             - 생각/감정 기록
-             - 일상 메모
-             - 습관/루틴
-          7. 정보/자료
-             - 연락처/주소
-             - 제품/가격 정보
-             - 참고 링크
-          
-          반드시 다음 JSON 응답 형식을 정확히 따라줘:
-          {
-             "parent_card": {
-                "title": "나중에 찾기 쉽도록 직관적이고 구체적인 제목",
-                "content": "부모 카드의 내용 요약",
-                "keywords": ["구체적_키워드1", "구체적_키워드2", "구체적_키워드3"],
-                "type": "parent",
-                "category": {
-                   "main": "주 카테고리",
-                   "sub": "하위 카테고리"
-                },
-                "key_sentence": "메모의 핵심을 담은 한 문장 요약",
-                "document_type": "simple|complex|article"
-             },
-             "child_cards": [
-                {
-                   "title": "자식 카드 1 제목",
-                   "content": "자식 카드 1 내용 (2-3문장)",
-                   "keywords": ["키워드1", "키워드2", "키워드3"],
-                   "type": "child"
-                },
-                // 추가 자식 카드들...
-             ],
-             "center_ideas": [
-                {
-                   "content": "중심 아이디어 1의 내용",
-                   "linked": true,
-                   "parent_card_index": 0,
-                   "child_card_index": 0
-                },
-                // 추가 중심 아이디어들...
-             ]
-          }
-          
-          단순 메모(simple)인 경우 center_ideas는 빈 배열([])로 반환하고 child_cards도 빈 배열([])로 반환해.
-          복합 생각(complex)인 경우 각 중심 아이디어마다 child_card_index는 0부터 시작하는 배열 인덱스를 사용하여 자식 카드를 연결해야 해.
-          각 자식 카드는 대응하는 중심 아이디어에 집중해 독립적으로도 이해할 수 있어야 해.`,
+            주어진 메모에서 핵심을 파악해 나중에 쉽게 찾아보고 활용할 수 있게 정리해줘.
+
+            구조적 특성 옵션:
+            - sequential: 순차적 구조 (시간순서나 단계별 전개)
+            - comparison: 비교/대조 구조
+            - cause_effect: 원인/결과 구조
+            - problem_solution: 문제/해결 구조
+
+            논리적 관계 옵션:
+            - parallel: 병렬 관계 (동등한 위계)
+            - causal: 인과 관계
+            - opposing: 대립 관계
+            - inclusive: 포함 관계
+
+            카테고리 옵션:
+            1. 학습/공부
+               - 강의/수업 내용
+               - 책/아티클 요약
+               - 개념/용어 정리
+            2. 업무/프로젝트
+               - 회의/미팅 내용
+               - 기획/아이디어
+               - 할일/체크리스트
+            3. 영감/아이디어
+               - 창작 아이디어
+               - 참고할 내용
+               - 흥미로운 발견
+            4. 문제해결/의사결정
+               - 고민 정리
+               - 대안 분석
+               - 결정 사항
+            5. 리서치/조사
+               - 시장/트렌드 조사
+               - 제품/서비스 분석
+               - 경쟁사 정보
+            6. 개인/일상
+               - 생각/감정 기록
+               - 일상 메모
+               - 습관/루틴
+            7. 정보/자료
+               - 연락처/주소
+               - 제품/가격 정보
+               - 참고 링크
+
+            반드시 다음 JSON 응답 형식을 정확히 따라줘:
+            {
+               "parent_card": {
+                  "title": "나중에 찾기 쉽도록 직관적이고 구체적인 제목",
+                  "content": "부모 카드의 내용 요약",
+                  "keywords": ["구체적_키워드1", "구체적_키워드2", "구체적_키워드3"],
+                  "type": "parent",
+                  "category": {
+                     "main": "주 카테고리",
+                     "sub": "하위 카테고리"
+                  },
+                  "key_sentence": "메모의 핵심을 담은 한 문장 요약",
+                  "document_type": "simple|complex|article",
+                  "structural_characteristic": {
+                     "type": "sequential|comparison|cause_effect|problem_solution",
+                     "description": "구조적 특성 설명"
+                  },
+                  "logical_relationship": {
+                     "type": "parallel|causal|opposing|inclusive",
+                     "description": "논리적 관계 설명"
+                  }
+               },
+               "child_cards": [
+                  {
+                     "title": "자식 카드 1 제목",
+                     "content": "자식 카드 1 내용 (2-3문장)",
+                     "keywords": ["키워드1", "키워드2", "키워드3"],
+                     "type": "child",
+                     "structural_characteristic": {
+                        "type": "sequential|comparison|cause_effect|problem_solution",
+                        "description": "구조적 특성 설명"
+                     },
+                     "logical_relationship": {
+                        "type": "parallel|causal|opposing|inclusive",
+                        "description": "논리적 관계 설명"
+                     }
+                  }
+               ],
+               "center_ideas": []
+            }`,
           },
           {
             role: 'user',
-            content: `다음 메모를 분석하고 JSON 형식으로 응답해주세요:
-            
-${inputText}`,
+            content: `다음 메모를 분석하고 JSON 형식으로 응답해주세요:\n\n${inputText}`,
           },
         ],
         max_tokens: 5000,
@@ -278,10 +312,6 @@ ${inputText}`,
         response_format: { type: 'json_object' },
       };
 
-      // 요청 바디를 콘솔에 출력
-      console.log('API 요청:', JSON.stringify(requestBody, null, 2));
-
-      // 실제 API 호출
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -292,25 +322,17 @@ ${inputText}`,
       });
 
       const data = await response.json();
-
-      // 전체 응답을 콘솔에 출력
-      console.log('API 응답:', JSON.stringify(data, null, 2));
-
-      // 원시 응답 저장
       setRawResponse(JSON.stringify(data, null, 2));
 
       if (!data.choices || !data.choices[0]) {
         throw new Error('API 응답 형식이 올바르지 않습니다.');
       }
 
-      // 파싱 시도
       try {
         const result = JSON.parse(data.choices[0].message.content);
-        console.log('파싱된 결과:', result);
         setAnalysisResult(result);
         setStep('complete');
 
-        // 모든 중심 아이디어를 기본적으로 접힌 상태로 설정
         if (result.center_ideas && result.center_ideas.length > 0) {
           const initialExpandState: Record<number, boolean> = {};
           result.center_ideas.forEach((idea: CenterIdea, index: number) => {
@@ -320,13 +342,12 @@ ${inputText}`,
         }
       } catch (parseError) {
         console.error('JSON 파싱 오류:', parseError);
-        console.log('파싱 실패한 원본 텍스트:', data.choices[0].message.content);
-        setError('API 응답을 파싱하는 중 오류가 발생했습니다. 콘솔을 확인해주세요.');
+        setError('API 응답을 파싱하는 중 오류가 발생했습니다.');
         setStep('initial');
       }
     } catch (error) {
       console.error('API 요청 오류:', error);
-      setError('메모 분석 중 오류가 발생했습니다. 콘솔을 확인해주세요.');
+      setError('메모 분석 중 오류가 발생했습니다.');
       setStep('initial');
     } finally {
       setIsLoading(false);
@@ -362,6 +383,22 @@ ${inputText}`,
     '정보/자료': 'bg-gray-100 text-gray-800',
   };
 
+  // 구조적 특성 색상 매핑
+  const structuralColors: Record<string, string> = {
+    sequential: 'bg-blue-50 text-blue-600',
+    comparison: 'bg-purple-50 text-purple-600',
+    cause_effect: 'bg-yellow-50 text-yellow-600',
+    problem_solution: 'bg-green-50 text-green-600',
+  };
+
+  // 논리적 관계 색상 매핑
+  const logicalColors: Record<string, string> = {
+    parallel: 'bg-blue-50 text-blue-600',
+    causal: 'bg-red-50 text-red-600',
+    opposing: 'bg-purple-50 text-purple-600',
+    inclusive: 'bg-green-50 text-green-600',
+  };
+
   // 자식 카드 컴포넌트
   const ChildCardComponent = ({
     childCard,
@@ -378,7 +415,33 @@ ${inputText}`,
         <CardContent className="py-3 px-4">
           <p className="text-sm text-gray-600 mb-3">{childCard.content}</p>
 
-          <div className="flex flex-wrap gap-1">
+          {/* 구조적 특성 표시 */}
+          {childCard.structural_characteristic && (
+            <div className="mb-2">
+              <span
+                className={`inline-block px-2 py-1 rounded-full text-xs ${
+                  structuralColors[childCard.structural_characteristic.type]
+                }`}
+              >
+                구조: {childCard.structural_characteristic.description}
+              </span>
+            </div>
+          )}
+
+          {/* 논리적 관계 표시 */}
+          {childCard.logical_relationship && (
+            <div className="mb-2">
+              <span
+                className={`inline-block px-2 py-1 rounded-full text-xs ${
+                  logicalColors[childCard.logical_relationship.type]
+                }`}
+              >
+                관계: {childCard.logical_relationship.description}
+              </span>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-1 mt-2">
             {childCard.keywords.map((keyword, idx) => (
               <span
                 key={idx}
@@ -447,13 +510,12 @@ ${inputText}`,
                     <TabsContent value="main-card">
                       <div className="p-4 bg-white border border-gray-200 rounded-md">
                         <div className="space-y-3">
-                          {/* 카테고리 - undefined 체크 추가 */}
+                          {/* 카테고리 */}
                           {analysisResult.parent_card.category && (
                             <div className="flex items-center gap-2">
                               <span
                                 className={`px-2 py-1 text-xs rounded-full ${
-                                  (analysisResult.parent_card.category.main &&
-                                    categoryColors[analysisResult.parent_card.category.main]) ||
+                                  categoryColors[analysisResult.parent_card.category.main || ''] ||
                                   'bg-gray-100 text-gray-800'
                                 }`}
                               >
@@ -481,12 +543,41 @@ ${inputText}`,
                             </div>
                           )}
 
-                          {/* 제목 */}
-                          {analysisResult.parent_card.title && (
-                            <h4 className="text-lg font-semibold">
-                              {analysisResult.parent_card.title}
-                            </h4>
+                          {/* 구조적 특성 */}
+                          {analysisResult.parent_card.structural_characteristic && (
+                            <div className="mb-2">
+                              <span
+                                className={`inline-block px-2 py-1 rounded-full text-xs ${
+                                  structuralColors[
+                                    analysisResult.parent_card.structural_characteristic.type
+                                  ]
+                                }`}
+                              >
+                                구조:{' '}
+                                {analysisResult.parent_card.structural_characteristic.description}
+                              </span>
+                            </div>
                           )}
+
+                          {/* 논리적 관계 */}
+                          {analysisResult.parent_card.logical_relationship && (
+                            <div className="mb-2">
+                              <span
+                                className={`inline-block px-2 py-1 rounded-full text-xs ${
+                                  logicalColors[
+                                    analysisResult.parent_card.logical_relationship.type
+                                  ]
+                                }`}
+                              >
+                                관계: {analysisResult.parent_card.logical_relationship.description}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* 제목 */}
+                          <h4 className="text-lg font-semibold">
+                            {analysisResult.parent_card.title}
+                          </h4>
 
                           {/* 핵심 문장 */}
                           {analysisResult.parent_card.key_sentence && (
@@ -496,19 +587,16 @@ ${inputText}`,
                           )}
 
                           {/* 키워드 */}
-                          {analysisResult.parent_card.keywords &&
-                            analysisResult.parent_card.keywords.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {analysisResult.parent_card.keywords.map((keyword, index) => (
-                                  <span
-                                    key={index}
-                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-                                  >
-                                    # {keyword}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+                          <div className="flex flex-wrap gap-2">
+                            {analysisResult.parent_card.keywords.map((keyword, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                              >
+                                # {keyword}
+                              </span>
+                            ))}
+                          </div>
 
                           {/* 중심 아이디어 */}
                           {analysisResult.center_ideas &&
@@ -566,7 +654,6 @@ ${inputText}`,
                       {analysisResult.child_cards && analysisResult.child_cards.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {analysisResult.child_cards.map((childCard, childIdx) => {
-                            // 이 자식 카드와 연결된 중심 아이디어 찾기
                             const relatedIdea = analysisResult.center_ideas.find(
                               (idea) => idea.child_card_index === childIdx
                             );
@@ -593,6 +680,32 @@ ${inputText}`,
                                 </CardHeader>
                                 <CardContent className="py-3 px-4">
                                   <p className="text-sm text-gray-600 mb-3">{childCard.content}</p>
+
+                                  {/* 구조적 특성 */}
+                                  {childCard.structural_characteristic && (
+                                    <div className="mb-2">
+                                      <span
+                                        className={`inline-block px-2 py-1 rounded-full text-xs ${
+                                          structuralColors[childCard.structural_characteristic.type]
+                                        }`}
+                                      >
+                                        구조: {childCard.structural_characteristic.description}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {/* 논리적 관계 */}
+                                  {childCard.logical_relationship && (
+                                    <div className="mb-2">
+                                      <span
+                                        className={`inline-block px-2 py-1 rounded-full text-xs ${
+                                          logicalColors[childCard.logical_relationship.type]
+                                        }`}
+                                      >
+                                        관계: {childCard.logical_relationship.description}
+                                      </span>
+                                    </div>
+                                  )}
 
                                   <div className="flex flex-wrap gap-1">
                                     {childCard.keywords.map((keyword, kidx) => (

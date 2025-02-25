@@ -75,7 +75,7 @@ const BrainLabelingDemo = () => {
   const supabase = createSupabaseBrowserClient();
 
   const user_id = currentUser?.id || '';
-  console.log(user_id);
+  //console.log(user_id);
 
   // 아이디어 확장/축소 토글 (인덱스 기반)
   const toggleIdea = (index: number) => {
@@ -194,81 +194,11 @@ const BrainLabelingDemo = () => {
         messages: [
           {
             role: 'system',
-            content: `넌 메모 분석 전문가야.
-          주어진 메모에서 핵심을 파악해 나중에 쉽게 찾아보고 활용할 수 있게 정리해줘.
-        
-          
-          카테고리 옵션:
-          1. 학습/공부
-             - 강의/수업 내용
-             - 책/아티클 요약
-             - 개념/용어 정리
-          2. 업무/프로젝트
-             - 회의/미팅 내용
-             - 기획/아이디어
-             - 할일/체크리스트
-          3. 영감/아이디어
-             - 창작 아이디어
-             - 참고할 내용
-             - 흥미로운 발견
-          4. 문제해결/의사결정
-             - 고민 정리
-             - 대안 분석
-             - 결정 사항
-          5. 리서치/조사
-             - 시장/트렌드 조사
-             - 제품/서비스 분석
-             - 경쟁사 정보
-          6. 개인/일상
-             - 생각/감정 기록
-             - 일상 메모
-             - 습관/루틴
-          7. 정보/자료
-             - 연락처/주소
-             - 제품/가격 정보
-             - 참고 링크
-          
-          반드시 다음 JSON 응답 형식을 정확히 따라줘:
-          {
-             "parent_card": {
-                "title": "나중에 찾기 쉽도록 직관적이고 구체적인 제목",
-                "content": "부모 카드의 내용 요약",
-                "keywords": ["구체적_키워드1", "구체적_키워드2", "구체적_키워드3"],
-                "type": "parent",
-                "category": {
-                   "main": "주 카테고리",
-                   "sub": "하위 카테고리"
-                },
-                "key_sentence": "메모의 핵심을 담은 한 문장 요약",
-                "document_type": "simple|complex|article"
-             },
-             "child_cards": [
-                {
-                   "title": "자식 카드 1 제목",
-                   "content": "자식 카드 1 내용 (2-3문장)",
-                   "keywords": ["키워드1", "키워드2", "키워드3"],
-                   "type": "child"
-                },
-                // 추가 자식 카드들...
-             ],
-             "center_ideas": [
-                {
-                   "content": "중심 아이디어 1의 내용",
-                   "linked": true,
-                   "parent_card_index": 0,
-                   "child_card_index": 0
-                },
-                // 추가 중심 아이디어들...
-             ]
-          }
-          
-          단순 메모(simple)인 경우 center_ideas는 빈 배열([])로 반환하고 child_cards도 빈 배열([])로 반환해.
-          복합 생각(complex)인 경우 각 중심 아이디어마다 child_card_index는 0부터 시작하는 배열 인덱스를 사용하여 자식 카드를 연결해야 해.
-          각 자식 카드는 대응하는 중심 아이디어에 집중해 독립적으로도 이해할 수 있어야 해.`,
+            content: `넌 뇌과학자야  나의 질문에 너의 특유와 예시 등을 이용해서 대답해줘`,
           },
           {
             role: 'user',
-            content: `다음 메모를 분석하고 JSON 형식으로 응답해주세요:
+            content: `다음 질문에 JSON 형식으로 응답해주세요:
             
 ${inputText}`,
           },
