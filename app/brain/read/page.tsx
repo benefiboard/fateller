@@ -1,3 +1,5 @@
+//app>brain>read>page.tsx
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -439,7 +441,7 @@ const RecentCardsPage = () => {
                         )}
 
                         {/* 내용 */}
-                        <p className="text-gray-700 whitespace-pre-line">{selectedCard.content}</p>
+                        {/* <p className="text-gray-700 whitespace-pre-line">{selectedCard.content}</p> */}
 
                         {/* 중심 아이디어 */}
                         {selectedCard.children.length > 0 && (
@@ -449,8 +451,8 @@ const RecentCardsPage = () => {
                               {selectedCard.children.map((child) => (
                                 <li key={child.id} className="flex items-start">
                                   <div
-                                    className={`flex-shrink-0 h-4 w-4 mt-1 rounded-full ${
-                                      child.is_linked ? 'bg-green-400' : 'bg-gray-300'
+                                    className={`flex-shrink-0 h-2 w-2 mt-[6px] rounded-full ${
+                                      child.is_linked ? 'bg-gray-600' : 'bg-gray-300'
                                     }`}
                                   ></div>
                                   <div className="ml-3 text-gray-700 flex flex-col">
@@ -458,7 +460,7 @@ const RecentCardsPage = () => {
                                       <p>{child.center_idea}</p>
                                       <button
                                         onClick={() => toggleIdea(child.id)}
-                                        className="ml-2 text-indigo-500 hover:text-indigo-700 focus:outline-none"
+                                        className="ml-2 text-gray-600 hover:text-gray-800 focus:outline-none"
                                       >
                                         {expandedIdeas[child.id] ? (
                                           <ChevronUp size={16} />

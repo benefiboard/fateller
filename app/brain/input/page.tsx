@@ -196,37 +196,12 @@ const BrainLabelingDemo = () => {
             role: 'system',
             content: `넌 메모 분석 전문가야.
           주어진 메모에서 핵심을 파악해 나중에 쉽게 찾아보고 활용할 수 있게 정리해줘.
+
+          방법 : 전체내용을 부분별로 나눈다. 부분별로 나눈 내용이 자식카드나 중심아이디어들이 된다. 부분별로 나눈 내용들의 합이 부모카드가 된다.
         
           
           카테고리 옵션:
-          1. 학습/공부
-             - 강의/수업 내용
-             - 책/아티클 요약
-             - 개념/용어 정리
-          2. 업무/프로젝트
-             - 회의/미팅 내용
-             - 기획/아이디어
-             - 할일/체크리스트
-          3. 영감/아이디어
-             - 창작 아이디어
-             - 참고할 내용
-             - 흥미로운 발견
-          4. 문제해결/의사결정
-             - 고민 정리
-             - 대안 분석
-             - 결정 사항
-          5. 리서치/조사
-             - 시장/트렌드 조사
-             - 제품/서비스 분석
-             - 경쟁사 정보
-          6. 개인/일상
-             - 생각/감정 기록
-             - 일상 메모
-             - 습관/루틴
-          7. 정보/자료
-             - 연락처/주소
-             - 제품/가격 정보
-             - 참고 링크
+          도서관 분류-듀이 십진분류법((Dewey Decimal Classification, DDC)를 이용하여 분류
           
           반드시 다음 JSON 응답 형식을 정확히 따라줘:
           {
@@ -246,6 +221,7 @@ const BrainLabelingDemo = () => {
                 {
                    "title": "자식 카드 1 제목",
                    "content": "자식 카드 1 내용 (2-3문장)",
+                   "key_sentence": "자식 카드 1의 핵심을 담은 한 문장 요약",
                    "keywords": ["키워드1", "키워드2", "키워드3"],
                    "type": "child"
                 },
@@ -491,7 +467,7 @@ ${inputText}`,
                           {/* 핵심 문장 */}
                           {analysisResult.parent_card.key_sentence && (
                             <p className="text-sm text-gray-700 italic">
-                              "{analysisResult.parent_card.key_sentence}"
+                              "{analysisResult.parent_card.content}"
                             </p>
                           )}
 
