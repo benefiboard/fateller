@@ -133,6 +133,8 @@ interface IndicatorProps {
   active: boolean;
 }
 
+// MemoCardSwiper 컴포넌트에서 drag 설정 부분 수정
+// MemoCardSwiper 컴포넌트에서 수정된 부분
 const MemoCardSwiper: React.FC<CardSwiperProps> = ({ data = sampleData }) => {
   // 상태 관리
   const [viewMode, setViewMode] = useState<ViewModeType>(VIEW_MODES.PARENT);
@@ -206,27 +208,75 @@ const MemoCardSwiper: React.FC<CardSwiperProps> = ({ data = sampleData }) => {
     },
   };
 
+  // 하위 컴포넌트 클릭 처리
+  const handleChildSelect = (index: number, e: React.MouseEvent) => {
+    // 클릭 이벤트가 상위로 전파되지 않도록 중지
+    if (e) {
+      e.stopPropagation();
+    }
+    setCurrentChildIndex(index);
+    setViewMode(VIEW_MODES.CHILD_DETAIL);
+    setDirection('left');
+  };
+
+  // ChildrenListCard를 위한 수정된 컴포넌트
+  const ModifiedChildrenListCard = () => {
+    return (
+      <CardWrapper>
+        {/* 전체 카드 영역에 pointer-events-none 클래스 추가하지 않음 */}
+        <div className="relative aspect-square bg-blue-50/75 p-2 flex flex-col">
+          {/* 상단 */}
+          <div className="flex items-center justify-between py-2">
+            <p className="whitespace-pre-line font-semibold">서브 카드 목록</p>
+            <p className="text-xs text-gray-600">2025.02.25-22:23:39</p>
+          </div>
+          {/* 중앙 */}
+          <div className="flex-1 flex flex-col gap-2 overflow-auto pt-2 pb-1 justify-between">
+            {cardData.child_cards.length > 0 ? (
+              cardData.child_cards.map((card, index) => (
+                <div
+                  key={index}
+                  className="bg-white p-[6px] rounded-lg shadow cursor-pointer flex items-center justify-between"
+                  onClick={(e) => handleChildSelect(index, e)}
+                >
+                  <p className="pointer-events-none">{`${index + 1}. ${
+                    card.title || '제목 없음'
+                  }`}</p>
+                  <ArrowRight className="w-4 h-4 text-gray-600 pointer-events-none" />
+                </div>
+              ))
+            ) : (
+              <div className="bg-gray-100 p-4 rounded-lg text-center">서브 카드가 없습니다</div>
+            )}
+          </div>
+        </div>
+        <div className="relative aspect-[6/1] bg-green-5 grid grid-cols-12 border-gray-200 border rounded-b-2xl">
+          <div className="col-span-2 bg-violet-20 flex items-center justify-center">
+            <DownloadCloud className="w-8 h-8 text-gray-600" />
+          </div>
+          <div className="col-span-7 bg-violet-30 flex items-center p-2">
+            <p className="text-sm">총 {cardData.child_cards.length}개의 서브 카드</p>
+          </div>
+          <div className="col-span-3 bg-violet-40 flex items-center justify-center">
+            <p className="p-2 px-4 bg-black text-sm text-white rounded-full">더보기</p>
+          </div>
+        </div>
+      </CardWrapper>
+    );
+  };
+
   // 렌더링할 현재 카드 결정
   const renderCurrentCard = () => {
     switch (viewMode) {
       case VIEW_MODES.PARENT:
         return <ParentCard card={cardData.parent_card} />;
       case VIEW_MODES.CHILDREN_LIST:
-        return (
-          <ChildrenListCard
-            childCards={cardData.child_cards}
-            onSelectChild={(index) => {
-              setCurrentChildIndex(index);
-              setViewMode(VIEW_MODES.CHILD_DETAIL);
-              setDirection('left');
-            }}
-          />
-        );
+        return <ModifiedChildrenListCard />;
       case VIEW_MODES.CHILD_DETAIL:
         return hasChildCards ? (
           <ChildDetailCard
             card={cardData.child_cards[currentChildIndex]}
-            parentCategory={cardData.parent_card.category} // 부모 카드의 카테고리 전달
+            parentCategory={cardData.parent_card.category}
           />
         ) : null;
       default:
@@ -235,9 +285,9 @@ const MemoCardSwiper: React.FC<CardSwiperProps> = ({ data = sampleData }) => {
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-full gap-2">
       {/* 카드를 일관된 크기로 유지하기 위한 래퍼 추가 */}
-      <div className="w-full" style={{ aspectRatio: '1/1.2' }}>
+      <div className="w-full aspect-square">
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
             key={`${viewMode}-${currentChildIndex}`}
@@ -255,6 +305,7 @@ const MemoCardSwiper: React.FC<CardSwiperProps> = ({ data = sampleData }) => {
             dragElastic={1}
             onDragEnd={handleDragEnd}
             className="cursor-grab w-full h-full"
+            style={{ touchAction: 'pan-y' }} // 수평 스와이프만 허용
           >
             {renderCurrentCard()}
           </motion.div>
@@ -274,7 +325,6 @@ const MemoCardSwiper: React.FC<CardSwiperProps> = ({ data = sampleData }) => {
     </div>
   );
 };
-
 // 카드 래퍼 컴포넌트 - 모든 카드에 일관된 크기 보장
 const CardWrapper: React.FC<CardWrapperProps> = ({ children }) => {
   return <div className="flex flex-col tracking-tighter w-full h-full">{children}</div>;
@@ -338,6 +388,12 @@ const ParentCard: React.FC<ParentCardProps> = ({ card }) => {
 
 // 서브 카드 목록 컴포넌트
 const ChildrenListCard: React.FC<ChildrenListCardProps> = ({ childCards = [], onSelectChild }) => {
+  const handleCardClick = (e: React.MouseEvent, index: number) => {
+    // Stop propagation to prevent interference with the parent's drag handler
+    e.stopPropagation();
+    onSelectChild(index);
+  };
+
   return (
     <CardWrapper>
       <div className="relative aspect-square bg-blue-50/75 p-2 flex flex-col">
@@ -352,11 +408,13 @@ const ChildrenListCard: React.FC<ChildrenListCardProps> = ({ childCards = [], on
             childCards.map((card, index) => (
               <div
                 key={index}
-                className="bg-white p-[6px]  rounded-lg shadow cursor-pointer flex items-center justify-between"
-                onClick={() => onSelectChild(index)}
+                className="bg-red-200 p-[6px]  rounded-lg shadow cursor-pointer flex items-center justify-between"
               >
                 <p>{`${index + 1}. ${card.title || '제목 없음'}`}</p>
-                <ArrowRight className="w-4 h-4 text-gray-600" />
+                <ArrowRight
+                  className="w-4 h-4 text-gray-600"
+                  onClick={(e) => handleCardClick(e, index)}
+                />
               </div>
             ))
           ) : (
