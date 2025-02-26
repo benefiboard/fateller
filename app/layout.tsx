@@ -86,7 +86,7 @@ export default async function RootLayout({
             <StoreInitializer currentUser={currentUser} />
             <MysticSymbolsEffect />
           </div>
-          <BottomNav />
+          {/* <BottomNav /> */}
         </div>
         {/* <BrowserRedirect />
         </MobileDetector> */}
