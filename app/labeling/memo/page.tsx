@@ -203,7 +203,7 @@ const TwitterStyleMemo: React.FC = () => {
     }
   }, [notification]);
 
-  // 메모의 스레드 토글 함수
+  // 메모의 주요내용 토글 함수
   const toggleThread = (id: string): void => {
     setMemoStates((prev) => ({
       ...prev,
@@ -211,7 +211,7 @@ const TwitterStyleMemo: React.FC = () => {
     }));
   };
 
-  // 메모의 AI 라벨링 토글 함수
+  // 메모의 요약 토글 함수
   const toggleLabeling = (id: string): void => {
     setMemoStates((prev) => ({
       ...prev,
@@ -246,10 +246,9 @@ const TwitterStyleMemo: React.FC = () => {
   };
 
   // API 호출하여 트윗 분석하기
-  // API 호출하여 트윗 분석하기
   const analyzeWithAI = async (text: string) => {
     try {
-      console.log('API 요청 전송:', text);
+      //console.log('API 요청 전송:', text);
 
       const response = await fetch('/api/labeling', {
         method: 'POST',
@@ -431,9 +430,9 @@ const TwitterStyleMemo: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white overflow-hidden shadow-md min-h-screen">
+    <div className="max-w-md mx-auto bg-white overflow-hidden shadow-md min-h-screen tracking-tighter leading-snug">
       {/* 트위터 헤더 */}
-      <div className="bg-indigo-500 p-2 flex justify-between items-center sticky top-0 z-20">
+      <div className="bg-teal-500 p-2 flex justify-between items-center sticky top-0 z-20">
         <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
           <Twitter size={20} color="#1DA1F2" />
         </div>
@@ -457,7 +456,7 @@ const TwitterStyleMemo: React.FC = () => {
         <div className="fixed bottom-20 right-4 z-10">
           <button
             onClick={() => setShowComposer(true)}
-            className="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-lg"
+            className="w-12 h-12 rounded-full bg-teal-500 text-white flex items-center justify-center shadow-lg"
           >
             <MessageCircle size={24} />
           </button>
@@ -469,7 +468,7 @@ const TwitterStyleMemo: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="p-3 border-b flex justify-between items-center">
-              <button onClick={resetForm} className="text-indigo-500">
+              <button onClick={resetForm} className="text-teal-500">
                 <X size={20} />
               </button>
               <span className="font-semibold">{editingMemoId ? '메모 수정' : '새 메모 작성'}</span>
@@ -478,7 +477,7 @@ const TwitterStyleMemo: React.FC = () => {
 
             <div className="p-4">
               <div className="flex">
-                <div className="mr-3">
+                <div className="mr-[6px]">
                   <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
                     <img
                       src={profile.avatar}
@@ -496,7 +495,7 @@ const TwitterStyleMemo: React.FC = () => {
                     value={inputText}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
-                    maxLength={1000}
+                    maxLength={10000}
                   ></textarea>
 
                   {error && (
@@ -508,7 +507,7 @@ const TwitterStyleMemo: React.FC = () => {
 
                   <div className="border-t pt-3">
                     <div className="flex items-center justify-between">
-                      <div className="flex space-x-2 text-indigo-500">
+                      <div className="flex space-x-2 text-teal-500">
                         <button className="p-1">
                           <Image size={18} />
                         </button>
@@ -525,20 +524,20 @@ const TwitterStyleMemo: React.FC = () => {
 
                       <div className="flex items-center">
                         <div
-                          className={`text-xs mr-2 ${
+                          className={`text-sm mr-2 ${
                             characterCount > 280 ? 'text-red-500' : 'text-gray-500'
                           }`}
                         >
-                          {characterCount}/1000
+                          {characterCount}/10000
                         </div>
                         <button
                           className={`rounded-full px-4 py-1 text-white font-bold ${
-                            !inputText.trim() || isSubmitting || characterCount > 1000
-                              ? 'bg-indigo-300 cursor-not-allowed'
-                              : 'bg-indigo-500 hover:bg-indigo-600'
+                            !inputText.trim() || isSubmitting || characterCount > 10000
+                              ? 'bg-teal-300 cursor-not-allowed'
+                              : 'bg-teal-500 hover:bg-teal-600'
                           }`}
                           onClick={handleSubmit}
-                          disabled={!inputText.trim() || isSubmitting || characterCount > 1000}
+                          disabled={!inputText.trim() || isSubmitting || characterCount > 10000}
                         >
                           {isSubmitting ? (
                             <Loader size={16} className="animate-spin" />
@@ -569,7 +568,7 @@ const TwitterStyleMemo: React.FC = () => {
           memos.map((memo) => (
             <div key={memo.id} className="p-4">
               <div className="flex">
-                <div className="mr-3">
+                <div className="mr-[6px]">
                   <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
                     <img
                       src={profile.avatar}
@@ -582,19 +581,18 @@ const TwitterStyleMemo: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <span className="font-bold text-gray-900">{profile.name}</span>
-                      {profile.verified && (
-                        <CheckCircle size={16} className="ml-1 text-indigo-500" />
-                      )}
-                      <span className="text-gray-500 ml-1 text-sm">
-                        {profile.username} · {memo.time}
+                      {/* {profile.verified && <CheckCircle size={16} className="ml-1 text-teal-500" />} */}
+                      <span className="text-teal-500 ml-1 text-sm font-semibold">
+                        @{memo.labeling.category}
                       </span>
+                      <span className="text-gray-500 ml-1 text-sm">· {memo.time}</span>
                     </div>
 
                     {/* 메모 관리 버튼 */}
                     <div className="flex space-x-1">
                       <button
                         onClick={() => memo.id && handleEditMemo(memo)}
-                        className="text-gray-400 hover:text-indigo-500"
+                        className="text-gray-400 hover:text-teal-500"
                       >
                         <Edit size={16} />
                       </button>
@@ -608,30 +606,50 @@ const TwitterStyleMemo: React.FC = () => {
                   </div>
 
                   <h2 className="font-bold text-lg mt-1">{memo.title}</h2>
+                  {/* <div className="flex items-center gap-2">
+                    <p className="text-gray-400 text-sm">
+                      카테고리:
+                      <span className="text-gray-600 font-semibold">{memo.labeling.category}</span>
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      키워드:
+                      <span className="text-gray-600 font-semibold">{memo.labeling.category}</span>
+                    </p>
+                  </div> */}
                   <p className="mt-2 text-gray-700">{memo.tweet_main}</p>
+                  <hr className="border-1 border-gray-200 my-2" />
 
                   {/* 버튼 영역 - 항상 같은 위치에 고정 */}
-                  <div className="mt-3 flex space-x-4">
+                  <div className=" flex space-x-4">
                     <button
                       onClick={() => memo.id && toggleThread(memo.id)}
-                      className="text-indigo-500 text-sm font-medium"
+                      className="text-gray-400 text-sm font-medium"
                     >
                       {memo.id && memoStates[memo.id]?.expanded
-                        ? '스레드 접기'
-                        : '스레드 더보기...'}
+                        ? '- 주요내용 접기'
+                        : '+ 주요내용 보기'}
                     </button>
+
+                    <p className="text-gray-400">|</p>
 
                     <button
                       onClick={() => memo.id && toggleLabeling(memo.id)}
-                      className="text-indigo-500 text-sm font-medium"
+                      className="text-gray-400 text-sm font-medium"
                     >
-                      {memo.id && memoStates[memo.id]?.showLabeling
-                        ? 'AI 라벨링 접기'
-                        : 'AI 라벨링 보기...'}
+                      {memo.id && memoStates[memo.id]?.showLabeling ? '- 요약 접기' : '+ 요약 보기'}
+                    </button>
+
+                    <p className="text-gray-400">|</p>
+
+                    <button
+                      onClick={() => memo.id && toggleLabeling(memo.id)}
+                      className="text-gray-400 text-sm font-medium"
+                    >
+                      {memo.id && memoStates[memo.id]?.showLabeling ? '- 원문 접기' : '+ 원문 보기'}
                     </button>
                   </div>
 
-                  {/* 스레드 표시 (토글 가능) */}
+                  {/* 주요내용 표시 (토글 가능) */}
                   {memo.id && memoStates[memo.id]?.expanded && (
                     <div className="mt-4 border-l-2 border-gray-300 pl-3 space-y-3">
                       {memo.thread.map((tweet, tweetIndex) => (
@@ -642,25 +660,25 @@ const TwitterStyleMemo: React.FC = () => {
                     </div>
                   )}
 
-                  {/* AI 라벨링 표시 (토글 가능) */}
+                  {/* 요약 표시 (토글 가능) */}
                   {memo.id && memoStates[memo.id]?.showLabeling && (
                     <div className="mt-4 border-l-2 border-gray-300 pl-3 space-y-3">
-                      <div className="bg-indigo-50 p-3 rounded-lg">
-                        <h3 className="text-sm font-medium text-indigo-700 mb-2">AI 라벨링</h3>
+                      <div className="bg-teal-50 p-3 rounded-lg">
+                        <h3 className="text-sm font-medium text-teal-700 mb-2">요약</h3>
                         <div className="space-y-2">
                           <div>
-                            <span className="text-xs font-medium text-indigo-600">카테고리:</span>
-                            <span className="ml-2 text-sm bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded">
+                            <span className="text-sm font-medium text-teal-600">카테고리:</span>
+                            <span className="ml-2 text-sm bg-teal-100 text-teal-800 px-2 py-0.5 rounded">
                               {memo.labeling.category}
                             </span>
                           </div>
                           <div>
-                            <span className="text-xs font-medium text-indigo-600">키워드:</span>
+                            <span className="text-sm font-medium text-teal-600">키워드:</span>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {memo.labeling.keywords.map((keyword, keywordIndex) => (
                                 <span
                                   key={keywordIndex}
-                                  className="text-xs bg-indigo-200 text-indigo-700 px-2 py-0.5 rounded"
+                                  className="text-sm bg-teal-200 text-teal-700 px-2 py-0.5 rounded"
                                 >
                                   {keyword}
                                 </span>
@@ -668,8 +686,8 @@ const TwitterStyleMemo: React.FC = () => {
                             </div>
                           </div>
                           <div>
-                            <span className="text-xs font-medium text-indigo-600">핵심 문장:</span>
-                            <p className="text-sm text-indigo-800 mt-1 italic bg-indigo-100 p-2 rounded">
+                            <span className="text-sm font-medium text-teal-600">핵심 문장:</span>
+                            <p className="text-sm text-teal-800 mt-1 italic bg-teal-100 p-2 rounded">
                               "{memo.labeling.key_sentence}"
                             </p>
                           </div>
@@ -679,32 +697,32 @@ const TwitterStyleMemo: React.FC = () => {
                   )}
 
                   {/* 트윗 액션 버튼 */}
-                  <div className="flex justify-between mt-4 text-gray-500">
+                  {/* <div className="flex justify-between mt-4 text-gray-500">
                     <button
                       className="flex items-center"
                       onClick={() => memo.id && handleReply(memo.id)}
                     >
                       <MessageCircle size={16} className="mr-1" />
-                      <span className="text-xs">{memo.replies}</span>
+                      <span className="text-sm">{memo.replies}</span>
                     </button>
                     <button
                       className="flex items-center"
                       onClick={() => memo.id && handleRetweet(memo.id)}
                     >
                       <Repeat size={16} className="mr-1" />
-                      <span className="text-xs">{memo.retweets}</span>
+                      <span className="text-sm">{memo.retweets}</span>
                     </button>
                     <button
                       className="flex items-center"
                       onClick={() => memo.id && handleLike(memo.id)}
                     >
                       <Heart size={16} className="mr-1" />
-                      <span className="text-xs">{memo.likes}</span>
+                      <span className="text-sm">{memo.likes}</span>
                     </button>
                     <button className="flex items-center">
                       <Share size={16} />
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
@@ -714,7 +732,7 @@ const TwitterStyleMemo: React.FC = () => {
 
       {/* 바텀 네비게이션 */}
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto flex justify-around py-3 border-t border-gray-200 bg-white z-20">
-        <button className="text-indigo-500">
+        <button className="text-teal-500">
           <Home size={24} />
         </button>
         <button className="text-gray-500">

@@ -2,11 +2,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // 트위터 스타일 프롬프트
-const TWITTER_PROMPT = `당신은 AI 트위터 최적화 전문가입니다. 사용자가 저장한 생각/메모/정보를 트위터에서 유저들이 쉽게 이해할 수 있는 포스트로 변환해 주세요. 스레드를 너무 잘게 쪼개지 말아주세요!
+const TWITTER_PROMPT = `당신은 트위터 최적화 전문가입니다.
+1.먼저 유저의 입력 내용이 일반적인 내용인지 개인적인 내용인지 확인 후
+2.사용자가 저장한 생각/메모/정보를 트위터에서 유저들이 쉽게 이해할 수 있는 포스트로 변환해 주세요.
+3.스레드를 너무 잘게 쪼개지 말아주세요!
 아래의 형식에 따라 정확히 JSON 객체를 생성해주세요:
 {
   "title": "입력받은 텍스트의 핵심 아이디어를 표현하는 제목",
-  "tweet_main": "핵심 메시지를 200자 이내로 압축(본문 70-80%, 해시태그 10-15%, 기타 5-10% 비율 유지)",
+  "tweet_main": "핵심 메시지를 200자 이내로 압축",
   "hashtags": ["관련해시태그1", "관련해시태그2"],
   "thread": [
     "1. 스레드 첫 번째 트윗",
@@ -33,9 +36,8 @@ const TWITTER_PROMPT = `당신은 AI 트위터 최적화 전문가입니다. 사
 필수 가이드라인:
 1. 이모지 사용 금지: 대신 숫자(1, 2, 3) 또는 알파벳(a, b, c)을 사용하여 포인트 구분
 2. 첫 문장에 강력한 후킹 요소 포함: HOW TO, 질문형, 숫자, FOMO 유발 표현 등
-3. 트윗과 스레드는 모두 280자 제한 준수
+3. 트윗과 스레드는 모두 200자 제한 준수
 4. 반드시 스레드는 최대 5개까지만 작성
-5. 반드시 해시태그는 2개만 포함
 결과는 반드시 유효한 JSON 형식으로만 응답하세요. 추가 설명이나 텍스트는 포함하지 마세요.
 `;
 
@@ -96,7 +98,7 @@ export async function POST(req: NextRequest) {
       const parsedContent = JSON.parse(content);
 
       // 로그 출력
-      console.log('파싱된 응답:', parsedContent);
+      //console.log('파싱된 응답:', parsedContent);
 
       // 응답 반환
       return NextResponse.json(parsedContent);
