@@ -1,67 +1,193 @@
-import { Brain } from 'lucide-react';
-import { ThumbnailCard } from './ThumbnailCard';
-import ThumbnailCardAnimation from './ThumbnailCardAnimation';
+'use client';
 
-interface ResearchData {
-  title: string;
-  subject: string;
-  keywords: string[];
-}
+import React, { useState } from 'react';
+import { MessageCircle } from 'lucide-react';
 
-export default function MemoPage() {
-  const researchData: ResearchData = {
-    title: `씹는 횟수 증가,\n치매 위험 높인다`,
-    subject: '씹는 횟수와 치매 위험의 상관관계',
-    keywords: ['치매', '씹는 횟수', '노인', '연구', '알츠하이머병'],
+// UI 컴포넌트 임포트
+import Header from './ui/Header';
+import MemoItem from './ui/MemoItem';
+import Notification from './ui/Notification';
+import BottomNavigation from './ui/BottomNavigation';
+import ComposerModal from './ui/ComposerModal';
+
+// 훅 임포트
+import useMemos from './hooks/useMemos';
+import useMemosState from './hooks/useMemosState';
+import useNotification from './hooks/useNotification';
+
+// 프로필 정보
+const profile = {
+  name: 'BrainLabel',
+  username: '@brainlabel_ai',
+  avatar: 'https://placehold.co/40x40',
+  verified: true,
+};
+
+const MemoPage: React.FC = () => {
+  // 컴포저 모달 상태
+  const [showComposer, setShowComposer] = useState(false);
+  const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState<'direct' | 'analyze'>('direct');
+
+  // 메모 관련 훅
+  const {
+    memos,
+    isLoading,
+    error: memosError,
+    createMemo,
+    updateMemoWithAI,
+    updateMemoDirect,
+    deleteMemo,
+    likeMemo,
+    retweetMemo,
+    replyToMemo,
+  } = useMemos();
+
+  // 메모 상태 훅
+  const { memoStates, toggleThread, toggleLabeling, toggleOriginal } = useMemosState(memos);
+
+  // 알림 훅
+  const { notification, showNotification } = useNotification();
+
+  // 모달 열기 핸들러
+  const handleOpenComposer = (mode: 'direct' | 'analyze', memoId?: string) => {
+    if (!memoId && mode === 'direct') {
+      showNotification('새 메모는 AI 분석 모드로만 작성할 수 있습니다.', 'error');
+      return;
+    }
+
+    setEditMode(mode);
+    setEditingMemoId(memoId || null);
+    setShowComposer(true);
+  };
+
+  // 모달 닫기 핸들러
+  const handleCloseComposer = () => {
+    setShowComposer(false);
+    setEditingMemoId(null);
+  };
+
+  // 메모 제출 처리
+  const handleSubmit = async (data: any) => {
+    try {
+      if (data.mode === 'analyze') {
+        if (editingMemoId) {
+          await updateMemoWithAI(editingMemoId, data.text);
+          showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
+        } else {
+          await createMemo(data.text);
+          showNotification('새 메모가 성공적으로 생성되었습니다.', 'success');
+        }
+      } else if (data.mode === 'direct' && editingMemoId) {
+        await updateMemoDirect(editingMemoId, {
+          title: data.title,
+          tweet_main: data.tweet_main,
+          thread: data.thread,
+          category: data.category,
+          keywords: data.keywords,
+          key_sentence: data.key_sentence,
+        });
+        showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
+      }
+
+      handleCloseComposer();
+    } catch (error: any) {
+      showNotification(`오류가 발생했습니다: ${error.message}`, 'error');
+    }
+  };
+
+  // 메모 편집 핸들러
+  const handleEdit = (memo: any) => {
+    handleOpenComposer('direct', memo.id);
+  };
+
+  // 메모 분석 핸들러
+  const handleAnalyze = (memo: any) => {
+    handleOpenComposer('analyze', memo.id);
+  };
+
+  // 메모 삭제 핸들러
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMemo(id);
+      showNotification('메모가 삭제되었습니다.', 'success');
+    } catch (error: any) {
+      showNotification(`삭제 중 오류가 발생했습니다: ${error.message}`, 'error');
+    }
   };
 
   return (
-    <div className="w-full flex flex-col gap-4">
-      <ThumbnailCard
-        title={researchData.title}
-        subject={researchData.subject}
-        bgColor="from-blue-900 to-blue-700"
-        bgImage="/fortune/crystal/amethyst-cave.jpg"
-      />
-      <ThumbnailCard
-        title={researchData.title}
-        subject={researchData.subject}
-        imageQuery="dementia"
-      />
-      <ThumbnailCard
-        title={researchData.title}
-        subject={researchData.subject}
-        bgColor="https://cdn.jhealthmedia.joins.com/news/photo/202005/21746_18960_0924.jpg"
-        bgImage="https://cdn.jhealthmedia.joins.com/news/photo/202005/21746_18960_0924.jpg"
-      />
-      <ThumbnailCard
-        title={researchData.title}
-        subject={researchData.subject}
-        bgColor="from-pink-200 to-red-50"
-      />
-      <ThumbnailCardAnimation
-        title="씹는 횟수 증가, 치매 위험 높인다"
-        subject="씹는 횟수와 치매 위험의 상관관계"
-        keywords={['#치매', '#씹는 횟수', '#노인', '#연구', '#알츠하이머병']}
-        keyPoints={[
-          '밥 씹는 횟수가 늘어나면 치매 위험이 높아진다는 연구 결과가 나왔다.',
-          '씹는 기능 저하가 치매 발생에 미치는 영향을 60세 이상 노인 5064명을 대상으로 8년간 추적 관찰하여 확인했다.',
-          '씹는 횟수가 30회 이상인 남성은 10회 미만인 남성에 비해 치매 발생 위험이 2.9배 높았다.',
-        ]}
-        bgColor="from-gray-900 to-gray-600"
-      />
-      <ThumbnailCardAnimation
-        title="요약의 힘: 글쓰기와 삶을 이끄는 능력"
-        subject="요약 능력이 글쓰기와 삶의 질을 높인다"
-        keywords={['#요약', '#정의', '#본질', '#글쓰기', '#패턴', '#우선순위', '#핵심문장']}
-        keyPoints={[
-          '세상은 요약하는 사람이 이끌어간다.',
-          '요약은 본질이나 원리, 근본, 바탕을 파악하는 일이기도 하다.',
-          '요약을 잘해야 글을 잘 쓸 수 있다',
-          '요약 능력이 뛰어난 사람은 글쓰기와 일 처리에서 유능하다.',
-        ]}
-        bgColor="from-gray-900 to-gray-800"
-      />
+    <div className="max-w-md mx-auto bg-white overflow-hidden shadow-md min-h-screen tracking-tighter leading-snug">
+      {/* 헤더 */}
+      <Header />
+
+      {/* 알림 메시지 */}
+      {notification && <Notification message={notification.message} type={notification.type} />}
+
+      {/* 메모 작성 버튼 */}
+      {!showComposer && (
+        <div className="fixed bottom-20 right-4 z-10">
+          <button
+            onClick={() => handleOpenComposer('analyze')}
+            className="w-12 h-12 rounded-full bg-teal-500 text-white flex items-center justify-center shadow-lg"
+          >
+            <MessageCircle size={24} />
+          </button>
+        </div>
+      )}
+
+      {/* 메모 작성/편집 모달 */}
+      {showComposer && (
+        <ComposerModal
+          isOpen={showComposer}
+          mode={editMode}
+          editingMemo={editingMemoId ? memos.find((m) => m.id === editingMemoId) : undefined}
+          onClose={handleCloseComposer}
+          onSubmit={handleSubmit}
+          profile={profile}
+        />
+      )}
+
+      {/* 메모 목록 */}
+      <div className="divide-y divide-gray-200">
+        {memos.length === 0 ? (
+          <div className="p-10 text-center text-gray-500">
+            <MessageCircle size={48} className="mx-auto mb-4 opacity-30" />
+            <p>아직 메모가 없습니다. 첫 번째 메모를 작성해보세요!</p>
+          </div>
+        ) : (
+          memos.map((memo) => (
+            <MemoItem
+              key={memo.id}
+              memo={memo}
+              profile={profile}
+              memoState={
+                memo.id
+                  ? memoStates[memo.id] || {
+                      expanded: false,
+                      showLabeling: true,
+                      showOriginal: false,
+                    }
+                  : { expanded: false, showLabeling: true, showOriginal: false }
+              }
+              onToggleThread={toggleThread}
+              onToggleLabeling={toggleLabeling}
+              onToggleOriginal={toggleOriginal}
+              onEdit={handleEdit}
+              onAnalyze={handleAnalyze}
+              onDelete={handleDelete}
+              onLike={likeMemo}
+              onRetweet={retweetMemo}
+              onReply={replyToMemo}
+            />
+          ))
+        )}
+      </div>
+
+      {/* 바텀 네비게이션 */}
+      <BottomNavigation />
     </div>
   );
-}
+};
+
+export default MemoPage;
