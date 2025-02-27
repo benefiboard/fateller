@@ -89,7 +89,7 @@ export const useMemos = () => {
   };
 
   // 메모 생성
-  const createMemo = async (text: string) => {
+  const createMemo = async (text: string, options: any = {}) => {
     if (!user_id) {
       throw new Error('로그인이 필요합니다.');
     }
@@ -111,6 +111,9 @@ export const useMemos = () => {
         throw new Error('API 응답 형식이 올바르지 않습니다.');
       }
 
+      // 저장할 원본 텍스트 결정 - URL이면 URL 자체를 저장, 아니면 추출된 텍스트
+      const originalTextToSave = options.isUrl ? options.sourceUrl : text;
+
       // 새 메모 생성 (Supabase)
       const { data, error } = await supabase
         .from('memos')
@@ -120,7 +123,7 @@ export const useMemos = () => {
           tweet_main: aiResponse.tweet_main,
           hashtags: aiResponse.hashtags || [],
           thread: aiResponse.thread || [],
-          original_text: text,
+          original_text: originalTextToSave, // URL 또는 원본 텍스트
           category: aiResponse.labeling?.category || '미분류',
           keywords: aiResponse.labeling?.keywords || [],
           key_sentence: aiResponse.labeling?.key_sentence || '',
@@ -171,7 +174,7 @@ export const useMemos = () => {
   };
 
   // 메모 업데이트 (AI 분석)
-  const updateMemoWithAI = async (memoId: string, text: string) => {
+  const updateMemoWithAI = async (memoId: string, text: string, options: any = {}) => {
     if (!user_id) {
       throw new Error('로그인이 필요합니다.');
     }
@@ -183,6 +186,8 @@ export const useMemos = () => {
       // AI 분석 요청
       const aiResponse = await analyzeWithAI(text);
 
+      const originalTextToSave = options.isUrl ? options.sourceUrl : text;
+
       // 기존 메모 업데이트 (Supabase)
       const { data, error } = await supabase
         .from('memos')
@@ -191,7 +196,7 @@ export const useMemos = () => {
           tweet_main: aiResponse.tweet_main,
           hashtags: aiResponse.hashtags || [],
           thread: aiResponse.thread || [],
-          original_text: text,
+          original_text: originalTextToSave, // URL 또는 원본 텍스트
           category: aiResponse.labeling?.category || '미분류',
           keywords: aiResponse.labeling?.keywords || [],
           key_sentence: aiResponse.labeling?.key_sentence || '',

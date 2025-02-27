@@ -72,10 +72,16 @@ const MemoPage: React.FC = () => {
     try {
       if (data.mode === 'analyze') {
         if (editingMemoId) {
-          await updateMemoWithAI(editingMemoId, data.text);
+          await updateMemoWithAI(editingMemoId, data.text, {
+            isUrl: data.isUrl,
+            sourceUrl: data.sourceUrl,
+          });
           showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
         } else {
-          await createMemo(data.text);
+          await createMemo(data.text, {
+            isUrl: data.isUrl,
+            sourceUrl: data.sourceUrl,
+          });
           showNotification('새 메모가 성공적으로 생성되었습니다.', 'success');
         }
       } else if (data.mode === 'direct' && editingMemoId) {

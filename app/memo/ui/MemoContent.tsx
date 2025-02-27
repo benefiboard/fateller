@@ -20,6 +20,17 @@ const MemoContent: React.FC<MemoContentProps> = ({
   onToggleLabeling,
   onToggleOriginal,
 }) => {
+  const isUrl = (text: string): boolean => {
+    try {
+      // URL 형식 확인
+      new URL(text);
+      // http로 시작하는지 추가 확인 (더 정확한 URL 감지)
+      return /^https?:\/\//i.test(text);
+    } catch (e) {
+      return false;
+    }
+  };
+
   return (
     <>
       <h2 className="font-bold text-lg mt-1">{memo.title}</h2>
@@ -117,9 +128,31 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 <span className="text-teal-500 mr-2">{showOriginal ? '▼' : '▲'}</span>
                 <h3 className="text-sm font-medium text-teal-700">원문</h3>
               </div>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2">
-                {memo.original_text || '원문이 없습니다.'}
-              </p>
+
+              {memo.original_text && isUrl(memo.original_text) ? (
+                // URL인 경우 링크와 바로가기 버튼 표시
+                <div className="mt-2">
+                  <p className="text-sm text-gray-600 mb-1">원본 URL:</p>
+                  <div className="flex items-center">
+                    <span className="text-sm text-gray-700 break-all mr-2">
+                      {memo.original_text}
+                    </span>
+                    <a
+                      href={memo.original_text}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      바로가기
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                // 일반 텍스트인 경우 기존처럼 표시
+                <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2">
+                  {memo.original_text || '원문이 없습니다.'}
+                </p>
+              )}
             </div>
           </div>
         </>
