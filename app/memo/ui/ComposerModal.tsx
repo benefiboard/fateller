@@ -145,13 +145,12 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
     try {
       if (mode === 'direct') {
-        // 키워드 입력을 배열로 변환
+        // 직접 수정 모드 (기존 코드 유지)
         const keywordArray = keywordsInput
           .split(',')
           .map((keyword) => keyword.trim())
           .filter(Boolean);
 
-        // 직접 수정 모드 저장
         await onSubmit({
           ...editFormData,
           keywords: keywordArray,
@@ -159,9 +158,35 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
           id: editingMemo?.id,
         });
       } else {
-        // AI 분석 모드 저장
+        // AI 분석 모드
+        if (!inputText.trim()) {
+          throw new Error('내용을 입력해주세요');
+        }
+
+        // 1단계: URL 확인 및 콘텐츠 추출
+        const extractResponse = await fetch('/api/extract-and-analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: inputText.trim() }),
+        });
+
+        if (!extractResponse.ok) {
+          const errorData = await extractResponse.json();
+          throw new Error(errorData.error || '추출 중 오류가 발생했습니다');
+        }
+
+        const extractData = await extractResponse.json();
+        const textToAnalyze = extractData.content;
+
+        // URL 추출 성공 메시지 표시 (선택 사항)
+        if (extractData.isExtracted) {
+          // URL에서 추출 성공 시 알림 (선택 사항)
+          console.log('URL에서 콘텐츠 추출 성공:', extractData.sourceUrl);
+        }
+
+        // 2단계: 추출된 콘텐츠로 메모 생성 (기존 방식 그대로)
         await onSubmit({
-          text: inputText,
+          text: textToAnalyze,
           mode: 'analyze',
           id: editingMemo?.id,
         });
