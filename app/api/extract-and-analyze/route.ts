@@ -32,6 +32,130 @@ function extractYoutubeId(url: string): string | null {
   return match && match[7]?.length === 11 ? match[7] : null;
 }
 
+function getMatches(string: string, regex: RegExp): Array<RegExpExecArray> {
+  const matches: Array<RegExpExecArray> = [];
+  let match: RegExpExecArray | null;
+
+  // 정규식에 global 플래그가 있는지 확인
+  if (!regex.global) {
+    regex = new RegExp(regex.source, regex.flags + 'g');
+  }
+
+  while ((match = regex.exec(string)) !== null) {
+    matches.push(match);
+  }
+
+  return matches;
+}
+
+// Puppeteer를 사용한 유튜브 자막 추출 함수
+async function fetchYoutubeTranscriptWithPuppeteer(videoId: string) {
+  let browser = null;
+
+  try {
+    console.log(`Puppeteer를 사용하여 유튜브 자막 추출 시작: ${videoId}`);
+
+    // 환경에 따른 브라우저 설정
+    if (isVercelProduction()) {
+      console.log('Vercel 환경에서 실행 중...');
+      const executablePath = await chromium.executablePath(
+        'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+      );
+
+      browser = await puppeteerCore.launch({
+        executablePath,
+        args: [...chromium.args, '--no-sandbox'],
+        headless: chromium.headless,
+        defaultViewport: chromium.defaultViewport,
+      });
+    } else {
+      console.log('로컬 환경에서 실행 중...');
+      browser = await puppeteerCore.launch({
+        executablePath: CHROME_PATH,
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+    }
+
+    const page = await browser.newPage();
+
+    // 유튜브 페이지 방문 헤더 설정
+    await page.setExtraHTTPHeaders({
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+    });
+
+    // 유튜브 페이지 로드
+    console.log(`유튜브 페이지 로드 중: ${videoId}`);
+    await page.goto(`https://www.youtube.com/watch?v=${videoId}`, {
+      waitUntil: 'domcontentloaded',
+      timeout: 25000,
+    });
+
+    // 페이지에서 자막 URL 추출
+    console.log('자막 URL 추출 중...');
+    const captionsData = await page.evaluate(() => {
+      // @ts-ignore - window.ytInitialPlayerResponse는 유튜브 페이지에서 사용 가능
+      const ytResponse = window.ytInitialPlayerResponse;
+
+      if (
+        !ytResponse ||
+        !ytResponse.captions ||
+        !ytResponse.captions.playerCaptionsTracklistRenderer ||
+        !ytResponse.captions.playerCaptionsTracklistRenderer.captionTracks ||
+        !ytResponse.captions.playerCaptionsTracklistRenderer.captionTracks.length
+      ) {
+        return null;
+      }
+
+      // 첫 번째 자막 트랙의 baseUrl 추출
+      return ytResponse.captions.playerCaptionsTracklistRenderer.captionTracks[0].baseUrl;
+    });
+
+    // 브라우저 즉시 종료
+    console.log('브라우저 종료 중...');
+    await browser.close();
+    browser = null;
+
+    if (!captionsData) {
+      console.log('자막 데이터를 찾을 수 없습니다');
+      throw new Error('자막을 찾을 수 없습니다');
+    }
+
+    // 추출한 URL로 자막 데이터 가져오기
+    console.log('자막 XML 데이터 가져오는 중...');
+    const transcriptResponse = await fetch(captionsData, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      },
+    });
+
+    const transcriptBody = await transcriptResponse.text();
+
+    // 자막 파싱
+    const RE_XML_TRANSCRIPT = /<text start="([^"]*)" dur="([^"]*)">([^<]*)<\/text>/g;
+    const results = getMatches(transcriptBody, RE_XML_TRANSCRIPT);
+
+    if (!results || results.length === 0) {
+      throw new Error('자막 데이터를 파싱할 수 없습니다');
+    }
+
+    console.log(`자막 추출 완료: ${results.length}개 항목`);
+
+    return results.map((result) => ({
+      text: result[3],
+      duration: parseFloat(result[2]),
+      offset: parseFloat(result[1]),
+    }));
+  } catch (error) {
+    console.error('Puppeteer로 자막 추출 실패:', error);
+    if (browser) await browser.close();
+    throw error;
+  }
+}
+
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
@@ -77,14 +201,42 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: '유효한 유튜브 URL이 아닙니다' }, { status: 400 });
       }
 
+      let transcript;
+      let errorMessage = '';
+
+      // 1. 먼저 YoutubeTranscript 라이브러리로 시도
       try {
-        // youtube-transcript-api를 사용하여 자막 가져오기
-        const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+        console.log('YoutubeTranscript 라이브러리로 자막 추출 시도');
+        transcript = await YoutubeTranscript.fetchTranscript(videoId);
+        console.log('라이브러리로 자막 추출 성공');
+      } catch (error: any) {
+        console.log('라이브러리 추출 실패, 오류:', error.message);
+        errorMessage = error.message;
+        transcript = null;
+      }
 
-        if (!transcript || transcript.length === 0) {
-          throw new Error('자막을 가져올 수 없습니다');
+      // 2. 라이브러리 실패 시 Puppeteer로 시도
+      if (!transcript || transcript.length === 0) {
+        try {
+          console.log('Puppeteer로 자막 추출 시도');
+          transcript = await fetchYoutubeTranscriptWithPuppeteer(videoId);
+          console.log('Puppeteer로 자막 추출 성공');
+        } catch (puppeteerError: any) {
+          console.error('Puppeteer로 자막 추출 실패:', puppeteerError);
+          // 두 방법 모두 실패한 경우
+          return NextResponse.json(
+            {
+              error: `이 영상에서 자막을 가져올 수 없습니다: ${
+                errorMessage || puppeteerError.message
+              }`,
+            },
+            { status: 400 }
+          );
         }
+      }
 
+      // 자막이 성공적으로 추출된 경우
+      if (transcript && transcript.length > 0) {
         // 자막 텍스트 결합
         const transcriptText = transcript
           .map((item) => item.text)
@@ -98,10 +250,10 @@ export async function POST(request: NextRequest) {
           isExtracted: true,
           type: 'youtube',
         });
-      } catch (error: any) {
+      } else {
         return NextResponse.json(
           {
-            error: '이 영상에서 자막을 가져올 수 없습니다: ' + error.message,
+            error: '이 영상에서 자막을 가져올 수 없습니다. 자막이 없거나 접근할 수 없습니다.',
           },
           { status: 400 }
         );
@@ -215,6 +367,224 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// 일반 url 굿굿// app/api/extract-and-analyze/route.ts
+// import { NextResponse, type NextRequest } from 'next/server';
+// import puppeteerCore from 'puppeteer-core';
+// import chromium from '@sparticuz/chromium-min';
+// import { Readability } from '@mozilla/readability';
+// import { JSDOM } from 'jsdom';
+// import { YoutubeTranscript } from 'youtube-transcript';
+
+// // 크롬 실행 경로 (로컬 개발용)
+// const CHROME_PATH =
+//   process.env.CHROME_PATH ||
+//   (process.platform === 'win32'
+//     ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+//     : process.platform === 'darwin'
+//     ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+//     : '/usr/bin/google-chrome');
+
+// // 환경 확인 함수
+// const isVercelProduction = () => {
+//   return process.env.VERCEL === '1' || process.env.VERCEL_ENV === 'production';
+// };
+
+// // 유튜브 URL 확인 함수
+// function isYoutubeUrl(url: string): boolean {
+//   return /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\/.+/i.test(url);
+// }
+
+// // 유튜브 비디오 ID 추출 함수
+// function extractYoutubeId(url: string): string | null {
+//   const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+//   const match = url.match(regExp);
+//   return match && match[7]?.length === 11 ? match[7] : null;
+// }
+
+// export const dynamic = 'force-dynamic';
+// export const maxDuration = 60;
+
+// export async function POST(request: NextRequest) {
+//   const { text } = await request.json();
+
+//   if (!text) {
+//     return NextResponse.json({ error: '텍스트가 필요합니다' }, { status: 400 });
+//   }
+
+//   try {
+//     // URL 여부 확인
+//     let isUrl = false;
+//     try {
+//       new URL(text);
+//       isUrl = text.trim().indexOf('\n') === -1 && /^https?:\/\//i.test(text.trim());
+//     } catch (e) {
+//       isUrl = false;
+//     }
+
+//     // URL이 아니면 그대로 반환 (클라이언트에서 labeling API 호출)
+//     if (!isUrl) {
+//       return NextResponse.json({
+//         content: text,
+//         isExtracted: false,
+//       });
+//     }
+
+//     // 네이버 블로그 체크
+//     if (isUrl && /blog\.naver\.com/i.test(text)) {
+//       return NextResponse.json(
+//         {
+//           error: '네이버 블로그는 지원되지 않습니다. 내용을 직접 복사하여 입력해주세요.',
+//         },
+//         { status: 400 }
+//       );
+//     }
+
+//     // 유튜브 URL 확인
+//     if (isYoutubeUrl(text)) {
+//       const videoId = extractYoutubeId(text);
+//       if (!videoId) {
+//         return NextResponse.json({ error: '유효한 유튜브 URL이 아닙니다' }, { status: 400 });
+//       }
+
+//       try {
+//         // youtube-transcript-api를 사용하여 자막 가져오기
+//         const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+
+//         if (!transcript || transcript.length === 0) {
+//           throw new Error('자막을 가져올 수 없습니다');
+//         }
+
+//         // 자막 텍스트 결합
+//         const transcriptText = transcript
+//           .map((item) => item.text)
+//           .join(' ')
+//           .replace(/\s+/g, ' ')
+//           .trim();
+
+//         return NextResponse.json({
+//           content: transcriptText,
+//           sourceUrl: text,
+//           isExtracted: true,
+//           type: 'youtube',
+//         });
+//       } catch (error: any) {
+//         return NextResponse.json(
+//           {
+//             error: '이 영상에서 자막을 가져올 수 없습니다: ' + error.message,
+//           },
+//           { status: 400 }
+//         );
+//       }
+//     }
+
+//     // 일반 웹페이지 콘텐츠 추출 (최적화: HTML 추출 후 즉시 브라우저 종료)
+//     let browser = null;
+//     let html = '';
+
+//     try {
+//       // 환경에 따른 브라우저 시작
+//       if (isVercelProduction()) {
+//         console.log('Vercel 환경에서 실행 중...');
+//         const executablePath = await chromium.executablePath(
+//           'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+//         );
+
+//         browser = await puppeteerCore.launch({
+//           executablePath,
+//           args: chromium.args,
+//           headless: chromium.headless,
+//           defaultViewport: chromium.defaultViewport,
+//         });
+//       } else {
+//         console.log('로컬 환경에서 실행 중...', CHROME_PATH);
+//         browser = await puppeteerCore.launch({
+//           executablePath: CHROME_PATH,
+//           headless: true,
+//           args: ['--no-sandbox', '--disable-setuid-sandbox'],
+//         });
+//       }
+
+//       const page = await browser.newPage();
+
+//       // 리소스 차단하여 속도 향상
+//       await page.setRequestInterception(true);
+//       page.on('request', (req) => {
+//         const resourceType = req.resourceType();
+//         if (['image', 'font', 'media', 'stylesheet'].includes(resourceType)) {
+//           req.abort();
+//         } else {
+//           req.continue();
+//         }
+//       });
+
+//       // 페이지 로드
+//       await page.goto(text, { waitUntil: 'domcontentloaded', timeout: 25000 });
+
+//       // HTML 콘텐츠 가져오기
+//       html = await page.content();
+
+//       // 중요: HTML을 얻은 즉시 브라우저 종료
+//       await browser.close();
+//       browser = null;
+//     } catch (error: any) {
+//       // 브라우저 관련 오류 처리
+//       if (browser) {
+//         await browser.close();
+//         browser = null;
+//       }
+
+//       console.error('웹페이지 로딩 오류:', error);
+//       return NextResponse.json(
+//         { error: error.message || '웹페이지를 로드할 수 없습니다' },
+//         { status: 500 }
+//       );
+//     }
+
+//     // 브라우저 없이 Readability로 콘텐츠 추출
+//     try {
+//       const dom = new JSDOM(html, { url: text });
+//       const reader = new Readability(dom.window.document);
+//       const article = reader.parse();
+
+//       if (!article || !article.textContent || article.textContent.length < 100) {
+//         throw new Error('콘텐츠를 충분히 추출할 수 없습니다. 직접 내용을 입력해주세요.');
+//       }
+
+//       // 추출된 텍스트 정제
+//       const extractedContent = article.textContent
+//         .replace(/\n{3,}/g, '\n\n')
+//         .replace(/[ \t]+/g, ' ')
+//         .split('\n')
+//         .map((line) => line.trim())
+//         .join('\n')
+//         .trim();
+
+//       // 추출 성공 응답
+//       return NextResponse.json({
+//         content: extractedContent,
+//         sourceUrl: text,
+//         title: article.title || '',
+//         isExtracted: true,
+//         type: 'webpage',
+//       });
+//     } catch (error: any) {
+//       console.error('콘텐츠 추출 오류:', error);
+//       return NextResponse.json(
+//         { error: error.message || '웹페이지 처리 중 오류가 발생했습니다' },
+//         { status: 500 }
+//       );
+//     }
+//   } catch (error: any) {
+//     console.error('처리 오류:', error);
+//     return NextResponse.json(
+//       {
+//         error: error.message || '처리 중 오류가 발생했습니다',
+//       },
+//       { status: 500 }
+//     );
+//   }
+// }
 
 // 오리지널오리지널  // app/api/extract-and-analyze/route.ts
 // import { NextResponse } from 'next/server';
