@@ -108,12 +108,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 일반 웹페이지 콘텐츠 추출 (Vercel 최적화된 코드)
-    let browser;
+    // 일반 웹페이지 콘텐츠 추출 (최적화: HTML 추출 후 즉시 브라우저 종료)
+    let browser = null;
+    let html = '';
+
     try {
       // 환경에 따른 브라우저 시작
       if (isVercelProduction()) {
-        // Vercel 환경에서 @sparticuz/chromium-min 사용
         console.log('Vercel 환경에서 실행 중...');
         const executablePath = await chromium.executablePath(
           'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
@@ -126,7 +127,6 @@ export async function POST(request: NextRequest) {
           defaultViewport: chromium.defaultViewport,
         });
       } else {
-        // 로컬 개발 환경에서는 로컬 Chrome 경로 지정
         console.log('로컬 환경에서 실행 중...', CHROME_PATH);
         browser = await puppeteerCore.launch({
           executablePath: CHROME_PATH,
@@ -149,12 +149,30 @@ export async function POST(request: NextRequest) {
       });
 
       // 페이지 로드
-      await page.goto(text, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      await page.goto(text, { waitUntil: 'domcontentloaded', timeout: 25000 });
 
       // HTML 콘텐츠 가져오기
-      const html = await page.content();
+      html = await page.content();
 
-      // Readability로 콘텐츠 추출
+      // 중요: HTML을 얻은 즉시 브라우저 종료
+      await browser.close();
+      browser = null;
+    } catch (error: any) {
+      // 브라우저 관련 오류 처리
+      if (browser) {
+        await browser.close();
+        browser = null;
+      }
+
+      console.error('웹페이지 로딩 오류:', error);
+      return NextResponse.json(
+        { error: error.message || '웹페이지를 로드할 수 없습니다' },
+        { status: 500 }
+      );
+    }
+
+    // 브라우저 없이 Readability로 콘텐츠 추출
+    try {
       const dom = new JSDOM(html, { url: text });
       const reader = new Readability(dom.window.document);
       const article = reader.parse();
@@ -181,13 +199,11 @@ export async function POST(request: NextRequest) {
         type: 'webpage',
       });
     } catch (error: any) {
-      console.error('웹페이지 추출 오류:', error);
+      console.error('콘텐츠 추출 오류:', error);
       return NextResponse.json(
         { error: error.message || '웹페이지 처리 중 오류가 발생했습니다' },
         { status: 500 }
       );
-    } finally {
-      if (browser) await browser.close();
     }
   } catch (error: any) {
     console.error('처리 오류:', error);
