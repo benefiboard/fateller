@@ -6,6 +6,27 @@ import { Readability } from '@mozilla/readability';
 import { JSDOM } from 'jsdom';
 import { YoutubeTranscript } from 'youtube-transcript';
 
+// 타입 정의
+interface TranscriptItem {
+  text: string;
+  duration: number;
+  offset: number;
+}
+
+interface YTCaptionTrack {
+  baseUrl: string;
+  name: {
+    simpleText: string;
+  };
+  languageCode: string;
+}
+
+interface YTJsonEvent {
+  segs?: Array<{ utf8?: string }>;
+  dDurationMs?: number;
+  tStartMs?: number;
+}
+
 // 크롬 실행 경로 (로컬 개발용)
 const CHROME_PATH =
   process.env.CHROME_PATH ||
@@ -32,6 +53,7 @@ function extractYoutubeId(url: string): string | null {
   return match && match[7]?.length === 11 ? match[7] : null;
 }
 
+// matchAll 대신 사용할 함수
 function getMatches(string: string, regex: RegExp): Array<RegExpExecArray> {
   const matches: Array<RegExpExecArray> = [];
   let match: RegExpExecArray | null;
@@ -48,8 +70,8 @@ function getMatches(string: string, regex: RegExp): Array<RegExpExecArray> {
   return matches;
 }
 
-// Puppeteer를 사용한 유튜브 자막 추출 함수
-async function fetchYoutubeTranscriptWithPuppeteer(videoId: string) {
+// 유튜브 자막 추출 개선 함수
+async function fetchYoutubeTranscriptWithPuppeteer(videoId: string): Promise<TranscriptItem[]> {
   let browser = null;
 
   try {
@@ -64,7 +86,12 @@ async function fetchYoutubeTranscriptWithPuppeteer(videoId: string) {
 
       browser = await puppeteerCore.launch({
         executablePath,
-        args: [...chromium.args, '--no-sandbox'],
+        args: [
+          ...chromium.args,
+          '--no-sandbox',
+          '--disable-web-security', // 크로스 도메인 요청 허용
+          '--disable-features=IsolateOrigins,site-per-process', // 동일 출처 정책 우회
+        ],
         headless: chromium.headless,
         defaultViewport: chromium.defaultViewport,
       });
@@ -79,24 +106,44 @@ async function fetchYoutubeTranscriptWithPuppeteer(videoId: string) {
 
     const page = await browser.newPage();
 
-    // 유튜브 페이지 방문 헤더 설정
+    // 유튜브가 봇을 감지하지 않도록 헤더 설정 개선
     await page.setExtraHTTPHeaders({
       'User-Agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'Accept-Language': 'en-US,en;q=0.9',
+      Accept:
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      Referer: 'https://www.google.com/',
+    });
+
+    // 추가: 유튜브가 지원하는 자막 언어를 명시적으로 요청
+    await page.setExtraHTTPHeaders({
+      'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7,ja;q=0.6',
+    });
+
+    // 페이지 쿠키 설정 (지역 설정)
+    await page.setCookie({
+      name: 'PREF',
+      value: 'hl=ko&gl=KR',
+      domain: '.youtube.com',
+      path: '/',
     });
 
     // 유튜브 페이지 로드
     console.log(`유튜브 페이지 로드 중: ${videoId}`);
+
+    // 로딩 시간 늘리고 네트워크 대기
     await page.goto(`https://www.youtube.com/watch?v=${videoId}`, {
-      waitUntil: 'domcontentloaded',
-      timeout: 25000,
+      waitUntil: 'networkidle2', // 모든 네트워크 연결이 최소 500ms 동안 유휴 상태가 될 때까지 대기
+      timeout: 30000, // 30초로 타임아웃 증가
     });
 
-    // 페이지에서 자막 URL 추출
-    console.log('자막 URL 추출 중...');
-    const captionsData = await page.evaluate(() => {
-      // @ts-ignore - window.ytInitialPlayerResponse는 유튜브 페이지에서 사용 가능
+    // waitForTimeout 대신 대체 방법 사용
+    await page.evaluate(() => new Promise((r) => setTimeout(r, 2000)));
+
+    // 방법 1: 일반적인 ytInitialPlayerResponse 객체 추출
+    let captionsData = await page.evaluate(() => {
+      // @ts-ignore - ytInitialPlayerResponse는 유튜브 페이지에서 사용 가능
       const ytResponse = window.ytInitialPlayerResponse;
 
       if (
@@ -113,6 +160,41 @@ async function fetchYoutubeTranscriptWithPuppeteer(videoId: string) {
       return ytResponse.captions.playerCaptionsTracklistRenderer.captionTracks[0].baseUrl;
     });
 
+    // 방법 1이 실패하면 방법 2: 스크립트 태그에서 직접 찾기
+    if (!captionsData) {
+      console.log('방법 1 실패, 방법 2 시도...');
+      captionsData = await page.evaluate(() => {
+        // NodeList를 배열로 변환
+        const scriptElements = Array.from(document.querySelectorAll('script'));
+
+        for (let i = 0; i < scriptElements.length; i++) {
+          const script = scriptElements[i];
+          const content = script.textContent || '';
+          if (content.includes('captionTracks')) {
+            const match = content.match(/"captionTracks":\s*(\[.*?\])/);
+            if (match && match[1]) {
+              try {
+                const tracks = JSON.parse(match[1].replace(/\\"/g, '"'));
+                if (tracks && tracks.length > 0 && tracks[0].baseUrl) {
+                  return tracks[0].baseUrl;
+                }
+              } catch (e) {
+                // JSON 파싱 실패, 다음 스크립트로 진행
+              }
+            }
+          }
+        }
+        return null;
+      });
+    }
+
+    // 방법 3: API 통해 자막 URL 직접 구성
+    if (!captionsData) {
+      console.log('방법 2 실패, 방법 3 시도...');
+      // timedtext API를 직접 사용
+      captionsData = `https://www.youtube.com/api/timedtext?lang=ko&v=${videoId}`;
+    }
+
     // 브라우저 즉시 종료
     console.log('브라우저 종료 중...');
     await browser.close();
@@ -123,22 +205,66 @@ async function fetchYoutubeTranscriptWithPuppeteer(videoId: string) {
       throw new Error('자막을 찾을 수 없습니다');
     }
 
+    console.log('자막 URL 추출 성공:', captionsData);
+
     // 추출한 URL로 자막 데이터 가져오기
     console.log('자막 XML 데이터 가져오는 중...');
     const transcriptResponse = await fetch(captionsData, {
       headers: {
         'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        Referer: 'https://www.youtube.com/',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
       },
     });
 
     const transcriptBody = await transcriptResponse.text();
+    console.log('자막 XML 데이터 수신 (처음 100자):', transcriptBody.substring(0, 100));
 
     // 자막 파싱
     const RE_XML_TRANSCRIPT = /<text start="([^"]*)" dur="([^"]*)">([^<]*)<\/text>/g;
     const results = getMatches(transcriptBody, RE_XML_TRANSCRIPT);
 
+    // 파싱 실패하면 fallback으로 다른 형식 시도
     if (!results || results.length === 0) {
+      console.log('일반 XML 형식 파싱 실패, 다른 형식 시도...');
+
+      // 대체 정규식: 다른 포맷의 XML 구조 시도
+      const alternativeRegex = /<text\s+[^>]*>(.*?)<\/text>/g;
+      const altResults = getMatches(transcriptBody, alternativeRegex);
+
+      if (altResults && altResults.length > 0) {
+        console.log(`대체 형식으로 자막 추출 완료: ${altResults.length}개 항목`);
+        return altResults.map((result) => ({
+          text: result[1],
+          duration: 0,
+          offset: 0,
+        }));
+      }
+
+      // JSON 형식일 수도 있음
+      try {
+        const jsonData = JSON.parse(transcriptBody);
+        if (jsonData.events && Array.isArray(jsonData.events)) {
+          console.log(`JSON 형식으로 자막 추출 완료: ${jsonData.events.length}개 항목`);
+
+          const processedEvents = jsonData.events
+            .filter(
+              (event: YTJsonEvent) =>
+                event.segs && Array.isArray(event.segs) && event.segs.length > 0
+            )
+            .map((event: YTJsonEvent) => ({
+              text: event.segs?.map((seg) => seg.utf8 || '').join('') || '',
+              duration: (event.dDurationMs || 0) / 1000,
+              offset: (event.tStartMs || 0) / 1000,
+            }));
+
+          return processedEvents;
+        }
+      } catch (e) {
+        // JSON 파싱 실패
+      }
+
       throw new Error('자막 데이터를 파싱할 수 없습니다');
     }
 
@@ -201,21 +327,31 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: '유효한 유튜브 URL이 아닙니다' }, { status: 400 });
       }
 
-      let transcript;
+      let transcript: TranscriptItem[] | null = null;
       let errorMessage = '';
 
-      // 1. 먼저 YoutubeTranscript 라이브러리로 시도
-      try {
-        console.log('YoutubeTranscript 라이브러리로 자막 추출 시도');
-        transcript = await YoutubeTranscript.fetchTranscript(videoId);
-        console.log('라이브러리로 자막 추출 성공');
-      } catch (error: any) {
-        console.log('라이브러리 추출 실패, 오류:', error.message);
-        errorMessage = error.message;
-        transcript = null;
+      // 로컬 환경인 경우 먼저 라이브러리로 시도
+      if (!isVercelProduction()) {
+        try {
+          console.log('YoutubeTranscript 라이브러리로 자막 추출 시도');
+          const libTranscript = await YoutubeTranscript.fetchTranscript(videoId);
+          transcript = libTranscript.map((item) => ({
+            text: item.text || '',
+            duration: item.duration || 0,
+            offset: item.offset || 0,
+          }));
+          console.log('라이브러리로 자막 추출 성공');
+        } catch (error: any) {
+          console.log('라이브러리 추출 실패, 오류:', error.message);
+          errorMessage = error.message;
+          transcript = null;
+        }
+      } else {
+        // Vercel 환경에서는 라이브러리 시도 건너뛰기
+        console.log('Vercel 환경 감지, 라이브러리 시도 건너뛰고 Puppeteer 직접 사용');
       }
 
-      // 2. 라이브러리 실패 시 Puppeteer로 시도
+      // 라이브러리 실패 또는 Vercel 환경인 경우 바로 Puppeteer로 시도
       if (!transcript || transcript.length === 0) {
         try {
           console.log('Puppeteer로 자막 추출 시도');
@@ -223,12 +359,12 @@ export async function POST(request: NextRequest) {
           console.log('Puppeteer로 자막 추출 성공');
         } catch (puppeteerError: any) {
           console.error('Puppeteer로 자막 추출 실패:', puppeteerError);
-          // 두 방법 모두 실패한 경우
+
+          // 모든 시도가 실패한 경우 오류 메시지만 반환
           return NextResponse.json(
             {
-              error: `이 영상에서 자막을 가져올 수 없습니다: ${
-                errorMessage || puppeteerError.message
-              }`,
+              error:
+                '이 영상에서 자막을 가져올 수 없습니다. 유튜브 동영상에 자막이 없거나 자막이 비공개 설정되었을 수 있습니다.',
             },
             { status: 400 }
           );
@@ -239,7 +375,7 @@ export async function POST(request: NextRequest) {
       if (transcript && transcript.length > 0) {
         // 자막 텍스트 결합
         const transcriptText = transcript
-          .map((item) => item.text)
+          .map((item) => item.text || '')
           .join(' ')
           .replace(/\s+/g, ' ')
           .trim();
