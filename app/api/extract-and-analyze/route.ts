@@ -195,20 +195,25 @@ async function fetchYoutubeTranscriptWithAPI(videoId: string): Promise<string> {
     }
 
     // 자막이 여전히 없으면, 영상 제목과 설명으로 대체
+    // if (transcriptLines.length === 0) {
+    //   console.log('자막을 추출할 수 없어 영상 정보로 대체합니다.');
+
+    //   const title = videoInfo.items[0].snippet.title || '';
+    //   const description = videoInfo.items[0].snippet.description || '';
+
+    //   const infoText = `${title}\n\n${description}`.trim();
+
+    //   if (infoText.length > 0) {
+    //     console.log('영상 정보를 사용하여 대체 콘텐츠 생성');
+    //     return infoText;
+    //   }
+
+    //   throw new Error('자막과 영상 정보 모두 추출할 수 없습니다.');
+    // }
+
     if (transcriptLines.length === 0) {
-      console.log('자막을 추출할 수 없어 영상 정보로 대체합니다.');
-
-      const title = videoInfo.items[0].snippet.title || '';
-      const description = videoInfo.items[0].snippet.description || '';
-
-      const infoText = `${title}\n\n${description}`.trim();
-
-      if (infoText.length > 0) {
-        console.log('영상 정보를 사용하여 대체 콘텐츠 생성');
-        return infoText;
-      }
-
-      throw new Error('자막과 영상 정보 모두 추출할 수 없습니다.');
+      console.log('자막을 추출할 수 없습니다.');
+      throw new Error('이 동영상에서 자막을 추출할 수 없습니다.');
     }
 
     console.log(`자막 추출 성공: ${transcriptLines.length}개 라인`);
