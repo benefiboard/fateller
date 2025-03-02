@@ -99,164 +99,116 @@ async function fetchYoutubeTranscriptWithAPI(videoId: string): Promise<string> {
       throw new Error('비디오 정보를 찾을 수 없습니다.');
     }
 
-    // 4. TimedText API로 자막 가져오기 (JSON 형식 요청)
+    // 4. TimedText API로 자막 가져오기 (공개 자막인 경우)
     const lang = selectedCaption.snippet.language;
-    const timedTextUrl = `https://www.youtube.com/api/timedtext?lang=${lang}&v=${videoId}&fmt=json3`;
+    const timedTextUrl = `https://www.youtube.com/api/timedtext?lang=${lang}&v=${videoId}`;
 
     console.log(`TimedText API URL: ${timedTextUrl}`);
     const transcriptResponse = await fetch(timedTextUrl);
-    const transcriptContent = await transcriptResponse.text();
+    const transcriptXml = await transcriptResponse.text();
 
     // 응답 내용 로깅 (디버깅용)
-    console.log('TimedText API 응답 길이:', transcriptContent.length);
-    console.log('TimedText API 응답 일부:', transcriptContent.substring(0, 200));
+    console.log('TimedText API 응답 길이:', transcriptXml.length);
+    console.log('TimedText API 응답 일부:', transcriptXml.substring(0, 200));
 
-    // 5. 자막 파싱 (여러 형식 지원)
+    // 5. XML 파싱 - 개선된 방식
     let transcriptLines: string[] = [];
 
-    // JSON 형식 확인 및 파싱
-    if (transcriptContent.trim().startsWith('{')) {
-      console.log('JSON 형식 자막 감지');
-      try {
-        const jsonData = JSON.parse(transcriptContent);
+    // 방법 1: 정규 표현식으로 추출
+    const textRegex = /<text[^>]*>(.*?)<\/text>/g;
+    let match;
 
-        if (jsonData.events && Array.isArray(jsonData.events)) {
-          transcriptLines = jsonData.events
-            .filter((e: any) => e.segs && Array.isArray(e.segs))
-            .map((e: any) => e.segs.map((s: any) => s.utf8 || '').join(' '))
-            .filter((line: string) => line.trim().length > 0);
+    while ((match = textRegex.exec(transcriptXml)) !== null) {
+      // HTML 엔티티 디코딩
+      let text = match[1]
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .trim();
 
-          if (transcriptLines.length > 0) {
-            console.log(`JSON 자막 파싱 성공: ${transcriptLines.length}개 라인`);
-          }
-        }
-      } catch (jsonError) {
-        console.log('JSON 파싱 실패, XML 형식으로 시도합니다.');
+      if (text) {
+        transcriptLines.push(text);
       }
     }
 
-    // JSON 파싱 실패 또는 라인이 없는 경우 XML 형식 시도
-    if (transcriptLines.length === 0) {
-      console.log('XML 형식 자막 시도');
-      // XML 파싱 시도
-      const transcriptXml = transcriptContent;
-
-      // 방법 1: 정규 표현식으로 추출
-      const textRegex = /<text[^>]*>(.*?)<\/text>/g;
-      let match;
-
-      while ((match = textRegex.exec(transcriptXml)) !== null) {
-        // HTML 엔티티 디코딩
-        let text = match[1]
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .trim();
-
-        if (text) {
-          transcriptLines.push(text);
-        }
-      }
-
-      // 방법 1이 실패하면 방법 2: DOMParser 사용
-      if (transcriptLines.length === 0 && transcriptXml.length > 0) {
-        console.log('정규식 방법 실패, DOMParser 시도...');
-
-        try {
-          // 서버 환경에서는 JSDOM 사용
-          const dom = new JSDOM(transcriptXml);
-          const textElements = dom.window.document.querySelectorAll('text');
-
-          for (let i = 0; i < textElements.length; i++) {
-            const text = textElements[i].textContent?.trim();
-            if (text) {
-              transcriptLines.push(text);
-            }
-          }
-        } catch (parseError) {
-          console.error('JSDOM 파싱 실패:', parseError);
-        }
-      }
-
-      // 방법 3: 특수 케이스 - 자막이 다른 형식일 수 있음
-      if (transcriptLines.length === 0 && transcriptXml.includes('<transcript_list>')) {
-        console.log('자막 목록 형식 감지, 개별 자막 URL 추출 시도...');
-
-        // 사용 가능한 첫 번째 자막 트랙 URL 추출
-        const trackRegex = /<track[^>]*lang_code="([^"]*)"[^>]*>/g;
-        let trackMatch;
-        let langCode = null;
-
-        while ((trackMatch = trackRegex.exec(transcriptXml)) !== null) {
-          langCode = trackMatch[1];
-          if (langCode) break;
-        }
-
-        if (langCode) {
-          console.log(`개별 자막 트랙 찾음: ${langCode}`);
-          // 찾은 언어로 다시 시도
-          const newTimedTextUrl = `https://www.youtube.com/api/timedtext?lang=${langCode}&v=${videoId}`;
-
-          const newResponse = await fetch(newTimedTextUrl);
-          const newXml = await newResponse.text();
-
-          console.log(`새 자막 URL 응답 길이:`, newXml.length);
-
-          // 새 XML에서 자막 추출 재시도
-          const newTextRegex = /<text[^>]*>(.*?)<\/text>/g;
-          let newMatch;
-
-          while ((newMatch = newTextRegex.exec(newXml)) !== null) {
-            const text = newMatch[1]
-              .replace(/&amp;/g, '&')
-              .replace(/&lt;/g, '<')
-              .replace(/&gt;/g, '>')
-              .replace(/&quot;/g, '"')
-              .trim();
-            if (text) {
-              transcriptLines.push(text);
-            }
-          }
-        }
-      }
-    }
-
-    // 자동 생성 자막 시도 (다른 형식으로 다시 시도)
-    if (transcriptLines.length === 0) {
-      console.log('자동 생성 자막 시도...');
-      const asrUrl = `https://www.youtube.com/api/timedtext?lang=${lang}&v=${videoId}&kind=asr&fmt=json3`;
-      console.log(`자동 생성 자막 URL: ${asrUrl}`);
+    // 방법 1이 실패하면 방법 2: DOMParser 사용
+    if (transcriptLines.length === 0 && transcriptXml.length > 0) {
+      console.log('정규식 방법 실패, DOMParser 시도...');
 
       try {
-        const asrResponse = await fetch(asrUrl);
-        const asrContent = await asrResponse.text();
+        // 서버 환경에서는 JSDOM 사용
+        const dom = new JSDOM(transcriptXml);
+        const textElements = dom.window.document.querySelectorAll('text');
 
-        console.log('자동 생성 자막 응답 길이:', asrContent.length);
-
-        if (asrContent.trim().startsWith('{')) {
-          const jsonData = JSON.parse(asrContent);
-
-          if (jsonData.events && Array.isArray(jsonData.events)) {
-            transcriptLines = jsonData.events
-              .filter((e: any) => e.segs && Array.isArray(e.segs))
-              .map((e: any) => e.segs.map((s: any) => s.utf8 || '').join(' '))
-              .filter((line: string) => line.trim().length > 0);
-
-            if (transcriptLines.length > 0) {
-              console.log(`자동 생성 자막 파싱 성공: ${transcriptLines.length}개 라인`);
-            }
+        for (let i = 0; i < textElements.length; i++) {
+          const text = textElements[i].textContent?.trim();
+          if (text) {
+            transcriptLines.push(text);
           }
         }
-      } catch (asrError) {
-        console.log('자동 생성 자막 처리 실패');
+      } catch (parseError) {
+        console.error('JSDOM 파싱 실패:', parseError);
       }
     }
 
-    // 자막이 여전히 없으면 오류 발생
+    // 방법 3: 특수 케이스 - 자막이 다른 형식일 수 있음
+    if (transcriptLines.length === 0 && transcriptXml.includes('<transcript_list>')) {
+      console.log('자막 목록 형식 감지, 개별 자막 URL 추출 시도...');
+
+      // 사용 가능한 첫 번째 자막 트랙 URL 추출
+      const trackRegex = /<track[^>]*lang_code="([^"]*)"[^>]*>/g;
+      let trackMatch;
+      let langCode = null;
+
+      while ((trackMatch = trackRegex.exec(transcriptXml)) !== null) {
+        langCode = trackMatch[1];
+        if (langCode) break;
+      }
+
+      if (langCode) {
+        console.log(`개별 자막 트랙 찾음: ${langCode}`);
+        // 찾은 언어로 다시 시도
+        const newTimedTextUrl = `https://www.youtube.com/api/timedtext?lang=${langCode}&v=${videoId}`;
+
+        const newResponse = await fetch(newTimedTextUrl);
+        const newXml = await newResponse.text();
+
+        console.log(`새 자막 URL 응답 길이:`, newXml.length);
+
+        // 새 XML에서 자막 추출 재시도
+        const newTextRegex = /<text[^>]*>(.*?)<\/text>/g;
+        let newMatch;
+
+        while ((newMatch = newTextRegex.exec(newXml)) !== null) {
+          const text = newMatch[1]
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .trim();
+          if (text) {
+            transcriptLines.push(text);
+          }
+        }
+      }
+    }
+
+    // 자막이 여전히 없으면, 영상 제목과 설명으로 대체
     if (transcriptLines.length === 0) {
-      console.log('자막을 추출할 수 없습니다.');
-      throw new Error('이 동영상에서 자막을 추출할 수 없습니다.');
+      console.log('자막을 추출할 수 없어 영상 정보로 대체합니다.');
+
+      const title = videoInfo.items[0].snippet.title || '';
+      const description = videoInfo.items[0].snippet.description || '';
+
+      const infoText = `${title}\n\n${description}`.trim();
+
+      if (infoText.length > 0) {
+        console.log('영상 정보를 사용하여 대체 콘텐츠 생성');
+        return infoText;
+      }
+
+      throw new Error('자막과 영상 정보 모두 추출할 수 없습니다.');
     }
 
     console.log(`자막 추출 성공: ${transcriptLines.length}개 라인`);
