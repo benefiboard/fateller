@@ -234,6 +234,136 @@ function parseTimedTextXml(xml: string): string[] {
   return lines;
 }
 
+// Vercel 환경에서 Puppeteer를 사용하여 직접 YouTube 자막 가져오기
+async function fetchYouTubeSubtitlesWithPuppeteer(videoId: string): Promise<string> {
+  let browser = null;
+
+  try {
+    console.log('Puppeteer로 YouTube 자막 직접 추출 시작...');
+
+    // 브라우저 시작
+    const executablePath = await chromium.executablePath(
+      'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+    );
+
+    browser = await puppeteerCore.launch({
+      executablePath,
+      args: chromium.args,
+      headless: chromium.headless,
+      defaultViewport: chromium.defaultViewport,
+    });
+
+    const page = await browser.newPage();
+
+    // 페이지 로드 최적화
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const resourceType = req.resourceType();
+      if (['image', 'media', 'font', 'stylesheet'].includes(resourceType)) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
+    // YouTube 페이지 로드
+    console.log(`YouTube 페이지 로드 중: ${videoId}`);
+    await page.goto(`https://www.youtube.com/watch?v=${videoId}`, {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000,
+    });
+
+    // 페이지에서 자막 데이터 추출
+    console.log('페이지에서 자막 데이터 추출 시도...');
+    const subtitleData = await page.evaluate(() => {
+      // 동영상 플레이어 데이터 추출
+      function findPlayerResponse() {
+        // NodeList를 Array로 변환하여 순회
+        const scripts = Array.from(document.querySelectorAll('script'));
+        for (let i = 0; i < scripts.length; i++) {
+          const script = scripts[i];
+          const content = script.textContent || '';
+          if (content.includes('ytInitialPlayerResponse')) {
+            const match = content.match(/ytInitialPlayerResponse\s*=\s*({.+?});/);
+            if (match && match[1]) {
+              try {
+                return JSON.parse(match[1]);
+              } catch (e) {
+                console.error('JSON 파싱 오류');
+              }
+            }
+          }
+        }
+        return null;
+      }
+
+      const playerData = findPlayerResponse();
+      if (!playerData) return { error: '플레이어 데이터를 찾을 수 없습니다' };
+
+      // 자막 트랙 찾기
+      const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+      if (!captionTracks || !Array.isArray(captionTracks) || captionTracks.length === 0) {
+        return { error: '자막 트랙을 찾을 수 없습니다' };
+      }
+
+      // 한국어 또는 영어 자막 우선, 없으면 첫 번째 자막 사용
+      const track =
+        captionTracks.find((t) => t.languageCode === 'ko') ||
+        captionTracks.find((t) => t.languageCode === 'en') ||
+        captionTracks[0];
+
+      if (!track || !track.baseUrl) {
+        return { error: '자막 URL을 찾을 수 없습니다' };
+      }
+
+      return {
+        baseUrl: track.baseUrl,
+        languageCode: track.languageCode,
+        name: track.name?.simpleText || track.languageCode,
+      };
+    });
+
+    // 오류 확인
+    if ('error' in subtitleData) {
+      throw new Error(subtitleData.error);
+    }
+
+    // 자막 XML 가져오기
+    console.log(`자막 트랙 찾음: ${subtitleData.name}, 언어: ${subtitleData.languageCode}`);
+    const response = await page.goto(subtitleData.baseUrl, { waitUntil: 'networkidle0' });
+    if (!response) {
+      throw new Error('자막 URL 접근 실패: 응답이 없습니다');
+    }
+    const subtitleXml = await response.text();
+
+    // 브라우저 닫기
+    await browser.close();
+    browser = null;
+
+    // XML 파싱
+    console.log('자막 XML 파싱 중...');
+    const subtitleLines = parseTimedTextXml(subtitleXml);
+
+    if (!subtitleLines || subtitleLines.length === 0) {
+      throw new Error('자막을 파싱할 수 없습니다');
+    }
+
+    console.log(`자막 파싱 성공: ${subtitleLines.length}개 라인`);
+
+    // 텍스트 결합
+    return subtitleLines.join(' ').replace(/\s+/g, ' ').trim();
+  } catch (error: any) {
+    console.error('Puppeteer 자막 추출 오류:', error.message);
+
+    // 브라우저 세션 정리
+    if (browser) {
+      await browser.close();
+    }
+
+    throw error;
+  }
+}
+
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
@@ -283,54 +413,22 @@ export async function POST(request: NextRequest) {
       let error = null;
 
       // 환경에 따라 다른 방식으로 자막 추출
+      // Vercel 환경에서의 처리 부분 수정
       if (isVercelProduction()) {
-        // 브라우저 환경을 열어서 IP 우회
-        let browser = null;
         try {
-          console.log('Vercel 환경에서 Chromium 환경 시작...');
-          const executablePath = await chromium.executablePath(
-            'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
-          );
-
-          browser = await puppeteerCore.launch({
-            executablePath,
-            args: chromium.args,
-            headless: chromium.headless,
-            defaultViewport: chromium.defaultViewport,
-          });
-
-          // 브라우저 세션이 열린 상태에서 내부 라이브러리 실행
-          console.log('Chromium 세션 내에서 YoutubeTranscript 라이브러리 실행 시도');
-
-          // 브라우저는 열린 상태를 유지하면서 내부 라이브러리 실행
-          const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-
-          if (!transcript || transcript.length === 0) {
-            throw new Error('자막을 가져올 수 없습니다');
-          }
-
-          // 자막 텍스트 결합
-          transcriptText = transcript
-            .map((item) => item.text)
-            .join(' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-          console.log('Chromium 세션 내에서 YoutubeTranscript 라이브러리로 자막 추출 성공');
-        } catch (libError: any) {
-          console.log('내부 라이브러리 실패, 공식 API 시도:', libError.message);
+          // 1. Puppeteer로 직접 추출 시도
+          console.log('Vercel 환경에서 Puppeteer로 자막 직접 추출 시도');
+          transcriptText = await fetchYouTubeSubtitlesWithPuppeteer(videoId);
+          console.log('Puppeteer로 자막 추출 성공');
+        } catch (puppeteerError: any) {
+          // 2. 실패하면 공식 API 시도
+          console.log('Puppeteer 추출 실패, 공식 API 시도:', puppeteerError.message);
           try {
             transcriptText = await fetchYoutubeTranscriptWithAPI(videoId);
             console.log('YouTube API로 자막 추출 성공');
           } catch (apiError: any) {
             error = apiError;
             console.error('YouTube API 자막 추출 실패:', apiError.message);
-          }
-        } finally {
-          // 브라우저 세션 종료
-          if (browser) {
-            await browser.close();
-            console.log('Chromium 세션 종료');
           }
         }
       } else {
