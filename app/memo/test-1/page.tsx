@@ -16,7 +16,7 @@ export default function YoutubeTranscriptTest() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('');
-  const [debugInfo, setDebugInfo] = useState('');
+  const [debugData, setDebugData] = useState<any>(null);
 
   // 비디오 ID 추출 함수
   const extractVideoId = (url: string): string | null => {
@@ -37,7 +37,48 @@ export default function YoutubeTranscriptTest() {
     setVideoId(id || '');
   };
 
-  // 자막 가져오기 - 완전 클라이언트 측 접근법
+  // 자막 메타데이터 직접 가져오기
+  const getTranscriptMetadata = async () => {
+    // 유사 진짜 브라우저 요청을 생성
+    const url = `/api/youtube-proxy?url=${encodeURIComponent(
+      `https://www.youtube.com/watch?v=${videoId}&hl=ko`
+    )}`;
+    const response = await fetch(url);
+    const html = await response.text();
+
+    // JSON 데이터 추출을 위한 패턴
+    const patterns = [
+      /ytInitialPlayerResponse\s*=\s*({.+?});/,
+      /ytInitialPlayerResponse\s*=\s*({[\s\S]+?});/,
+      /\("ytInitialPlayerResponse"\)\s*&&\s*\("ytInitialPlayerResponse"\)\s*\|\|\s*({[\s\S]+?});/,
+    ];
+
+    let playerResponse = null;
+
+    // 각 패턴 시도
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        try {
+          playerResponse = JSON.parse(match[1]);
+          break;
+        } catch (e) {
+          console.error('JSON 파싱 실패:', e);
+        }
+      }
+    }
+
+    if (!playerResponse) {
+      throw new Error('YouTube 플레이어 응답을 찾을 수 없습니다');
+    }
+
+    // 디버깅을 위해 데이터 저장
+    setDebugData(playerResponse);
+
+    return playerResponse;
+  };
+
+  // 새로운 자막 추출 방법
   const fetchTranscript = async () => {
     if (!videoId) {
       setError('유효한 YouTube URL 또는 비디오 ID를 입력해주세요');
@@ -49,126 +90,54 @@ export default function YoutubeTranscriptTest() {
     setStatus('처리 시작...');
     setTranscript([]);
     setFullText('');
-    setDebugInfo('');
 
     try {
-      // 1. 임시 iframe 생성 (직접 브라우저에서 YouTube 로드)
-      setStatus('YouTube 페이지 로드 중...');
+      // 1. 메타데이터에서 자막 정보 가져오기
+      setStatus('YouTube 메타데이터 분석 중...');
+      const playerData = await getTranscriptMetadata();
 
-      // CORS 문제를 해결하기 위해 임베디드 플레이어 사용
-      const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.top = '-9999px';
-      document.body.appendChild(tempDiv);
+      // 2. 자막 URL 추출
+      const captions = playerData?.captions?.playerCaptionsTracklistRenderer;
 
-      // iframe으로 YouTube 플레이어 로드
-      const iframeHtml = `
-        <iframe 
-          id="youtube-transcript-iframe" 
-          width="560" 
-          height="315" 
-          src="https://www.youtube.com/embed/${videoId}?cc_load_policy=1&cc_lang_pref=ko" 
-          frameborder="0" 
-          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
-          allowfullscreen>
-        </iframe>
-      `;
-      tempDiv.innerHTML = iframeHtml;
+      if (!captions || !captions.captionTracks || captions.captionTracks.length === 0) {
+        throw new Error('이 동영상에는 자막이 없습니다');
+      }
 
-      // 3초 대기하여 자막 로드 (프레임이 로드되도록)
-      setStatus('자막 데이터 로드 중 (3초 대기)...');
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // 3. 한국어 또는 영어 자막 선택 (있는 경우)
+      const tracks = captions.captionTracks;
+      let selectedTrack = tracks[0]; // 기본값
 
-      // 2. YouTube API 직접 호출
-      setStatus('YouTube 자막 API 직접 호출 중...');
+      // 선호 언어 순서
+      const preferredLangs = ['ko', 'en'];
 
-      // 다양한 URL 형식 시도
-      const urls = [
-        `/api/youtube-proxy?url=${encodeURIComponent(
-          `https://www.youtube.com/api/timedtext?lang=ko&v=${videoId}`
-        )}`,
-        `/api/youtube-proxy?url=${encodeURIComponent(
-          `https://www.youtube.com/api/timedtext?lang=en&v=${videoId}`
-        )}`,
-        `/api/youtube-proxy?url=${encodeURIComponent(
-          `https://www.youtube.com/api/timedtext?v=${videoId}&kind=asr&lang=ko`
-        )}`,
-        `/api/youtube-proxy?url=${encodeURIComponent(
-          `https://www.youtube.com/api/timedtext?v=${videoId}&kind=asr`
-        )}`,
-      ];
-
-      let transcriptBody = '';
-      let successUrl = '';
-
-      // 각 URL 시도
-      for (const url of urls) {
-        try {
-          setStatus(`URL 시도 중: ${url}`);
-          const response = await fetch(url);
-
-          if (response.ok) {
-            const text = await response.text();
-            if (text && text.includes('<text')) {
-              transcriptBody = text;
-              successUrl = url;
-              break;
-            }
-          }
-        } catch (e) {
-          console.error('URL 시도 실패:', url, e);
+      for (const lang of preferredLangs) {
+        const track = tracks.find((t: any) => t.languageCode === lang);
+        if (track) {
+          selectedTrack = track;
+          break;
         }
       }
 
-      // 임시 요소 제거
-      document.body.removeChild(tempDiv);
+      setStatus(`자막 다운로드 중 (${selectedTrack.languageCode})...`);
 
-      // 자막을 찾을 수 없으면 특별한 접근법 시도
-      if (!transcriptBody) {
-        setStatus('일반 자막을 찾을 수 없어 대체 방법 시도 중...');
+      // 4. 자막 내용 가져오기
+      const transcriptUrl = selectedTrack.baseUrl;
+      const proxyUrl = `/api/youtube-proxy?url=${encodeURIComponent(transcriptUrl)}`;
 
-        // YouTube 비디오 페이지의 HTML 소스에서 직접 데이터 추출 시도
-        const webPageUrl = `/api/youtube-proxy?url=${encodeURIComponent(
-          `https://www.youtube.com/watch?v=${videoId}&cc_lang_pref=ko&cc_load_policy=1`
-        )}`;
-        const webPageResponse = await fetch(webPageUrl);
-        const webPageHtml = await webPageResponse.text();
+      const transcriptResponse = await fetch(proxyUrl);
+      const transcriptXml = await transcriptResponse.text();
 
-        // 자막 URL을 직접 찾는 정규식 시도
-        const captionsRegex = /"captionTracks":\s*\[\s*\{\s*"baseUrl":\s*"([^"]+)"/;
-        const match = webPageHtml.match(captionsRegex);
-
-        if (match && match[1]) {
-          const captionUrl = match[1].replace(/\\u0026/g, '&');
-          setStatus(`자막 URL 발견: ${captionUrl.substring(0, 50)}...`);
-
-          const captionResponse = await fetch(
-            `/api/youtube-proxy?url=${encodeURIComponent(captionUrl)}`
-          );
-          const captionText = await captionResponse.text();
-
-          if (captionText && captionText.includes('<text')) {
-            transcriptBody = captionText;
-            successUrl = captionUrl;
-          }
-        }
+      if (!transcriptXml || transcriptXml.length === 0) {
+        throw new Error('자막 데이터를 다운로드할 수 없습니다');
       }
 
-      if (!transcriptBody) {
-        throw new Error(
-          '모든 자막 추출 방법이 실패했습니다. 이 동영상에는 자막이 없거나 접근할 수 없습니다.'
-        );
-      }
-
-      setStatus(`자막 데이터 추출 성공 (URL: ${successUrl})`);
-
-      // XML 파싱
+      // 5. XML 파싱
+      setStatus('자막 파싱 중...');
       const regex = /<text start="([^"]*)" dur="([^"]*)">([^<]*)<\/text>/g;
       const results: TranscriptItem[] = [];
       let match;
 
-      while ((match = regex.exec(transcriptBody)) !== null) {
+      while ((match = regex.exec(transcriptXml)) !== null) {
         const text = match[3]
           .replace(/&amp;/g, '&')
           .replace(/&lt;/g, '<')
@@ -186,10 +155,10 @@ export default function YoutubeTranscriptTest() {
       }
 
       if (results.length === 0) {
-        throw new Error('자막을 파싱할 수 없습니다.');
+        throw new Error('자막을 파싱할 수 없습니다');
       }
 
-      // 결과 설정
+      // 6. 결과 설정
       setTranscript(results);
       setFullText(results.map((item) => item.text).join(' '));
       setStatus(`완료: ${results.length}개 자막 라인 추출됨`);
@@ -251,12 +220,35 @@ export default function YoutubeTranscriptTest() {
         </>
       )}
 
+      {debugData && (
+        <div className="mt-8">
+          <details className="border border-gray-200 rounded-md p-2">
+            <summary className="font-medium cursor-pointer">디버그 데이터 (확장)</summary>
+            <div className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-x-auto">
+              <ul>
+                <li>비디오 ID: {videoId}</li>
+                <li>응답 데이터 존재: {debugData ? '예' : '아니오'}</li>
+                <li>자막 데이터 존재: {debugData?.captions ? '예' : '아니오'}</li>
+                {debugData?.captions?.playerCaptionsTracklistRenderer?.captionTracks && (
+                  <li>
+                    사용 가능한 자막 언어:
+                    {debugData.captions.playerCaptionsTracklistRenderer.captionTracks
+                      .map((t: any) => t.languageCode)
+                      .join(', ')}
+                  </li>
+                )}
+              </ul>
+            </div>
+          </details>
+        </div>
+      )}
+
       <div className="mt-6 text-gray-500 text-sm">
-        <p className="font-medium">주요 특징:</p>
+        <p className="font-medium">실패한 경우 다음을 시도해보세요:</p>
         <ul className="list-disc ml-6 space-y-1">
-          <li>클라이언트 측에서 YouTube 페이지 분석</li>
-          <li>다양한 자막 접근 방법 시도</li>
-          <li>Vercel 환경에서도 작동</li>
+          <li>자막이 있는 다른 영상 시도 (예: 유명 뮤직비디오, 공식 채널 영상)</li>
+          <li>영어 자막이 있는 영상 시도</li>
+          <li>URL 전체 복사 (https://www.youtube.com/watch?v=ID 형식)</li>
         </ul>
       </div>
     </div>

@@ -1,15 +1,15 @@
+// /app/api/youtube-proxy/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 
-// CORS 헤더 설정을 위한 헬퍼 함수
+// CORS 헤더 설정
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 }
 
-// OPTIONS 요청 처리 (CORS preflight)
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders() });
 }
@@ -28,25 +28,32 @@ export async function GET(request: NextRequest) {
 
     console.log(`프록시 요청: ${youtubeUrl}`);
 
-    // 더 많은 브라우저 헤더 추가
-    const headers = {
+    // Record<string, string> 타입을 사용하여 동적 헤더 추가 허용
+    const headers: Record<string, string> = {
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-      Origin: 'https://www.youtube.com',
-      Referer: 'https://www.youtube.com/',
       Accept:
-        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-      'Sec-Fetch-Site': 'same-origin',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Dest': 'document',
-      'sec-ch-ua': '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="99"',
-      'sec-ch-ua-mobile': '?0',
-      'sec-ch-ua-platform': '"Windows"',
-      'Cache-Control': 'max-age=0',
-      'Upgrade-Insecure-Requests': '1',
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
       Connection: 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+      'Cache-Control': 'max-age=0',
+      Cookie: 'CONSENT=YES+; PREF=hl=ko&gl=KR',
     };
+
+    // 요청 대상에 따라 헤더 추가
+    if (youtubeUrl.includes('youtube.com/watch')) {
+      headers['Referer'] = 'https://www.google.com/';
+      headers['Sec-Fetch-Dest'] = 'document';
+      headers['Sec-Fetch-Mode'] = 'navigate';
+      headers['Sec-Fetch-Site'] = 'cross-site';
+    } else if (youtubeUrl.includes('timedtext')) {
+      headers['Referer'] = 'https://www.youtube.com/';
+      headers['Origin'] = 'https://www.youtube.com';
+      headers['Sec-Fetch-Dest'] = 'empty';
+      headers['Sec-Fetch-Mode'] = 'cors';
+      headers['Sec-Fetch-Site'] = 'same-site';
+    }
 
     // YouTube로 요청 전송
     const response = await fetch(youtubeUrl, { headers });
