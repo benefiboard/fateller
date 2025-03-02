@@ -16,10 +16,11 @@ export default function YoutubeTranscriptTest() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
 
   // 비디오 ID 추출 함수
   const extractVideoId = (url: string): string | null => {
-    if (url.length === 11) return url; // 이미 ID인 경우
+    if (url.length === 11) return url;
 
     const regex =
       /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
@@ -48,6 +49,7 @@ export default function YoutubeTranscriptTest() {
     setStatus('처리 시작...');
     setTranscript([]);
     setFullText('');
+    setDebugInfo('');
 
     try {
       // 1. 비디오 페이지 가져오기
@@ -64,25 +66,83 @@ export default function YoutubeTranscriptTest() {
       const videoPageBody = await videoPageResponse.text();
       setStatus('캡션 데이터 분석 중...');
 
-      // 2. 캡션 데이터 추출
+      // 디버깅 정보 저장
+      const pagePreview = videoPageBody.substring(0, 1000) + '...';
+      setDebugInfo(`페이지 미리보기: ${pagePreview}`);
+
+      // 여러 패턴 시도
+      let captions = null;
+
+      // 방법 1: 기존 방식
       const splittedHTML = videoPageBody.split('"captions":');
-
-      if (splittedHTML.length <= 1) {
-        throw new Error('자막 정보를 찾을 수 없습니다');
+      if (splittedHTML.length > 1) {
+        try {
+          const captionsJSON = splittedHTML[1].split(',"videoDetails')[0].replace(/\n/g, '');
+          captions = JSON.parse(captionsJSON)?.['playerCaptionsTracklistRenderer'];
+          setStatus('방법 1로 자막 정보 추출 성공');
+        } catch (e) {
+          console.log('방법 1 실패:', e);
+        }
       }
 
-      // 3. JSON 파싱
-      const captionsJSON = splittedHTML[1].split(',"videoDetails')[0].replace(/\n/g, '');
-      let captions;
-
-      try {
-        captions = JSON.parse(captionsJSON)?.['playerCaptionsTracklistRenderer'];
-      } catch (e) {
-        throw new Error('자막 정보 파싱 실패');
+      // 방법 2: ytInitialPlayerResponse 사용
+      if (!captions) {
+        try {
+          const playerResponseMatch = videoPageBody.match(/ytInitialPlayerResponse\s*=\s*({.+?});/);
+          if (playerResponseMatch && playerResponseMatch[1]) {
+            const playerResponse = JSON.parse(playerResponseMatch[1]);
+            captions = playerResponse?.captions?.playerCaptionsTracklistRenderer;
+            setStatus('방법 2로 자막 정보 추출 성공');
+          }
+        } catch (e) {
+          console.log('방법 2 실패:', e);
+        }
       }
 
+      // 방법 3: 직접 timedtext API 사용
+      if (!captions) {
+        try {
+          // timedtext API 직접 사용
+          const timedTextUrl = `/api/youtube-proxy?url=${encodeURIComponent(
+            `https://www.youtube.com/api/timedtext?lang=ko&v=${videoId}`
+          )}`;
+          const timedTextResponse = await fetch(timedTextUrl);
+          const timedTextBody = await timedTextResponse.text();
+
+          if (timedTextBody && timedTextBody.includes('<text')) {
+            // XML 응답이 있으면 직접 처리
+            const regex = /<text start="([^"]*)" dur="([^"]*)">([^<]*)<\/text>/g;
+            const results: TranscriptItem[] = [];
+            let match;
+
+            while ((match = regex.exec(timedTextBody)) !== null) {
+              results.push({
+                text: match[3]
+                  .replace(/&amp;/g, '&')
+                  .replace(/&lt;/g, '<')
+                  .replace(/&gt;/g, '>')
+                  .trim(),
+                duration: parseFloat(match[2]),
+                offset: parseFloat(match[1]),
+              });
+            }
+
+            if (results.length > 0) {
+              setTranscript(results);
+              setFullText(results.map((item) => item.text).join(' '));
+              setStatus(`방법 3으로 자막 추출 성공: ${results.length}개 라인`);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (e) {
+          console.log('방법 3 실패:', e);
+        }
+      }
+
+      // 자막 정보가 없으면 에러
       if (!captions || !('captionTracks' in captions) || captions.captionTracks.length === 0) {
-        throw new Error('이 동영상에는 자막이 없습니다');
+        throw new Error('이 동영상에는 자막이 없거나 추출할 수 없습니다');
       }
 
       // 4. 언어 선택 (한국어 우선, 없으면 첫 번째 언어)
@@ -189,16 +249,28 @@ export default function YoutubeTranscriptTest() {
             readOnly
             className="w-full h-48 p-3 border border-gray-300 rounded-md font-sans resize-y"
           />
-
-          <div className="mt-4 text-gray-600 text-sm">
-            <p>* 이 기능은 각 사용자의 IP를 통해 YouTube에 접근하여 자막을 추출합니다.</p>
-            <p>
-              * 모든 처리는 클라이언트-사이드에서 이루어지므로 Vercel 서버 IP 차단 문제를 피할 수
-              있습니다.
-            </p>
-          </div>
         </>
       )}
+
+      {debugInfo && (
+        <div className="mt-8">
+          <details className="border border-gray-200 rounded-md p-2">
+            <summary className="font-medium cursor-pointer">디버그 정보 (확장)</summary>
+            <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-x-auto whitespace-pre-wrap">
+              {debugInfo}
+            </pre>
+          </details>
+        </div>
+      )}
+
+      <div className="mt-6 text-gray-500 text-sm">
+        <p>디버깅 팁:</p>
+        <ol className="list-decimal ml-6 space-y-1">
+          <li>자막이 있는 영상을 먼저 시도해보세요</li>
+          <li>인기 있는 영상(조회수 많은)이 자막을 가져올 확률이 높습니다</li>
+          <li>오류가 지속되면 비디오 ID를 확인하세요</li>
+        </ol>
+      </div>
     </div>
   );
 }
