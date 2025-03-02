@@ -4,7 +4,7 @@ import puppeteerCore from 'puppeteer-core';
 import chromium from '@sparticuz/chromium-min';
 import { Readability } from '@mozilla/readability';
 import { JSDOM } from 'jsdom';
-import { YoutubeTranscript } from 'youtube-transcript';
+import { YoutubeTranscript } from '@/app/memo/utils/ytTranscript';
 
 // 크롬 실행 경로 (로컬 개발용)
 const CHROME_PATH =
@@ -194,23 +194,6 @@ async function fetchYoutubeTranscriptWithAPI(videoId: string): Promise<string> {
       }
     }
 
-    // 자막이 여전히 없으면, 영상 제목과 설명으로 대체
-    // if (transcriptLines.length === 0) {
-    //   console.log('자막을 추출할 수 없어 영상 정보로 대체합니다.');
-
-    //   const title = videoInfo.items[0].snippet.title || '';
-    //   const description = videoInfo.items[0].snippet.description || '';
-
-    //   const infoText = `${title}\n\n${description}`.trim();
-
-    //   if (infoText.length > 0) {
-    //     console.log('영상 정보를 사용하여 대체 콘텐츠 생성');
-    //     return infoText;
-    //   }
-
-    //   throw new Error('자막과 영상 정보 모두 추출할 수 없습니다.');
-    // }
-
     if (transcriptLines.length === 0) {
       console.log('자막을 추출할 수 없습니다.');
       throw new Error('이 동영상에서 자막을 추출할 수 없습니다.');
@@ -301,14 +284,33 @@ export async function POST(request: NextRequest) {
 
       // 환경에 따라 다른 방식으로 자막 추출
       if (isVercelProduction()) {
-        // Vercel 환경: 공식 YouTube API 사용
+        // Vercel 환경: 먼저 YoutubeTranscript 라이브러리 시도, 실패시 공식 API 사용
         try {
-          console.log('Vercel 환경 감지, YouTube API 사용');
-          transcriptText = await fetchYoutubeTranscriptWithAPI(videoId);
-          console.log('YouTube API로 자막 추출 성공');
-        } catch (apiError: any) {
-          error = apiError;
-          console.error('YouTube API 자막 추출 실패:', apiError.message);
+          console.log('Vercel 환경에서 YoutubeTranscript 라이브러리 먼저 시도');
+          const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+
+          if (!transcript || transcript.length === 0) {
+            throw new Error('자막을 가져올 수 없습니다');
+          }
+
+          // 자막 텍스트 결합
+          transcriptText = transcript
+            .map((item) => item.text)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          console.log('Vercel 환경에서 YoutubeTranscript 라이브러리로 자막 추출 성공');
+        } catch (libError: any) {
+          // YoutubeTranscript 실패 시 공식 API로 대체 시도
+          console.log('YoutubeTranscript 라이브러리 실패, 공식 API 시도:', libError.message);
+          try {
+            transcriptText = await fetchYoutubeTranscriptWithAPI(videoId);
+            console.log('YouTube 공식 API로 자막 추출 성공');
+          } catch (apiError: any) {
+            error = apiError;
+            console.error('YouTube API 자막 추출 실패:', apiError.message);
+          }
         }
       } else {
         // 로컬 환경: YoutubeTranscript 라이브러리 사용
