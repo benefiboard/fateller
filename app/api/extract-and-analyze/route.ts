@@ -284,9 +284,25 @@ export async function POST(request: NextRequest) {
 
       // 환경에 따라 다른 방식으로 자막 추출
       if (isVercelProduction()) {
-        // Vercel 환경: 먼저 YoutubeTranscript 라이브러리 시도, 실패시 공식 API 사용
+        // 브라우저 환경을 열어서 IP 우회
+        let browser = null;
         try {
-          console.log('Vercel 환경에서 YoutubeTranscript 라이브러리 먼저 시도');
+          console.log('Vercel 환경에서 Chromium 환경 시작...');
+          const executablePath = await chromium.executablePath(
+            'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+          );
+
+          browser = await puppeteerCore.launch({
+            executablePath,
+            args: chromium.args,
+            headless: chromium.headless,
+            defaultViewport: chromium.defaultViewport,
+          });
+
+          // 브라우저 세션이 열린 상태에서 내부 라이브러리 실행
+          console.log('Chromium 세션 내에서 YoutubeTranscript 라이브러리 실행 시도');
+
+          // 브라우저는 열린 상태를 유지하면서 내부 라이브러리 실행
           const transcript = await YoutubeTranscript.fetchTranscript(videoId);
 
           if (!transcript || transcript.length === 0) {
@@ -300,20 +316,25 @@ export async function POST(request: NextRequest) {
             .replace(/\s+/g, ' ')
             .trim();
 
-          console.log('Vercel 환경에서 YoutubeTranscript 라이브러리로 자막 추출 성공');
+          console.log('Chromium 세션 내에서 YoutubeTranscript 라이브러리로 자막 추출 성공');
         } catch (libError: any) {
-          // YoutubeTranscript 실패 시 공식 API로 대체 시도
-          console.log('YoutubeTranscript 라이브러리 실패, 공식 API 시도:', libError.message);
+          console.log('내부 라이브러리 실패, 공식 API 시도:', libError.message);
           try {
             transcriptText = await fetchYoutubeTranscriptWithAPI(videoId);
-            console.log('YouTube 공식 API로 자막 추출 성공');
+            console.log('YouTube API로 자막 추출 성공');
           } catch (apiError: any) {
             error = apiError;
             console.error('YouTube API 자막 추출 실패:', apiError.message);
           }
+        } finally {
+          // 브라우저 세션 종료
+          if (browser) {
+            await browser.close();
+            console.log('Chromium 세션 종료');
+          }
         }
       } else {
-        // 로컬 환경: YoutubeTranscript 라이브러리 사용
+        // 로컬 환경: 기존과 동일하게 YoutubeTranscript 라이브러리 사용
         try {
           console.log('로컬 환경, YoutubeTranscript 라이브러리 사용');
           const transcript = await YoutubeTranscript.fetchTranscript(videoId);
