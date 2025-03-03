@@ -130,14 +130,29 @@ export async function GET(request: NextRequest) {
     const videoInfo = await yt.getInfo(videoId);
 
     // 자막 정보 가져오기
-    const transcriptInfo = await videoInfo.getTranscript();
+    try {
+      const transcriptInfo = await videoInfo.getTranscript();
 
-    // 자막 데이터 반환
-    return NextResponse.json({
-      videoTitle: videoInfo.basic_info.title,
-      selectedLanguage: transcriptInfo.selectedLanguage,
-      transcript: transcriptInfo.transcript.content.body.initial_segments,
-    });
+      // null 체크 추가 - 옵셔널 체이닝 사용
+      const segments = transcriptInfo?.transcript?.content?.body?.initial_segments || [];
+
+      // 자막 데이터 반환
+      return NextResponse.json({
+        videoTitle: videoInfo.basic_info.title,
+        selectedLanguage: transcriptInfo?.selectedLanguage || '',
+        transcript: segments,
+      });
+    } catch (transcriptError) {
+      console.error('Transcript error:', transcriptError);
+
+      // 자막을 가져오지 못한 경우에도 동영상 제목은 반환
+      return NextResponse.json({
+        videoTitle: videoInfo.basic_info.title,
+        selectedLanguage: '',
+        transcript: [],
+        transcriptError: '이 동영상에서 자막을 가져올 수 없습니다',
+      });
+    }
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json({ error: '자막을 가져올 수 없습니다' }, { status: 500 });
