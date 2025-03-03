@@ -25,6 +25,7 @@ const nextConfig = {
       },
     ],
   },
+  transpilePackages: ['youtube-transcript-api', 'cheerio'],
 };
 
 const withPWAConfig = withPWA({
