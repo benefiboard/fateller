@@ -102,7 +102,8 @@ export default function Home() {
   const [videoId, setVideoId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [transcriptData, setTranscriptData] = useState<any>(null);
+  const [transcript, setTranscript] = useState('');
+  const [videoTitle, setVideoTitle] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +111,8 @@ export default function Home() {
 
     setIsLoading(true);
     setError('');
-    setTranscriptData(null);
+    setTranscript('');
+    setVideoTitle('');
 
     try {
       const response = await fetch(`/api/iitranscript?videoId=${encodeURIComponent(videoId)}`);
@@ -120,21 +122,36 @@ export default function Home() {
         throw new Error(data.error || '자막을 가져오는데 실패했습니다');
       }
 
-      setTranscriptData(data);
-      console.log('받아온 자막 데이터:', data); // 콘솔에 데이터 출력
+      // 비디오 제목 설정
+      setVideoTitle(data.videoTitle || '제목 없음');
+
+      // 각 세그먼트의 text 부분만 추출해서 연결
+      if (data.transcript && Array.isArray(data.transcript)) {
+        const fullText = data.transcript
+          .map((segment: any) => {
+            // 여러 형태의 자막 데이터 구조 처리
+            if (segment.snippet && segment.snippet.text) {
+              return segment.snippet.text;
+            } else if (segment.text) {
+              return segment.text;
+            } else if (segment.snippet && typeof segment.snippet === 'object') {
+              // 중첩된 객체 구조 처리
+              return segment.snippet.text || '';
+            }
+            return '';
+          })
+          .filter((text: string) => text.trim() !== '') // 빈 문자열 제거
+          .join(' '); // 공백으로 연결
+
+        setTranscript(fullText);
+      } else {
+        setError('자막 데이터가 없습니다');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '오류가 발생했습니다');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // 시간을 00:00 형식으로 변환
-  const formatTime = (ms: number): string => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -166,28 +183,12 @@ export default function Home() {
         </div>
       )}
 
-      {transcriptData && (
-        <div>
-          <h2 className="text-xl font-semibold mb-2">{transcriptData.videoTitle}</h2>
-          <p className="mb-4">언어: {transcriptData.selectedLanguage}</p>
+      {videoTitle && <h2 className="text-xl font-semibold mb-2">{videoTitle}</h2>}
 
-          <div className="border rounded p-4 bg-gray-50 max-h-[500px] overflow-y-auto">
-            <h3 className="font-medium mb-2">자막 내용:</h3>
-
-            {transcriptData.transcript &&
-              transcriptData.transcript.map((segment: any, index: number) => (
-                <div key={index} className="mb-2 p-2 border-b">
-                  <div className="text-sm text-gray-500 mb-1">
-                    {formatTime(segment.start_ms)} - {formatTime(segment.end_ms)}
-                  </div>
-                  <p>{segment.text}</p>
-                </div>
-              ))}
-
-            {(!transcriptData.transcript || transcriptData.transcript.length === 0) && (
-              <p>자막 데이터가 없습니다.</p>
-            )}
-          </div>
+      {transcript && (
+        <div className="border rounded p-4 bg-gray-50 mt-4">
+          <h3 className="font-medium mb-2">전체 자막 내용:</h3>
+          <div className="whitespace-pre-line">{transcript}</div>
         </div>
       )}
     </main>
