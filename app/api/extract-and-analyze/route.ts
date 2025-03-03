@@ -299,8 +299,9 @@ export async function POST(request: NextRequest) {
         // Vercel 환경: 공식 YouTube API 사용
         try {
           console.log('Vercel 환경 감지, YouTube API 사용');
+          //transcriptText = await TranscriptAPI.getTranscript(videoId);
           transcriptText = await fetchYoutubeTranscriptWithAPI(videoId);
-          console.log('YouTube API로 자막 추출 성공');
+          console.log('YouTube API로 자막 추출 성공', transcriptText);
         } catch (apiError: any) {
           error = apiError;
           console.error('YouTube API 자막 추출 실패:', apiError.message);
