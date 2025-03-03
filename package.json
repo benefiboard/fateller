@@ -75,6 +75,7 @@
     "uuid": "^11.0.5",
     "youtube-transcript": "^1.2.1",
     "youtube-transcript-api": "^1.1.2",
+    "youtubei.js": "^13.1.0",
     "zod": "^3.24.1",
     "zustand": "^5.0.2"
   },
