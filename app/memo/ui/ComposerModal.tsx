@@ -1,3 +1,5 @@
+//app/memo/ui/ComposerModal.tsx
+
 import React, { useState, useEffect } from 'react';
 import { X, Image, Video, Loader, AlertCircle } from 'lucide-react';
 import { Memo } from '../utils/types';
