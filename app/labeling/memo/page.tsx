@@ -1109,14 +1109,14 @@ const TwitterStyleMemo: React.FC = () => {
                       </button>
 
                       {/* AI 재분석 버튼 */}
-                      <button
+                      {/* <button
                         onClick={() => memo.id && handleOpenAnalyzeEdit(memo)}
                         className="text-gray-400 hover:text-blue-500 flex items-center text-xs"
                         title="AI 재분석"
                       >
                         <RefreshCw size={16} className="mr-1" />
                         <span>재분석</span>
-                      </button>
+                      </button> */}
 
                       {/* 삭제 버튼 */}
                       <button

@@ -67,19 +67,19 @@ const MemoItem: React.FC<MemoItemProps> = ({
                 className="text-gray-400 hover:text-teal-500 flex items-center text-xs"
                 title="직접 수정"
               >
-                <Edit size={16} className="mr-1" />
+                <Edit size={16} className="mr-[2px]" />
                 <span>수정</span>
               </button>
 
               {/* AI 재분석 버튼 */}
-              <button
+              {/* <button
                 onClick={() => onAnalyze(memo)}
                 className="text-gray-400 hover:text-blue-500 flex items-center text-xs"
                 title="AI 재분석"
               >
                 <RefreshCw size={16} className="mr-1" />
                 <span>재분석</span>
-              </button>
+              </button> */}
 
               {/* 삭제 버튼 */}
               <button
@@ -87,7 +87,7 @@ const MemoItem: React.FC<MemoItemProps> = ({
                 className="text-gray-400 hover:text-red-500 flex items-center text-xs"
                 title="삭제"
               >
-                <Trash2 size={16} className="mr-1" />
+                <Trash2 size={16} className="mr-[2px]" />
                 <span>삭제</span>
               </button>
             </div>
