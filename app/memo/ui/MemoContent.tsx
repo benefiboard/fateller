@@ -31,10 +31,24 @@ const MemoContent: React.FC<MemoContentProps> = ({
     }
   };
 
+  // HTML 태그를 처리하는 함수 추가
+  const processStrongTags = (text: string): string => {
+    // <strong> 태그를 Tailwind CSS 클래스로 변환
+    return text.replace(
+      /<hi>(.*?)<\/hi>/g,
+      '<span class="font-semibold  underline px-[2px]">$1</span>'
+    );
+  };
+
+  // renderHTML 함수 추가
+  const renderHTML = (htmlString: string) => {
+    return <span dangerouslySetInnerHTML={{ __html: processStrongTags(htmlString) }} />;
+  };
+
   return (
     <>
       <h2 className="font-bold text-lg mt-1">{memo.title}</h2>
-      <p className="mt-2 text-gray-700">{memo.tweet_main}</p>
+      <p className="mt-2 text-gray-700">{renderHTML(memo.tweet_main)}</p>
       <hr className="border-1 border-gray-200 my-2" />
 
       {/* 버튼 영역 - 항상 같은 위치에 고정 */}
@@ -110,7 +124,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             <div className="mt-2">
               {memo.thread.map((tweet, tweetIndex) => (
                 <p key={tweetIndex} className="text-gray-700 text-sm mb-2">
-                  {tweet}
+                  {renderHTML(tweet)}
                 </p>
               ))}
             </div>
