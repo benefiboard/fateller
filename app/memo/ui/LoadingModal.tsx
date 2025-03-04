@@ -1,8 +1,7 @@
-// app/memo/ui/LoadingModal.tsx
 'use client';
 
+import { Brain } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { Loader } from 'lucide-react';
 
 interface LoadingModalProps {
   isOpen: boolean;
@@ -48,47 +47,43 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg w-full max-w-md py-8 px-6 flex flex-col items-center">
-        {/* 로딩 아이콘 */}
-        <div className="w-16 h-16 relative mb-6">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white/90 rounded-2xl w-full max-w-md py-8 px-6 shadow-lg flex flex-col items-center">
+        {/* 애플 스타일 로딩 아이콘 */}
+        <div className="w-20 h-20 relative mb-8">
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-10 h-10 rounded-full border-4 border-teal-500 border-t-transparent animate-spin"></div>
+            {/* 그라데이션 링 애니메이션 */}
+            <div className="w-16 h-16 rounded-full border-[3px] border-gray-200 border-t-gray-500 animate-spin opacity-80"></div>
           </div>
+          {/* 애니메이션 중앙 */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-teal-500">🧠</span>
+            <Brain size={32} className="text-gray-500 animate-pulse" />
           </div>
         </div>
 
-        {/* 현재 단계 타이틀 및 설명 */}
-        <div className="text-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-1">
+        {/* 현재 단계 타이틀 및 설명 - 애플의 SF Pro Display 스타일 폰트 */}
+        <div className="text-center mb-8">
+          <h3 className="text-xl font-medium text-gray-900 mb-2 tracking-tight">
             {showExtendedMessage ? '조금만 더 기다려 주세요' : steps[currentStep].title}
           </h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-500 font-light tracking-wide">
             {showExtendedMessage ? '거의 완성됐어요!' : steps[currentStep].description}
           </p>
         </div>
 
-        {/* 단계 표시기 */}
-        <div className="flex space-x-2 mb-2">
-          {steps.map((_, index) => (
+        {/* 단계 진행 바 - 애플의 선형 진행 표시 스타일 */}
+        <div className="w-full max-w-xs mb-4">
+          <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
             <div
-              key={index}
-              className={`w-2 h-2 rounded-full ${
-                index === currentStep
-                  ? 'bg-teal-500'
-                  : index < currentStep
-                  ? 'bg-teal-300'
-                  : 'bg-gray-200'
-              }`}
+              className="h-full bg-gray-500 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
             ></div>
-          ))}
+          </div>
         </div>
 
-        {/* 단계 번호 */}
-        <div className="text-xs text-gray-400">
-          단계 {currentStep + 1}/{steps.length}
+        {/* 단계 번호 - 미니멀한 스타일 */}
+        <div className="text-xs text-gray-400 font-light">
+          {currentStep + 1} / {steps.length}
         </div>
       </div>
     </div>
