@@ -1,4 +1,5 @@
 // 타입 정의
+import OnboardingScreen from './../../start/Start';
 export interface MemoLabeling {
   category: string;
   keywords: string[];
@@ -30,6 +31,7 @@ export interface Memo {
   retweets: number;
   replies: number;
   original_text?: string;
+  original_url?: string;
 }
 
 export interface NotificationType {

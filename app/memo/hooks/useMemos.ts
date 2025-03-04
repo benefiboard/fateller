@@ -112,7 +112,9 @@ export const useMemos = () => {
       }
 
       // 저장할 원본 텍스트 결정 - URL이면 URL 자체를 저장, 아니면 추출된 텍스트
-      const originalTextToSave = options.isUrl ? options.sourceUrl : text;
+      //const originalTextToSave = options.isUrl ? options.sourceUrl : text;
+      const originalTextToSave = text; // 항상 추출된 텍스트나 사용자가 입력한 텍스트 저장
+      const originalUrl = options.isUrl ? options.sourceUrl : null; // URL이면 URL 저장, 아니면 null
 
       // 새 메모 생성 (Supabase)
       const { data, error } = await supabase
@@ -123,7 +125,8 @@ export const useMemos = () => {
           tweet_main: aiResponse.tweet_main,
           hashtags: aiResponse.hashtags || [],
           thread: aiResponse.thread || [],
-          original_text: originalTextToSave, // URL 또는 원본 텍스트
+          original_text: originalTextToSave,
+          original_url: originalUrl || '', // URL 또는 원본 텍스트
           category: aiResponse.labeling?.category || '미분류',
           keywords: aiResponse.labeling?.keywords || [],
           key_sentence: aiResponse.labeling?.key_sentence || '',
@@ -186,7 +189,9 @@ export const useMemos = () => {
       // AI 분석 요청
       const aiResponse = await analyzeWithAI(text);
 
-      const originalTextToSave = options.isUrl ? options.sourceUrl : text;
+      // const originalTextToSave = options.isUrl ? options.sourceUrl : text;
+      const originalTextToSave = text; // 항상 추출된 텍스트나 사용자가 입력한 텍스트 저장
+      const originalUrl = options.isUrl ? options.sourceUrl : null; // URL이면 URL 저장, 아니면 null
 
       // 기존 메모 업데이트 (Supabase)
       const { data, error } = await supabase

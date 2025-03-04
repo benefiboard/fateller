@@ -192,7 +192,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
           mode: 'analyze',
           id: editingMemo?.id,
           isUrl: extractData.isExtracted, // 추가: URL에서 추출된 것인지 여부
-          sourceUrl: extractData.sourceUrl, // 추가: 원본 URL
+          sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null, // 추가: 원본 URL
         });
       }
 
