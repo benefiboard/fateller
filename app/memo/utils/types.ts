@@ -14,6 +14,23 @@ export interface Profile {
   verified: boolean;
 }
 
+export type UserInformation = {
+  name: string;
+  gender: '남자' | '여자';
+  birthYear: string;
+  birthMonth: string;
+  birthDay: string;
+  birthHour: string;
+  birthMinute: string;
+  isTimeUnknown?: boolean;
+  specialNumber?: number;
+};
+
+export type SaveUserResponse = {
+  success: boolean;
+  error?: string;
+};
+
 export interface MemoState {
   expanded: boolean;
   showLabeling: boolean;

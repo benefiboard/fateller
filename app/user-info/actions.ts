@@ -1,12 +1,12 @@
 'use server';
 
 import { createSupabaseServerClient } from '@/lib/supabse/server';
-import { SajuInformation, SaveSajuResponse } from '../dailytalk/types/user';
+import { SaveUserResponse, UserInformation } from '../memo/utils/types';
 
 export async function saveSajuInformation(
   userId: string,
-  sajuInfo: SajuInformation
-): Promise<SaveSajuResponse> {
+  sajuInfo: UserInformation
+): Promise<SaveUserResponse> {
   try {
     const supabase = await createSupabaseServerClient();
 

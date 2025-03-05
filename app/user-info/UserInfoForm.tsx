@@ -17,9 +17,9 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { saveSajuInformation } from './actions';
-import { SajuInformation } from '../dailytalk/types/user';
 import { useUserStore } from '../store/userStore';
 import createSupabaseBrowserClient from '@/lib/supabse/client';
+import { UserInformation } from '../memo/utils/types';
 
 interface UserInfoFormProps {
   userId: string;
@@ -28,7 +28,7 @@ interface UserInfoFormProps {
 export function UserInfoForm({ userId }: UserInfoFormProps) {
   const router = useRouter();
   const setCurrentUser = useUserStore((state) => state.setCurrentUser);
-  const [formData, setFormData] = useState<SajuInformation>({
+  const [formData, setFormData] = useState<UserInformation>({
     name: '',
     gender: '남자',
     birthYear: '2000',
