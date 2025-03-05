@@ -88,6 +88,76 @@ export const useMemos = () => {
     }
   };
 
+  // 메모 임베딩 생성 함수
+  const createEmbedding = async (memoId: string, memoData: any): Promise<boolean> => {
+    try {
+      // 임베딩에 사용할 텍스트 구성
+      const textToEmbed = [
+        memoData.title,
+        memoData.tweet_main,
+        memoData.key_sentence || memoData.labeling?.key_sentence,
+        ...(Array.isArray(memoData.thread) ? memoData.thread : []),
+        ...(Array.isArray(memoData.keywords)
+          ? memoData.keywords
+          : Array.isArray(memoData.labeling?.keywords)
+          ? memoData.labeling.keywords
+          : []),
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      if (!textToEmbed.trim()) {
+        console.error('임베딩할 텍스트가 없습니다:', memoId);
+        return false;
+      }
+
+      // OpenAI API로 임베딩 생성
+      const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${
+            process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY
+          }`,
+        },
+        body: JSON.stringify({
+          model: 'text-embedding-3-small',
+          input: textToEmbed.slice(0, 8000), // 입력 제한
+        }),
+      });
+
+      if (!embeddingResponse.ok) {
+        const errorData = await embeddingResponse.json();
+        console.error('OpenAI 임베딩 API 오류:', errorData);
+        return false;
+      }
+
+      const embeddingData = await embeddingResponse.json();
+      const embedding = embeddingData.data[0].embedding;
+
+      // Supabase에 임베딩 저장
+      const { error: upsertError } = await supabase.from('memo_embeddings').upsert(
+        {
+          id: memoId,
+          embedding,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+
+      if (upsertError) {
+        console.error('임베딩 저장 오류:', upsertError);
+        return false;
+      }
+
+      console.log('임베딩 생성 성공:', memoId, `(차원: ${embedding.length})`);
+      return true;
+    } catch (error) {
+      console.error('임베딩 생성 중 오류:', error);
+      return false;
+    }
+  };
+
   // 메모 생성
   const createMemo = async (text: string, options: any = {}) => {
     if (!user_id) {
@@ -112,7 +182,6 @@ export const useMemos = () => {
       }
 
       // 저장할 원본 텍스트 결정 - URL이면 URL 자체를 저장, 아니면 추출된 텍스트
-      //const originalTextToSave = options.isUrl ? options.sourceUrl : text;
       const originalTextToSave = text; // 항상 추출된 텍스트나 사용자가 입력한 텍스트 저장
       const originalUrl = options.isUrl ? options.sourceUrl : null; // URL이면 URL 저장, 아니면 null
 
@@ -135,6 +204,7 @@ export const useMemos = () => {
           likes: 0,
           retweets: 0,
           replies: 0,
+          has_embedding: false, // 임베딩 상태 추적을 위한 필드 추가
         })
         .select();
 
@@ -166,6 +236,26 @@ export const useMemos = () => {
       // 새 메모 추가
       setMemos((prevMemos) => [formattedNewMemo, ...prevMemos]);
 
+      // 비동기로 임베딩 생성 (UI 흐름에 영향 없이 백그라운드에서 처리)
+      setTimeout(async () => {
+        const embeddingResult = await createEmbedding(newMemo.id, {
+          title: aiResponse.title,
+          tweet_main: aiResponse.tweet_main,
+          key_sentence: aiResponse.labeling?.key_sentence,
+          thread: aiResponse.thread,
+          keywords: aiResponse.labeling?.keywords,
+        });
+
+        // 임베딩 상태 업데이트 (선택적)
+        if (embeddingResult) {
+          await supabase
+            .from('memos')
+            .update({ has_embedding: true })
+            .eq('id', newMemo.id)
+            .eq('user_id', user_id);
+        }
+      }, 100);
+
       return formattedNewMemo;
     } catch (error: any) {
       console.error('Error creating memo:', error);
@@ -189,7 +279,6 @@ export const useMemos = () => {
       // AI 분석 요청
       const aiResponse = await analyzeWithAI(text);
 
-      // const originalTextToSave = options.isUrl ? options.sourceUrl : text;
       const originalTextToSave = text; // 항상 추출된 텍스트나 사용자가 입력한 텍스트 저장
       const originalUrl = options.isUrl ? options.sourceUrl : null; // URL이면 URL 저장, 아니면 null
 
@@ -201,11 +290,13 @@ export const useMemos = () => {
           tweet_main: aiResponse.tweet_main,
           hashtags: aiResponse.hashtags || [],
           thread: aiResponse.thread || [],
-          original_text: originalTextToSave, // URL 또는 원본 텍스트
+          original_text: originalTextToSave,
+          original_url: originalUrl || '',
           category: aiResponse.labeling?.category || '미분류',
           keywords: aiResponse.labeling?.keywords || [],
           key_sentence: aiResponse.labeling?.key_sentence || '',
           updated_at: new Date().toISOString(),
+          has_embedding: false, // 업데이트 시 임베딩도 갱신 필요하므로 false로 설정
         })
         .eq('id', memoId)
         .eq('user_id', user_id)
@@ -236,6 +327,26 @@ export const useMemos = () => {
             : memo
         )
       );
+
+      // 비동기로 임베딩 업데이트 (UI 흐름에 영향 없이 백그라운드에서 처리)
+      setTimeout(async () => {
+        const embeddingResult = await createEmbedding(memoId, {
+          title: aiResponse.title,
+          tweet_main: aiResponse.tweet_main,
+          key_sentence: aiResponse.labeling?.key_sentence,
+          thread: aiResponse.thread,
+          keywords: aiResponse.labeling?.keywords,
+        });
+
+        // 임베딩 상태 업데이트 (선택적)
+        if (embeddingResult) {
+          await supabase
+            .from('memos')
+            .update({ has_embedding: true })
+            .eq('id', memoId)
+            .eq('user_id', user_id);
+        }
+      }, 100);
 
       return data && data[0] ? data[0] : null;
     } catch (error: any) {

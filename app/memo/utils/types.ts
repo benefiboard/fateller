@@ -1,5 +1,6 @@
+//app/memo/utils/types.ts
 // 타입 정의
-import OnboardingScreen from './../../start/Start';
+
 export interface MemoLabeling {
   category: string;
   keywords: string[];
@@ -32,9 +33,17 @@ export interface Memo {
   replies: number;
   original_text?: string;
   original_url?: string;
+  has_embedding?: boolean;
 }
 
 export interface NotificationType {
   message: string;
   type: 'success' | 'error';
+}
+
+export interface MemoEmbedding {
+  id: string;
+  embedding: number[];
+  created_at: string;
+  updated_at: string;
 }
