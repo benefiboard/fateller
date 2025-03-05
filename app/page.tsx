@@ -1,98 +1,199 @@
-import React from 'react';
-import {
-  Activity,
-  BriefcaseBusiness,
-  CalendarHeart,
-  CircleDollarSign,
-  CircleHelp,
-  Contact,
-  Heart,
-  HeartHandshake,
-  MoonStar,
-  Sparkles,
-} from 'lucide-react';
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { getUser } from '@/lib/supabse/server';
-import TopNav from './TopNav';
+'use client';
 
-export default async function MainPage() {
-  const currentUser = await getUser();
-  const userName = currentUser?.saju_information?.name || '';
+import React, { useState } from 'react';
+import { MessageCircle } from 'lucide-react';
 
-  if (!currentUser) {
-    redirect('/auth');
-  }
+// UI 컴포넌트 임포트
+import Header from './ui/Header';
+import MemoItem from './ui/MemoItem';
+import Notification from './ui/Notification';
+import BottomNavigation from './ui/BottomNavigation';
+import ComposerModal from './ui/ComposerModal';
 
-  const linkOptions = [
-    {
-      href: '/today',
-      icon: CalendarHeart,
-      mainText: '오늘의 운세',
-      subText: '#오늘의운세 #오늘',
-    },
+// 훅 임포트
+import useMemos from './hooks/useMemos';
+import useMemosState from './hooks/useMemosState';
+import useNotification from './hooks/useNotification';
 
-    {
-      href: '/fortune',
-      icon: MoonStar,
-      mainText: '사주',
-      subText: '#사주 #정통운세',
-    },
-    {
-      href: '/tarot',
-      icon: Sparkles,
-      mainText: '타로',
-      subText: '#타로 #타로마스터',
-    },
-    {
-      href: '/mirror',
-      icon: CircleHelp,
-      mainText: '해결의 거울',
-      subText: '#고민 #3초해결',
-    },
-  ];
+// 프로필 정보
+const profile = {
+  name: 'BrainLabel',
+  username: '@brainlabel_ai',
+  avatar: 'https://placehold.co/40x40',
+  verified: true,
+};
+
+const MemoPage: React.FC = () => {
+  // 컴포저 모달 상태
+  const [showComposer, setShowComposer] = useState(false);
+  const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState<'direct' | 'analyze'>('direct');
+
+  // 메모 관련 훅
+  const {
+    memos,
+    isLoading,
+    error: memosError,
+    createMemo,
+    updateMemoWithAI,
+    updateMemoDirect,
+    deleteMemo,
+    likeMemo,
+    retweetMemo,
+    replyToMemo,
+  } = useMemos();
+
+  // 메모 상태 훅
+  const { memoStates, toggleThread, toggleLabeling, toggleOriginal } = useMemosState(memos);
+
+  // 알림 훅
+  const { notification, showNotification } = useNotification();
+
+  // 모달 열기 핸들러
+  const handleOpenComposer = (mode: 'direct' | 'analyze', memoId?: string) => {
+    if (!memoId && mode === 'direct') {
+      showNotification('새 메모는 AI 분석 모드로만 작성할 수 있습니다.', 'error');
+      return;
+    }
+
+    setEditMode(mode);
+    setEditingMemoId(memoId || null);
+    setShowComposer(true);
+  };
+
+  // 모달 닫기 핸들러
+  const handleCloseComposer = () => {
+    setShowComposer(false);
+    setEditingMemoId(null);
+  };
+
+  // 메모 제출 처리
+  const handleSubmit = async (data: any) => {
+    try {
+      if (data.mode === 'analyze') {
+        if (editingMemoId) {
+          await updateMemoWithAI(editingMemoId, data.text, {
+            isUrl: data.isUrl,
+            sourceUrl: data.sourceUrl,
+          });
+          showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
+        } else {
+          await createMemo(data.text, {
+            isUrl: data.isUrl,
+            sourceUrl: data.sourceUrl,
+          });
+          showNotification('새 메모가 성공적으로 생성되었습니다.', 'success');
+        }
+      } else if (data.mode === 'direct' && editingMemoId) {
+        await updateMemoDirect(editingMemoId, {
+          title: data.title,
+          tweet_main: data.tweet_main,
+          thread: data.thread,
+          category: data.category,
+          keywords: data.keywords,
+          key_sentence: data.key_sentence,
+        });
+        showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
+      }
+
+      handleCloseComposer();
+    } catch (error: any) {
+      showNotification(`오류가 발생했습니다: ${error.message}`, 'error');
+    }
+  };
+
+  // 메모 편집 핸들러
+  const handleEdit = (memo: any) => {
+    handleOpenComposer('direct', memo.id);
+  };
+
+  // 메모 분석 핸들러
+  const handleAnalyze = (memo: any) => {
+    handleOpenComposer('analyze', memo.id);
+  };
+
+  // 메모 삭제 핸들러
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMemo(id);
+      showNotification('메모가 삭제되었습니다.', 'success');
+    } catch (error: any) {
+      showNotification(`삭제 중 오류가 발생했습니다: ${error.message}`, 'error');
+    }
+  };
 
   return (
-    <div>
-      <TopNav title="페이스텔러" />
-      <div className="p-6  tracking-tighter flex flex-col gap-4 justify-center">
-        {/* <h2 className="text-2xl font-semibold ">오늘의 운세</h2> */}
-        {/* <hr className="mt-4 border-1 border-gray-200" /> */}
-        <div className="flex flex-col  pb-4 border-b">
-          <h2 className="text-2xl font-semibold">
-            {userName}
-            <span className="text-base text-gray-400"> 님</span>
-          </h2>
-          <p className="text-lg">행운 가득한 하루 되세요!!</p>
+    <div className="max-w-md mx-auto bg-white overflow-hidden shadow-md min-h-screen tracking-tighter leading-snug">
+      {/* 헤더 */}
+      <Header />
+
+      {/* 알림 메시지 */}
+      {notification && <Notification message={notification.message} type={notification.type} />}
+
+      {/* 메모 작성 버튼 */}
+      {!showComposer && (
+        <div className="fixed bottom-20 right-4 z-10">
+          <button
+            onClick={() => handleOpenComposer('analyze')}
+            className="w-12 h-12 rounded-full bg-teal-500 text-white flex items-center justify-center shadow-lg"
+          >
+            <MessageCircle size={24} />
+          </button>
         </div>
-      </div>
-      {/* Background Image */}
-      <div className="w-full aspect-[2/1]  relative overflow-hidden shadow-sm">
-        <div
-          className="absolute inset-0 bg-cover bg-center border-y-2 border-violet-100 "
-          style={{
-            backgroundImage: "url('/main/main-image-main.webp')",
-          }}
+      )}
+
+      {/* 메모 작성/편집 모달 */}
+      {showComposer && (
+        <ComposerModal
+          isOpen={showComposer}
+          mode={editMode}
+          editingMemo={editingMemoId ? memos.find((m) => m.id === editingMemoId) : undefined}
+          onClose={handleCloseComposer}
+          onSubmit={handleSubmit}
+          profile={profile}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-50/30 to-violet-50/20" />
+      )}
+
+      {/* 메모 목록 */}
+      <div className="divide-y divide-gray-200">
+        {memos.length === 0 ? (
+          <div className="p-10 text-center text-gray-500">
+            <MessageCircle size={48} className="mx-auto mb-4 opacity-30" />
+            <p>아직 메모가 없습니다. 첫 번째 메모를 작성해보세요!</p>
+          </div>
+        ) : (
+          memos.map((memo) => (
+            <MemoItem
+              key={memo.id}
+              memo={memo}
+              profile={profile}
+              memoState={
+                memo.id
+                  ? memoStates[memo.id] || {
+                      expanded: false,
+                      showLabeling: true,
+                      showOriginal: false,
+                    }
+                  : { expanded: false, showLabeling: true, showOriginal: false }
+              }
+              onToggleThread={toggleThread}
+              onToggleLabeling={toggleLabeling}
+              onToggleOriginal={toggleOriginal}
+              onEdit={handleEdit}
+              onAnalyze={handleAnalyze}
+              onDelete={handleDelete}
+              onLike={likeMemo}
+              onRetweet={retweetMemo}
+              onReply={replyToMemo}
+            />
+          ))
+        )}
       </div>
-      {/* <hr className="mb-1 mx-6 border-violet-200" /> */}
-      <div className="p-6 tracking-tighter flex flex-col justify-center gap-4">
-        {linkOptions.map(({ href, icon: Icon, mainText, subText }) => (
-          <Link key={href} href={href}>
-            <div className="w-full aspect-[5/1] bg-gradient-to-br from-violet-50 to-pastel-50 rounded-xl flex items-center justify-between shadow-md gap-2 px-6">
-              <div className="flex items-center gap-2">
-                <Icon className="text-gray-400 w-6 h-6" />
-                <p className="text-xl font-semibold text-gray-900">
-                  {mainText}
-                  {/* <span className="text-base text-gray-400 font-normal">{subText}</span> */}
-                </p>
-              </div>
-              <p className="text-xs text-violet-400 tracking-tighter">{subText}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
+
+      {/* 바텀 네비게이션 */}
+      <BottomNavigation />
     </div>
   );
-}
+};
+
+export default MemoPage;

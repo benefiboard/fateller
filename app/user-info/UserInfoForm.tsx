@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { saveSajuInformation } from './actions';
 import { useUserStore } from '../store/userStore';
 import createSupabaseBrowserClient from '@/lib/supabse/client';
-import { UserInformation } from '../memo/utils/types';
+import { UserInformation } from '../utils/types';
 
 interface UserInfoFormProps {
   userId: string;

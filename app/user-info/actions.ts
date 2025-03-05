@@ -1,7 +1,7 @@
 'use server';
 
 import { createSupabaseServerClient } from '@/lib/supabse/server';
-import { SaveUserResponse, UserInformation } from '../memo/utils/types';
+import { SaveUserResponse, UserInformation } from '../utils/types';
 
 export async function saveSajuInformation(
   userId: string,

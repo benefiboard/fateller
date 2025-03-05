@@ -11,8 +11,8 @@ import AnalyticsTracker from './layout-component/AnalyticsTracker';
 import MobileDetector from './layout-component/MobileDetector';
 import BrowserRedirect from './layout-component/BrowserRedirect';
 import BottomNav from './BottomNav';
-import BottomNavigation from './memo/ui/BottomNavigation';
-import Header from './memo/ui/Header';
+import BottomNavigation from './ui/BottomNavigation';
+import Header from './ui/Header';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
