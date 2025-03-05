@@ -11,6 +11,8 @@ import AnalyticsTracker from './layout-component/AnalyticsTracker';
 import MobileDetector from './layout-component/MobileDetector';
 import BrowserRedirect from './layout-component/BrowserRedirect';
 import BottomNav from './BottomNav';
+import BottomNavigation from './memo/ui/BottomNavigation';
+import Header from './memo/ui/Header';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -81,8 +83,9 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {/* <MobileDetector> */}
         <div className="min-h-screen  ">
-          <div className="relative pb-20  max-w-[480px] flex flex-col mx-auto bg-white border border-gray-200 min-h-screen">
+          <div className="relative pb-20  max-w-md flex flex-col mx-auto bg-white border border-gray-200 min-h-screen">
             {children}
+
             <StoreInitializer currentUser={currentUser} />
             <MysticSymbolsEffect />
           </div>
