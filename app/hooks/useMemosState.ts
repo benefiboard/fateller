@@ -13,7 +13,7 @@ export const useMemosState = (memos: Memo[]) => {
         // 기존 상태 유지하거나 새로 초기화
         initialStates[memo.id] = memoStates[memo.id] || {
           expanded: false,
-          showLabeling: true,
+          showLabeling: false,
           showOriginal: false,
         };
       }

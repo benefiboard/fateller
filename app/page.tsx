@@ -173,10 +173,10 @@ const MemoPage: React.FC = () => {
                 memo.id
                   ? memoStates[memo.id] || {
                       expanded: false,
-                      showLabeling: true,
+                      showLabeling: false,
                       showOriginal: false,
                     }
-                  : { expanded: false, showLabeling: true, showOriginal: false }
+                  : { expanded: false, showLabeling: false, showOriginal: false }
               }
               onToggleThread={toggleThread}
               onToggleLabeling={toggleLabeling}
