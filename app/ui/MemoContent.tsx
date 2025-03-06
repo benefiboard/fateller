@@ -32,7 +32,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
   // 원문 내용 표시 여부를 관리하는 상태 추가
   const [showOriginalText, setShowOriginalText] = useState(false);
 
-  console.log('memo', memo);
+  //console.log('memo', memo);
 
   // 탭 변경 함수 - 수정된 버전
   const changeTab = (newTab: TabIndex) => {

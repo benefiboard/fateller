@@ -1,3 +1,7 @@
+//app/hooks/useMemos.ts
+
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useUserStore } from '@/app/store/userStore';
 import createSupabaseBrowserClient from '@/lib/supabse/client';
@@ -65,9 +69,25 @@ export const useMemos = () => {
     }
   };
 
+  const showAIOverloadAlert = () => {
+    // 브라우저 환경인 경우에만 실행
+    if (typeof window !== 'undefined') {
+      // 브라우저 기본 alert 사용
+      alert('요청이 많아 처리가 지연되고 있습니다. 잠시 후 다시 시도해 주세요.');
+
+      // 또는 토스트/모달 라이브러리 사용 (프로젝트에 따라 선택)
+      // import { toast } from 'react-toastify';
+      // toast.error('현재 AI 서비스가 혼잡합니다. 요청이 많아 처리가 지연되고 있습니다. 잠시 후 다시 시도해 주세요.');
+    }
+  };
+
   // API 호출하여 트윗 분석하기
-  const analyzeWithAI = async (text: string) => {
+  const analyzeWithAI = async (text: string, retryCount = 0, maxRetries = 2) => {
     try {
+      console.log(
+        `텍스트 분석 요청 ${retryCount > 0 ? `(재시도 ${retryCount}/${maxRetries})` : ''}`
+      );
+
       const response = await fetch('/api/labeling', {
         method: 'POST',
         headers: {
@@ -79,12 +99,63 @@ export const useMemos = () => {
       const responseData = await response.json();
 
       if (!response.ok) {
+        // 타임아웃 또는 서버 오류인 경우 재시도
+        if (
+          (response.status === 408 || response.status === 504 || response.status === 500) &&
+          retryCount < maxRetries &&
+          (responseData.isTimeout || responseData.error?.includes('시간 초과'))
+        ) {
+          console.log(`API 요청 시간 초과, ${retryCount + 1}번째 재시도 중...`);
+
+          // 재시도 전 1.5초 대기 (서버 부하 감소)
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+
+          // 재귀적으로 재시도
+          return analyzeWithAI(text, retryCount + 1, maxRetries);
+        }
+
+        // 최대 재시도 횟수를 초과한 경우 사용자 친화적인 메시지 표시
+        if (retryCount >= maxRetries) {
+          showAIOverloadAlert();
+          throw new Error(
+            '현재 AI 요청이 많아 처리가 지연되고 있습니다. 잠시 후 다시 시도해 주세요.'
+          );
+        }
+
         throw new Error(responseData.error || '분석 중 오류가 발생했습니다.');
+      }
+
+      // JSON 형식이 아니거나 필수 필드가 없는 경우 재시도
+      if (!responseData.title || !responseData.tweet_main) {
+        if (retryCount < maxRetries) {
+          console.log(`API 응답이 올바르지 않음, ${retryCount + 1}번째 재시도 중...`);
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          return analyzeWithAI(text, retryCount + 1, maxRetries);
+        } else {
+          showAIOverloadAlert();
+          throw new Error('AI 응답이 올바른 형식이 아닙니다. 현재 시스템이 혼잡한 것 같습니다.');
+        }
       }
 
       return responseData;
     } catch (error: any) {
       console.error('API 요청 오류:', error);
+
+      // 네트워크 오류나 JSON 파싱 오류인 경우 재시도
+      if (
+        retryCount < maxRetries &&
+        (error.message.includes('fetch') || error.message.includes('JSON'))
+      ) {
+        console.log(`네트워크 오류, ${retryCount + 1}번째 재시도 중...`);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        return analyzeWithAI(text, retryCount + 1, maxRetries);
+      }
+
+      // 최대 재시도 후 실패 시 사용자 친화적인 알림
+      if (retryCount >= maxRetries) {
+        showAIOverloadAlert();
+      }
+
       throw new Error(`분석 실패: ${error.message}`);
     }
   };
@@ -160,6 +231,7 @@ export const useMemos = () => {
   };
 
   // 메모 생성
+  // 메모 생성
   const createMemo = async (text: string, options: any = {}) => {
     if (!user_id) {
       throw new Error('로그인이 필요합니다.');
@@ -169,17 +241,42 @@ export const useMemos = () => {
     setError(null);
 
     try {
-      // AI 분석 요청
-      const aiResponse = await analyzeWithAI(text);
+      // AI 분석 요청을 별도의 try-catch 블록으로 분리
+      let aiResponse;
+      try {
+        aiResponse = await analyzeWithAI(text);
 
-      // API 응답 확인
-      if (aiResponse.error) {
-        throw new Error(aiResponse.error);
-      }
+        // API 응답 확인
+        if (aiResponse.error) {
+          throw new Error(aiResponse.error);
+        }
 
-      // 응답 형식 확인 - 필수 필드가 있는지 검사
-      if (!aiResponse.title || !aiResponse.tweet_main || !aiResponse.thread) {
-        throw new Error('API 응답 형식이 올바르지 않습니다.');
+        // 응답 형식 확인 - 필수 필드가 있는지 검사
+        if (!aiResponse.title || !aiResponse.tweet_main || !aiResponse.thread) {
+          throw new Error('API 응답 형식이 올바르지 않습니다.');
+        }
+      } catch (analyzeError: any) {
+        // AI 분석 실패 시 사용자 친화적인 메시지 설정
+        console.error('AI 분석 오류:', analyzeError);
+
+        // 로딩 상태 해제
+        setIsLoading(false);
+
+        // 사용자에게 표시할 메시지 설정
+        let errorMessage;
+        if (
+          analyzeError.message.includes('시간 초과') ||
+          analyzeError.message.includes('timeout')
+        ) {
+          errorMessage = '현재 AI 서비스가 혼잡합니다. 잠시 후 다시 시도해 주세요.';
+        } else if (analyzeError.message.includes('API 응답이 올바른 형식이 아닙니다')) {
+          errorMessage = 'AI가 올바른 형식으로 응답하지 않았습니다. 다시 시도해 주세요.';
+        } else {
+          errorMessage = `AI 분석 중 오류가 발생했습니다: ${analyzeError.message}`;
+        }
+
+        setError(errorMessage);
+        throw new Error(errorMessage);
       }
 
       // 저장할 원본 텍스트 결정 - URL이면 URL 자체를 저장, 아니면 추출된 텍스트
@@ -239,28 +336,40 @@ export const useMemos = () => {
 
       // 비동기로 임베딩 생성 (UI 흐름에 영향 없이 백그라운드에서 처리)
       setTimeout(async () => {
-        const embeddingResult = await createEmbedding(newMemo.id, {
-          title: aiResponse.title,
-          tweet_main: aiResponse.tweet_main,
-          key_sentence: aiResponse.labeling?.key_sentence,
-          thread: aiResponse.thread,
-          keywords: aiResponse.labeling?.keywords,
-        });
+        try {
+          const embeddingResult = await createEmbedding(newMemo.id, {
+            title: aiResponse.title,
+            tweet_main: aiResponse.tweet_main,
+            key_sentence: aiResponse.labeling?.key_sentence,
+            thread: aiResponse.thread,
+            keywords: aiResponse.labeling?.keywords,
+          });
 
-        // 임베딩 상태 업데이트 (선택적)
-        if (embeddingResult) {
-          await supabase
-            .from('memos')
-            .update({ has_embedding: true })
-            .eq('id', newMemo.id)
-            .eq('user_id', user_id);
+          // 임베딩 상태 업데이트 (선택적)
+          if (embeddingResult) {
+            await supabase
+              .from('memos')
+              .update({ has_embedding: true })
+              .eq('id', newMemo.id)
+              .eq('user_id', user_id);
+          }
+        } catch (embeddingError) {
+          // 임베딩 생성 오류는 사용자 경험에 영향을 주지 않도록 조용히 처리
+          console.error('임베딩 생성 오류:', embeddingError);
         }
       }, 100);
 
       return formattedNewMemo;
     } catch (error: any) {
-      console.error('Error creating memo:', error);
-      setError(`메모를 생성하는 중 오류가 발생했습니다: ${error.message}`);
+      // 이미 AI 분석 오류에 대해 처리했으므로 여기서는 다른 유형의 오류만 처리
+      if (
+        !error.message.includes('AI 분석 중 오류') &&
+        !error.message.includes('AI가 올바른 형식으로 응답하지 않았습니다') &&
+        !error.message.includes('현재 AI 서비스가 혼잡합니다')
+      ) {
+        console.error('Error creating memo:', error);
+        setError(`메모를 생성하는 중 오류가 발생했습니다: ${error.message}`);
+      }
       throw error;
     } finally {
       setIsLoading(false);

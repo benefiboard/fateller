@@ -24,9 +24,10 @@ const TWITTER_PROMPT = `당신은 교과서나 학습자료 수준의 명확한 
   }
 }
 
-카테고리는 다음 중 하나만 선택하세요:
+카테고리는 다음 중 하나만 선택하세요(다른 카테고리는 선택하면 안됨!):
 - 인문/철학
 - 경영/경제
+- 언어
 - 정치
 - 사회과학
 - 자연과학
@@ -35,6 +36,7 @@ const TWITTER_PROMPT = `당신은 교과서나 학습자료 수준의 명확한 
 - 의학/건강
 - 예술/문화
 - 문학/창작
+- 기타
 
 
 핵심 작성 지침:
@@ -106,8 +108,12 @@ const TWITTER_PROMPT = `당신은 교과서나 학습자료 수준의 명확한 
 // - 중요 개념과 사례를 효과적으로 연결하여 이해도 높이기
 
 // 결과는 반드시 유효한 JSON 형식으로만 응답하세요. 답변은 반드시 한글로 작성. 추가 설명이나 텍스트는 포함하지 마세요.`;
+const TIMEOUT_DURATION = 9200;
 
 export async function POST(req: NextRequest) {
+  // timeoutId 변수를 여기서 선언해서 스코프 문제 해결
+  let timeoutId: NodeJS.Timeout | undefined;
+
   try {
     // 요청에서 텍스트 추출
     const body = await req.json();
@@ -123,59 +129,104 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'API 키가 설정되지 않았습니다.' }, { status: 500 });
     }
 
-    // OpenAI API 호출
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini', // 또는 사용 가능한 다른 모델
-        messages: [
-          {
-            role: 'system',
-            content: TWITTER_PROMPT,
-          },
-          {
-            role: 'user',
-            content: `다음 텍스트를 분석하고 JSON 형식으로 응답해주세요: ${text}`,
-          },
-        ],
-        response_format: { type: 'json_object' },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API 오류:', errorData);
-      return NextResponse.json(
-        { error: `API 오류: ${errorData.error?.message || '알 수 없는 오류가 발생했습니다.'}` },
-        { status: response.status }
-      );
-    }
-
-    // 응답 데이터 처리
-    const data = await response.json();
+    // Create an AbortController for timeout handling
+    const controller = new AbortController();
+    timeoutId = setTimeout(() => controller.abort(), TIMEOUT_DURATION);
 
     try {
-      // API 응답에서 JSON 문자열 추출 및 파싱
-      const content = data.choices[0].message.content;
-      const parsedContent = JSON.parse(content);
+      // OpenAI API 호출
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini', // 또는 사용 가능한 다른 모델
+          messages: [
+            {
+              role: 'system',
+              content: TWITTER_PROMPT,
+            },
+            {
+              role: 'user',
+              content: `다음 텍스트를 분석하고 JSON 형식으로 응답해주세요: ${text}`,
+            },
+          ],
+          response_format: { type: 'json_object' },
+        }),
+        signal: controller.signal, // Add abort signal
+      });
 
-      // 로그 출력
-      //console.log('파싱된 응답:', parsedContent);
+      // Clear the timeout as the request completed
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
 
-      // 응답 반환
-      return NextResponse.json(parsedContent);
-    } catch (parseError) {
-      console.error('JSON 파싱 오류:', parseError);
-      return NextResponse.json({ error: 'API 응답을 파싱할 수 없습니다.' }, { status: 500 });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('OpenAI API 오류:', errorData);
+        return NextResponse.json(
+          {
+            error: `API 오류: ${errorData.error?.message || '알 수 없는 오류가 발생했습니다.'}`,
+            status: response.status,
+          },
+          { status: response.status }
+        );
+      }
+
+      // 응답 데이터 처리
+      const data = await response.json();
+
+      try {
+        // API 응답에서 JSON 문자열 추출 및 파싱
+        const content = data.choices[0].message.content;
+        const parsedContent = JSON.parse(content);
+
+        // 응답 반환
+        return NextResponse.json(parsedContent);
+      } catch (error) {
+        // parseError를 Error 타입으로 처리하여 타입 오류 해결
+        const parseError = error as Error;
+        console.error('JSON 파싱 오류:', parseError);
+        // Return a cleaner error message that will be easier to handle on the client
+        return NextResponse.json(
+          {
+            error: 'JSON 파싱 오류, 다시 시도해주세요.',
+            details: parseError.message,
+          },
+          { status: 422 }
+        );
+      }
+    } catch (error) {
+      // Clear the timeout to prevent memory leaks
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      // fetchError를 Error 타입으로 처리하여 타입 오류 해결
+      const fetchError = error as Error;
+
+      if (fetchError.name === 'AbortError') {
+        console.error('API 요청 시간 초과');
+        return NextResponse.json(
+          {
+            error: '요청 처리 시간이 초과되었습니다. 다시 시도해주세요.',
+            isTimeout: true,
+          },
+          { status: 408 }
+        );
+      }
+
+      console.error('API 호출 오류:', fetchError);
+      return NextResponse.json({ error: `API 호출 오류: ${fetchError.message}` }, { status: 500 });
     }
-  } catch (error: any) {
+  } catch (error) {
+    // 외부 try-catch 블록으로 구조화하여 문법 오류 해결
     console.error('API 처리 오류:', error);
+    const err = error as Error;
     return NextResponse.json(
-      { error: `처리 중 오류가 발생했습니다: ${error.message}` },
+      { error: `처리 중 오류가 발생했습니다: ${err.message}` },
       { status: 500 }
     );
   }
