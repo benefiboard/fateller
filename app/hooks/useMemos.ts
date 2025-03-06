@@ -44,6 +44,7 @@ export const useMemos = () => {
         hashtags: memo.hashtags,
         thread: memo.thread,
         original_text: memo.original_text,
+        original_url: memo.original_url,
         labeling: {
           category: memo.category,
           keywords: memo.keywords,

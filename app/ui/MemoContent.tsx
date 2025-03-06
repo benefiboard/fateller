@@ -1,9 +1,8 @@
-//app/ui/MemoContent.tsx
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Memo } from '../utils/types';
-import { Sparkle } from 'lucide-react';
+import { Sparkle, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 
 // 탭 인덱스 타입 정의
 type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 핵심 문장, 2: 주요 내용, 3: 원문
@@ -30,6 +29,10 @@ const MemoContent: React.FC<MemoContentProps> = ({
   // 탭 관리를 위한 상태
   const [activeTab, setActiveTab] = useState<TabIndex>(0); // 기본값은 "아이디어" 탭
   const [direction, setDirection] = useState(0); // 슬라이드 방향 (-1: 왼쪽, 1: 오른쪽)
+  // 원문 내용 표시 여부를 관리하는 상태 추가
+  const [showOriginalText, setShowOriginalText] = useState(false);
+
+  console.log('memo', memo);
 
   // 탭 변경 함수 - 수정된 버전
   const changeTab = (newTab: TabIndex) => {
@@ -80,6 +83,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
     const prevTab = (activeTab === 0 ? 3 : activeTab - 1) as TabIndex;
     setDirection(-1); // 왼쪽으로 이동
     setActiveTab(prevTab);
+  };
+
+  // 원문 내용 표시 토글 함수
+  const toggleOriginalText = () => {
+    setShowOriginalText(!showOriginalText);
   };
 
   const isUrl = (text: string): boolean => {
@@ -157,9 +165,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
         );
       case 1:
         return (
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-2">
             <h3 className="text-sm font-medium text-emerald-700">핵심 문장</h3>
-            <p className="py-2 text-sm mt-1 italic text-gray-800 bg-gray-100 p-4 rounded-lg leading-relaxed">
+            <p className="py-2 text-sm italic text-gray-800 bg-gray-100 p-4 rounded-lg leading-relaxed">
               "{renderHTML(memo.tweet_main)}"
             </p>
           </div>
@@ -179,23 +187,50 @@ const MemoContent: React.FC<MemoContentProps> = ({
         );
       case 3:
         return (
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-1">
             <h3 className="text-sm font-medium text-emerald-700">원문</h3>
-            {memo.original_text && isUrl(memo.original_text) ? (
-              // URL인 경우 링크와 바로가기 버튼 표시
-              <div className="mt-2">
-                <p className="text-sm text-gray-600 mb-1">원본 URL:</p>
-                <div className="flex items-center">
-                  <span className="text-sm text-gray-700 break-all mr-2">{memo.original_text}</span>
-                  <a
-                    href={memo.original_text}
+            {memo.original_url ? (
+              // URL인 경우 링크와 원문 내용 토글 버튼 표시
+              <div>
+                {/* URL을 일반 텍스트로 표시 */}
+                <p className="text-sm text-gray-700 break-all">{memo.original_url}</p>
+
+                {/* 원문으로 이동 버튼 추가 */}
+                <div className="flex flex-col gap-1 mt-2">
+                  <Link
+                    href={memo.original_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-2 py-1 text-xs bg-emerald-500 text-white rounded hover:bg-emerald-600"
+                    className="flex items-center text-sm text-emerald-700 hover:text-emerald-800"
                   >
-                    바로가기
-                  </a>
+                    <ExternalLink size={16} className="mr-2" /> 원문으로 이동
+                  </Link>
+
+                  {/* 원문 내용보기 버튼 추가 */}
+                  {memo.original_text && (
+                    <button
+                      onClick={toggleOriginalText}
+                      className="flex items-center text-sm text-emerald-700 hover:text-emerald-800"
+                    >
+                      {showOriginalText ? (
+                        <>
+                          <ChevronUp size={16} className="mr-2" /> 원문 내용접기
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown size={16} className="mr-2" /> 원문 내용보기
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
+
+                {/* 원문 내용이 있고 보기 상태일 때만 표시 */}
+                {showOriginalText && memo.original_text && (
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-gray-50 rounded-lg">
+                    {memo.original_text}
+                  </p>
+                )}
               </div>
             ) : (
               // 일반 텍스트인 경우 기존처럼 표시
