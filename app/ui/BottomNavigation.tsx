@@ -19,10 +19,10 @@ const BottomNavigation = () => {
   ];
 
   // 메모 작성 버튼 클릭 처리
-  const handleComposeClick = () => {
-    // 메모 작성 페이지로 이동하거나 모달 열기
-    router.push('/compose');
-  };
+  // const handleComposeClick = () => {
+  //   // 메모 작성 페이지로 이동하거나 모달 열기
+  //   router.push('/compose');
+  // };
 
   return (
     <>
@@ -43,7 +43,7 @@ const BottomNavigation = () => {
       </div>
 
       {/* 플로팅 메모 작성 버튼 */}
-      <div className="fixed right-4 bottom-20 md:hidden z-30">
+      {/* <div className="fixed right-4 bottom-20 md:hidden z-30">
         <button
           onClick={handleComposeClick}
           className="w-14 h-14 bg-emerald-400 hover:bg-emerald-500 rounded-full flex items-center justify-center shadow-lg text-white"
@@ -51,7 +51,7 @@ const BottomNavigation = () => {
         >
           <MessageCircle size={24} />
         </button>
-      </div>
+      </div> */}
     </>
   );
 };
