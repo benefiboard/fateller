@@ -37,6 +37,12 @@ export interface MemoState {
   showOriginal: boolean;
 }
 
+export interface MemoStats {
+  likes: number;
+  retweets: number;
+  replies: number;
+}
+
 export interface Memo {
   id?: string;
   title: string;
@@ -46,6 +52,8 @@ export interface Memo {
   labeling: MemoLabeling;
   time: string;
   likes: number;
+  liked?: boolean; // 좋아요 상태 추가
+  stats?: MemoStats; // 통계 정보 추가
   retweets: number;
   replies: number;
   original_text?: string;

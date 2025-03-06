@@ -1,3 +1,5 @@
+//app/ui/MemoContent.tsx
+
 import React from 'react';
 import { Memo } from '../utils/types';
 
