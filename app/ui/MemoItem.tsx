@@ -1,210 +1,3 @@
-// // app/ui/MemoItem.tsx
-// 'use client';
-
-// import React, { useState } from 'react';
-// import {
-//   MoreHorizontal,
-//   Heart,
-//   Repeat,
-//   MessageCircle,
-//   Share,
-//   Pencil,
-//   RotateCcw,
-//   Eraser,
-// } from 'lucide-react';
-// import { Memo, Profile } from '../utils/types';
-// import MemoContent from './MemoContent';
-
-// interface MemoItemProps {
-//   memo: Memo;
-//   profile: Profile;
-//   memoState: {
-//     expanded: boolean;
-//     showLabeling: boolean;
-//     showOriginal: boolean;
-//   };
-//   onToggleThread: (id: string) => void;
-//   onToggleLabeling: (id: string) => void;
-//   onToggleOriginal: (id: string) => void;
-//   onEdit: (memo: Memo) => void;
-//   onAnalyze: (memo: Memo) => void;
-//   onDelete: (id: string) => void;
-//   onLike: (id: string) => void;
-//   onRetweet: (id: string) => void;
-//   onReply: (id: string) => void;
-// }
-
-// const MemoItem: React.FC<MemoItemProps> = ({
-//   memo,
-//   profile,
-//   memoState,
-//   onToggleThread,
-//   onToggleLabeling,
-//   onToggleOriginal,
-//   onEdit,
-//   onAnalyze,
-//   onDelete,
-//   onLike,
-//   onRetweet,
-//   onReply,
-// }) => {
-//   // 옵션 드롭다운 상태
-//   const [showOptions, setShowOptions] = useState(false);
-
-//   const toggleOptions = () => {
-//     setShowOptions(!showOptions);
-//   };
-
-//   // 좋아요, 리트윗, 댓글 수 (기본값)
-//   const stats = memo.stats || { likes: 0, retweets: 0, replies: 0 };
-
-//   return (
-//     <article className="p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors">
-//       <div className="flex">
-//         {/* 프로필 이미지 */}
-//         <div className="mr-3 flex-shrink-0">
-//           <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-//             <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
-//           </div>
-//         </div>
-
-//         {/* 메모 내용 */}
-//         <div className="flex-1 min-w-0">
-//           {/* 헤더 - 이름, 카테고리, 시간 및 옵션 */}
-//           <div className="flex items-start justify-between">
-//             <div className="flex items-center">
-//               <span className="font-bold text-gray-900 mr-1 hover:underline">{profile.name}</span>
-//               <span className="text-gray-500 text-sm">
-//                 @{profile.username?.replace('@', '') || 'brainlabel_ai'} · {memo.time || '방금 전'}
-//               </span>
-//             </div>
-
-//             {/* 옵션 메뉴 */}
-//             <div className="relative">
-//               <button
-//                 onClick={toggleOptions}
-//                 className="text-gray-500 hover:text-emerald-400 p-1 rounded-full hover:bg-emerald-50"
-//               >
-//                 <MoreHorizontal size={18} />
-//               </button>
-
-//               {/* 드롭다운 메뉴 */}
-//               {showOptions && (
-//                 <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 w-48 z-10">
-//                   <div className="py-1">
-//                     <button
-//                       onClick={() => {
-//                         onEdit(memo);
-//                         setShowOptions(false);
-//                       }}
-//                       className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-//                     >
-//                       <Pencil size={18} className="text-gray-600" />
-
-//                       <p>수정 하기</p>
-//                     </button>
-//                     <button
-//                       onClick={() => {
-//                         onAnalyze(memo);
-//                         setShowOptions(false);
-//                       }}
-//                       className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-//                     >
-//                       <Share size={18} className="text-gray-600" />
-
-//                       <p>공유 하기</p>
-//                     </button>
-//                     <button
-//                       onClick={() => {
-//                         onAnalyze(memo);
-//                         setShowOptions(false);
-//                       }}
-//                       className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-//                     >
-//                       <RotateCcw size={18} className="text-gray-600" />
-
-//                       <p>AI 재분석</p>
-//                     </button>
-//                     <button
-//                       onClick={() => {
-//                         memo.id && onDelete(memo.id);
-//                         setShowOptions(false);
-//                       }}
-//                       className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-//                     >
-//                       <Eraser size={18} className="text-gray-600" />
-
-//                       <p>삭제 하기</p>
-//                     </button>
-//                   </div>
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-
-//           {/* 메모 내용 */}
-//           <MemoContent
-//             memo={memo}
-//             expanded={memoState.expanded}
-//             showLabeling={memoState.showLabeling}
-//             showOriginal={memoState.showOriginal}
-//             onToggleThread={() => memo.id && onToggleThread(memo.id)}
-//             onToggleLabeling={() => memo.id && onToggleLabeling(memo.id)}
-//             onToggleOriginal={() => memo.id && onToggleOriginal(memo.id)}
-//           />
-
-//           {/* 액션 버튼 */}
-//           {/* <div className="flex justify-between mt-3 max-w-md pr-8">
-//             <button
-//               onClick={() => memo.id && onReply(memo.id)}
-//               className="flex items-center text-gray-500 hover:text-emerald-400 group"
-//             >
-//               <div className="p-2 rounded-full group-hover:bg-emerald-50 mr-1">
-//                 <MessageCircle size={18} />
-//               </div>
-//               <span className="text-sm">{stats.replies}</span>
-//             </button>
-
-//             <button
-//               onClick={() => memo.id && onRetweet(memo.id)}
-//               className="flex items-center text-gray-500 hover:text-green-500 group"
-//             >
-//               <div className="p-2 rounded-full group-hover:bg-green-50 mr-1">
-//                 <Repeat size={18} />
-//               </div>
-//               <span className="text-sm">{stats.retweets}</span>
-//             </button>
-
-//             <button
-//               onClick={() => memo.id && onLike(memo.id)}
-//               className={`flex items-center ${
-//                 memo.liked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
-//               } group`}
-//             >
-//               <div
-//                 className={`p-2 rounded-full ${
-//                   memo.liked ? 'bg-red-50' : 'group-hover:bg-red-50'
-//                 } mr-1`}
-//               >
-//                 <Heart size={18} fill={memo.liked ? 'currentColor' : 'none'} />
-//               </div>
-//               <span className="text-sm">{stats.likes}</span>
-//             </button>
-
-//             <button className="flex items-center text-gray-500 hover:text-emerald-400 group">
-//               <div className="p-2 rounded-full group-hover:bg-emerald-50">
-//                 <Share size={18} />
-//               </div>
-//             </button>
-//           </div> */}
-//         </div>
-//       </div>
-//     </article>
-//   );
-// };
-
-// export default MemoItem;
-
 // app/ui/MemoItem.tsx
 'use client';
 
@@ -220,6 +13,17 @@ import {
   Lightbulb,
   ExternalLink,
   Tag,
+  // 카테고리별 아이콘들
+  BookOpen, // 인문/철학
+  BarChart3, // 경영/경제
+  LandPlot, // 정치
+  Users, // 사회과학
+  Atom, // 자연과학
+  PiSquare, // 수학
+  Cpu, // 기술/공학
+  Stethoscope, // 의학/건강
+  Palette, // 예술/문화
+  PenTool, // 문학/창작
 } from 'lucide-react';
 import { Memo, Profile } from '../utils/types';
 import MemoContent from './MemoContent';
@@ -312,13 +116,73 @@ const MemoItem: React.FC<MemoItemProps> = ({
     }
   };
 
+  // 카테고리에 따른 아이콘 반환 함수
+  const getCategoryIcon = () => {
+    const category = memo.labeling?.category || '';
+
+    switch (category) {
+      case '인문/철학':
+        return <BookOpen size={20} />;
+      case '경영/경제':
+        return <BarChart3 size={20} />;
+      case '정치':
+        return <LandPlot size={20} />;
+      case '사회과학':
+        return <Users size={20} />;
+      case '자연과학':
+        return <Atom size={20} />;
+      case '수학':
+        return <PiSquare size={20} />;
+      case '기술/공학':
+        return <Cpu size={20} />;
+      case '의학/건강':
+        return <Stethoscope size={20} />;
+      case '예술/문화':
+        return <Palette size={20} />;
+      case '문학/창작':
+        return <PenTool size={20} />;
+      default:
+        return <Tag size={20} />;
+    }
+  };
+
+  // 카테고리에 따른 배경색 반환 함수 (선택 사항)
+  // const getCategoryBgColor = () => {
+  //   const category = memo.labeling?.category || '';
+
+  //   switch (category) {
+  //     case '인문/철학':
+  //       return 'bg-purple-100 text-purple-600';
+  //     case '경영/경제':
+  //       return 'bg-blue-100 text-blue-600';
+  //     case '정치':
+  //       return 'bg-red-100 text-red-600';
+  //     case '사회과학':
+  //       return 'bg-amber-100 text-amber-600';
+  //     case '자연과학':
+  //       return 'bg-green-100 text-green-600';
+  //     case '수학':
+  //       return 'bg-indigo-100 text-indigo-600';
+  //     case '기술/공학':
+  //       return 'bg-gray-100 text-gray-600';
+  //     case '의학/건강':
+  //       return 'bg-rose-100 text-rose-600';
+  //     case '예술/문화':
+  //       return 'bg-pink-100 text-pink-600';
+  //     case '문학/창작':
+  //       return 'bg-orange-100 text-orange-600';
+  //     default:
+  //       return 'bg-emerald-100 text-emerald-600';
+  //   }
+  // };
+
   return (
     <article className="p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors">
       <div className="flex">
-        {/* 카테고리 아이콘 (프로필 이미지 대신) */}
+        {/* 카테고리 아이콘 (각 카테고리에 맞게 변경) */}
         <div className="mr-3 flex-shrink-0">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-            <Tag size={20} />
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-emerald-100`}>
+            {getCategoryIcon()}
           </div>
         </div>
 
@@ -327,7 +191,7 @@ const MemoItem: React.FC<MemoItemProps> = ({
           {/* 헤더 - 카테고리, 시간 및 옵션 */}
           <div className="flex items-start justify-between">
             <div className="flex items-center">
-              <span className="font-bold text-emerald-600 text-sm px-2 py-0.5 bg-emerald-50 rounded-full mr-2">
+              <span className={`font-bold text-sm px-2 py-0.5 rounded-full mr-2 bg-emerald-100`}>
                 {memo.labeling?.category || '미분류'}
               </span>
               <span className="text-gray-500 text-sm">{memo.time || '방금 전'}</span>
@@ -418,57 +282,6 @@ const MemoItem: React.FC<MemoItemProps> = ({
             onToggleLabeling={() => memo.id && onToggleLabeling(memo.id)}
             onToggleOriginal={() => memo.id && onToggleOriginal(memo.id)}
           />
-
-          {/* 지식 관리 액션 버튼 - 주석 처리된 트위터 스타일 버튼을 대체 */}
-          {/* <div className="flex justify-between mt-3   text-sm text-gray-500">
-           
-            <button
-              onClick={toggleSave}
-              className="flex items-center hover:text-emerald-600 transition-colors"
-            >
-              <BookmarkPlus size={18} className={isSaved ? 'text-emerald-500 mr-1' : 'mr-1'} />
-              <span>{isSaved ? '저장됨' : '저장'}</span>
-            </button>
-
-           
-            <button
-              onClick={handleFindRelated}
-              className="flex items-center hover:text-emerald-600 transition-colors"
-            >
-              <Network size={18} className="mr-1" />
-              <span>관련 메모</span>
-            </button>
-
-            
-            <button
-              onClick={handleGenerateInsight}
-              className="flex items-center hover:text-emerald-600 transition-colors"
-            >
-              <Lightbulb size={18} className="mr-1" />
-              <span>인사이트</span>
-            </button>
-
-            
-            {memo.original_text && isValidUrl(memo.original_text) && (
-              <button
-                onClick={openOriginalSource}
-                className="flex items-center hover:text-emerald-600 transition-colors"
-              >
-                <ExternalLink size={18} className="mr-1" />
-                <span>원본</span>
-              </button>
-            )}
-          </div> */}
-
-          {/* 유사도 표시 및 연결된 메모 개수 (필요시 활성화) */}
-          {/*
-          <div className="mt-2 text-xs flex items-center text-gray-500">
-            <Network size={14} className="mr-1" />
-            <span>8개의 메모와 연결됨</span>
-            <span className="mx-2">•</span>
-            <span>유사도 92%</span>
-          </div>
-          */}
         </div>
       </div>
     </article>
