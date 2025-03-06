@@ -184,9 +184,9 @@ const MemoPage: React.FC = () => {
               onEdit={handleEdit}
               onAnalyze={handleAnalyze}
               onDelete={handleDelete}
-              onLike={likeMemo}
-              onRetweet={retweetMemo}
-              onReply={replyToMemo}
+              //onLike={likeMemo}
+              //onRetweet={retweetMemo}
+              //onReply={replyToMemo}
             />
           ))
         )}
