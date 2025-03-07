@@ -261,9 +261,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
         isOpen={isSubmitting}
         step={processingStep === 'extracting' ? 'extracting' : 'analyzing'}
         extractedData={extractedData || undefined}
-        onContinueInBackground={
-          processingStep === 'analyzing' ? handleContinueInBackground : undefined
-        }
+        onContinueInBackground={handleContinueInBackground} // 단계에 관계없이 항상 전달
       />
 
       {/* 기존 모달 내용 - isSubmitting이 아닐 때만 표시 */}
