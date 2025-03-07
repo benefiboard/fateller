@@ -101,7 +101,7 @@ async function getYoutubeMetadata(
 
     // 비디오 정보 가져오기
     const videoInfo = await yt.getInfo(videoId);
-    //console.log('유튜브 비디오 정보:', videoInfo);
+    console.log('유튜브 비디오 정보:', videoInfo);
 
     // 제목 가져오기
     const title = videoInfo.basic_info.title || '제목 없음';
