@@ -232,6 +232,259 @@ async function extractMainImage(page: any): Promise<string> {
   }
 }
 
+// 네이버 블로그 특화 처리 함수
+async function extractNaverBlogContent(
+  url: string
+): Promise<{ content: string; title: string; imageUrl: string }> {
+  console.log(`[${new Date().toISOString()}] 네이버 블로그 처리 시작: ${url}`);
+  let browser = null;
+
+  try {
+    // 환경에 따른 브라우저 시작
+    if (isVercelProduction()) {
+      console.log('Vercel 환경에서 실행 중...');
+      const executablePath = await chromium.executablePath(
+        'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+      );
+
+      browser = await puppeteerCore.launch({
+        executablePath,
+        args: [...chromium.args, '--disable-features=site-per-process'], // iframe 접근을 위해 필요
+        headless: chromium.headless,
+        defaultViewport: chromium.defaultViewport,
+      });
+    } else {
+      console.log('로컬 환경에서 실행 중...', CHROME_PATH);
+      browser = await puppeteerCore.launch({
+        executablePath: CHROME_PATH,
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-features=site-per-process'], // iframe 접근을 위해 필요
+      });
+    }
+
+    const page = await browser.newPage();
+
+    // 네이버 블로그는 모바일 버전이 더 추출하기 쉬운 경우가 많음
+    // 모바일 User-Agent 설정
+    await page.setUserAgent(
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+    );
+
+    console.log(`[${new Date().toISOString()}] 네이버 블로그 페이지 로딩 시작`);
+
+    // 페이지 로드 (완전히 로드될 때까지 기다림)
+    await page.goto(url, {
+      waitUntil: 'networkidle2', // 최소 500ms 동안 네트워크 요청이 2개 이하일 때 로드 완료로 간주
+      timeout: 30000,
+    });
+
+    console.log(`[${new Date().toISOString()}] 네이버 블로그 페이지 로드 완료`);
+
+    // 페이지 제목 추출
+    const pageTitle = await page.title();
+    console.log(`[${new Date().toISOString()}] 네이버 블로그 제목: ${pageTitle}`);
+
+    // 메인 이미지 URL 추출
+    const mainImageUrl = await extractMainImage(page);
+    console.log(
+      `[${new Date().toISOString()}] 네이버 블로그 메인 이미지: ${mainImageUrl || '없음'}`
+    );
+
+    // 블로그 본문 iframe 탐지
+    console.log(`[${new Date().toISOString()}] 네이버 블로그 iframe 탐색 중...`);
+    const iframeHandle = await page.$('iframe#mainFrame, iframe#screenFrame');
+
+    let content = '';
+
+    if (iframeHandle) {
+      console.log(
+        `[${new Date().toISOString()}] 네이버 블로그 iframe 발견, iframe 내부 컨텐츠 추출 시도`
+      );
+
+      // iframe 내부 접근
+      const frame = await iframeHandle.contentFrame();
+
+      if (frame) {
+        // iframe이 완전히 로드될 때까지 추가 대기
+        await frame.waitForFunction(() => document.readyState === 'complete');
+        console.log(`[${new Date().toISOString()}] iframe 내부 로드 완료`);
+
+        // 포스트 섹션을 찾고 컨텐츠 추출 시도
+        // 네이버 블로그는 여러 선택자를 가질 수 있으므로 다양한 패턴 시도
+        content = await frame.evaluate(() => {
+          // 가능한 본문 컨텐츠 선택자들
+          const contentSelectors = [
+            // PC 버전
+            '.se-main-container', // 스마트에디터 2
+            '.se_component_wrap', // 구버전 스마트에디터
+            '.post-view', // 일부 블로그 템플릿
+            '.post_article', // 또 다른 템플릿
+            '#postViewArea', // 레거시 템플릿
+            '.blog_article', // 레거시 템플릿
+
+            // 모바일 버전
+            '.se_doc_viewer',
+            '.post_ct',
+            '#viewTypeSelector',
+            '.post-content',
+            '.se_doc_viewer_content',
+            '.se_view_wrap',
+          ];
+
+          // 추출 시도
+          for (const selector of contentSelectors) {
+            const element = document.querySelector(selector);
+            if (element && element.textContent && element.textContent.trim().length > 200) {
+              // HTMLElement로 타입 변환하여 innerText 속성에 접근
+              return (element as HTMLElement).innerText || element.textContent;
+            }
+          }
+
+          // 선택자로 찾지 못한 경우 모든 텍스트 노드 수집 시도
+          const getAllTextNodes = (element: any) => {
+            if (!element) return '';
+
+            // 숨김 요소 제외
+            const style = window.getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden') {
+              return '';
+            }
+
+            // 텍스트 컨텐츠가 있으면 반환
+            if (
+              element.tagName === 'P' ||
+              element.tagName === 'DIV' ||
+              element.tagName === 'SPAN' ||
+              element.tagName === 'H1' ||
+              element.tagName === 'H2' ||
+              element.tagName === 'H3' ||
+              element.tagName === 'H4' ||
+              element.tagName === 'LI'
+            ) {
+              if (element.textContent && element.textContent.trim().length > 20) {
+                return element.textContent + '\n';
+              }
+            }
+
+            // 자식 요소 재귀적으로 탐색
+            let result = '';
+            if (element.children) {
+              for (let i = 0; i < element.children.length; i++) {
+                result += getAllTextNodes(element.children[i]);
+              }
+            }
+
+            return result;
+          };
+
+          // 전체 문서에서 텍스트 노드 추출
+          return getAllTextNodes(document.body);
+        });
+      }
+    }
+
+    // iframe에서 컨텐츠를 추출하지 못한 경우 메인 페이지에서 시도
+    if (!content || content.trim().length < 200) {
+      console.log(`[${new Date().toISOString()}] iframe 추출 실패, 메인 페이지에서 직접 추출 시도`);
+
+      content = await page.evaluate(() => {
+        // 메인 페이지에서 가능한 컨텐츠 선택자
+        const contentSelectors = [
+          '#content',
+          '.blog_content',
+          '#blog-content',
+          '.entry-content',
+          '.post-content',
+        ];
+
+        for (const selector of contentSelectors) {
+          const element = document.querySelector(selector);
+          if (element && element.textContent && element.textContent.trim().length > 200) {
+            // HTMLElement로 타입 변환하여 innerText 속성에 접근
+            return (element as HTMLElement).innerText || element.textContent;
+          }
+        }
+
+        // 메인 페이지의 모든 텍스트 노드 수집
+        const getAllTextNodes = (element: any) => {
+          if (!element) return '';
+
+          const style = window.getComputedStyle(element);
+          if (style.display === 'none' || style.visibility === 'hidden') {
+            return '';
+          }
+
+          if (
+            element.tagName === 'P' ||
+            element.tagName === 'DIV' ||
+            element.tagName === 'SPAN' ||
+            element.tagName === 'H1' ||
+            element.tagName === 'H2' ||
+            element.tagName === 'H3' ||
+            element.tagName === 'H4' ||
+            element.tagName === 'LI'
+          ) {
+            if (element.textContent && element.textContent.trim().length > 20) {
+              return element.textContent + '\n';
+            }
+          }
+
+          let result = '';
+          if (element.children) {
+            for (let i = 0; i < element.children.length; i++) {
+              result += getAllTextNodes(element.children[i]);
+            }
+          }
+
+          return result;
+        };
+
+        return getAllTextNodes(document.body);
+      });
+    }
+
+    // 브라우저 종료
+    await browser.close();
+    browser = null;
+
+    // 컨텐츠 정제
+    if (content) {
+      content = content
+        .replace(/\n{3,}/g, '\n\n') // 여러 줄바꿈 제거
+        .replace(/[ \t]+/g, ' ') // 여러 공백 제거
+        .split('\n')
+        .map((line) => line.trim()) // 각 라인 앞뒤 공백 제거
+        .filter((line) => line) // 빈 라인 제거
+        .join('\n')
+        .trim();
+    }
+
+    // 충분한 컨텐츠가 추출되었는지 확인
+    if (!content || content.trim().length < 200) {
+      throw new Error('네이버 블로그 컨텐츠를 충분히 추출할 수 없습니다.');
+    }
+
+    console.log(
+      `[${new Date().toISOString()}] 네이버 블로그 컨텐츠 추출 성공 (${content.length}자)`
+    );
+
+    return {
+      content,
+      title: pageTitle.replace(' : 네이버 블로그', ''),
+      imageUrl: mainImageUrl || '',
+    };
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] 네이버 블로그 처리 오류:`, error);
+
+    // 브라우저가 열려있으면 종료
+    if (browser) {
+      await browser.close();
+    }
+
+    throw error;
+  }
+}
+
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
@@ -260,14 +513,29 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 네이버 블로그 체크
+    // 네이버 블로그 체크 및 처리
     if (isUrl && /blog\.naver\.com/i.test(text)) {
-      return NextResponse.json(
-        {
-          error: '네이버 블로그는 지원되지 않습니다. 내용을 직접 복사하여 입력해주세요.',
-        },
-        { status: 400 }
-      );
+      try {
+        console.log(`[${new Date().toISOString()}] 네이버 블로그 URL 감지: ${text}`);
+        const { content, title, imageUrl } = await extractNaverBlogContent(text);
+
+        return NextResponse.json({
+          content,
+          sourceUrl: text,
+          title,
+          imageUrl,
+          isExtracted: true,
+          type: 'naverblog',
+        });
+      } catch (error: any) {
+        console.error(`[${new Date().toISOString()}] 네이버 블로그 처리 실패:`, error);
+        return NextResponse.json(
+          {
+            error: `네이버 블로그 처리 중 오류: ${error.message || '알 수 없는 오류'}`,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // 유튜브 URL 확인

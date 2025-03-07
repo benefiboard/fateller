@@ -29,14 +29,15 @@ const TWITTER_PROMPT = `당신은 교과서나 학습자료 수준의 명확한 
 - 경영/경제
 - 언어
 - 정치
-- 사회과학
-- 자연과학
+- 사회
+- 국제
+- 과학/IT
 - 수학
 - 기술/공학
 - 의학/건강
 - 예술/문화
 - 문학/창작
-- 기타
+
 
 
 핵심 작성 지침:
@@ -57,7 +58,7 @@ const TWITTER_PROMPT = `당신은 교과서나 학습자료 수준의 명확한 
 - 중요 개념과 사례를 효과적으로 연결하여 이해도 높이기
 
 결과는 반드시 유효한 JSON 형식으로만 응답하세요. 답변은 반드시 한글로 작성. 추가 설명이나 텍스트는 포함하지 마세요.`;
-const TIMEOUT_DURATION = 18000;
+const TIMEOUT_DURATION = 10500;
 
 export async function POST(req: NextRequest) {
   // timeoutId 변수를 여기서 선언해서 스코프 문제 해결
