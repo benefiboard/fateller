@@ -151,6 +151,20 @@ const MemoContent: React.FC<MemoContentProps> = ({
             <p className="py-8 my-2 text-lg font-semibold tracking-tighter leading-relaxed">
               "{renderHTML(memo.labeling.key_sentence)}"
             </p>
+            {memo.original_image && (
+              <div className="flex items-center gap-2 w-full">
+                <div className="flex-shrink-0">
+                  <img
+                    src={memo.original_image}
+                    alt="Original Image"
+                    className="h-24 w-auto object-contain rounded-lg"
+                  />
+                </div>
+                <p className="text-sm text-gray-500 flex-grow overflow-hidden">
+                  {memo.original_title || 'no title'}
+                </p>
+              </div>
+            )}
             <div className="flex flex-wrap items-center text-emerald-700 gap-2">
               {memo.labeling.keywords.map((keyword, keywordIndex) => (
                 <span

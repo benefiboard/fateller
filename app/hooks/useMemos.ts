@@ -118,7 +118,7 @@ export const useMemos = () => {
     text: string,
     metadata: any = {},
     retryCount = 0,
-    maxRetries = 2
+    maxRetries = 1
   ) => {
     try {
       console.log(
