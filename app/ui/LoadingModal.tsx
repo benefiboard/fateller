@@ -91,6 +91,12 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
                 src={extractedData.imageUrl}
                 alt="콘텐츠 미리보기"
                 className="w-full h-28 object-cover rounded-lg shadow-sm"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  // 이미지 로드 실패 시 대체 이미지나 에러 처리
+                  console.log('이미지 로드 실패:', e);
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             )}
           </div>
