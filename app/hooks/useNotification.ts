@@ -1,3 +1,7 @@
+//app/hooks/useNotification.ts
+
+'use client';
+
 import { useState, useEffect } from 'react';
 import { NotificationType } from '../utils/types';
 

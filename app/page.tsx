@@ -16,6 +16,7 @@ import ComposerModal from './ui/ComposerModal';
 import useMemos from './hooks/useMemos';
 import useMemosState from './hooks/useMemosState';
 import useNotification from './hooks/useNotification';
+import usePendingMemos from './hooks/usePendingMemos';
 
 // 프로필 정보
 const profile = {
@@ -46,6 +47,58 @@ const MemoPage: React.FC = () => {
     loadMoreMemos,
     hasMore,
   } = useMemos();
+
+  const { pendingMemos, addPendingMemo, updatePendingMemo, removePendingMemo } = usePendingMemos();
+
+  // 백그라운드 처리 함수
+  const handleBackgroundProcess = async (data: any) => {
+    // 대기 중인 메모 추가
+    const pendingId = addPendingMemo(data.text);
+
+    try {
+      // 추출 상태 업데이트
+      updatePendingMemo(pendingId, {
+        status: 'analyzing',
+        extractedData: {
+          title: data.originalTitle,
+          imageUrl: data.originalImage,
+          content: data.text,
+          sourceUrl: data.sourceUrl,
+        },
+      });
+
+      // OpenAI API 호출 및 메모 저장
+      if (data.id) {
+        await updateMemoWithAI(data.id, data.text, {
+          isUrl: data.isUrl,
+          sourceUrl: data.sourceUrl,
+          originalTitle: data.originalTitle || '',
+          originalImage: data.originalImage || '',
+        });
+      } else {
+        await createMemo(data.text, {
+          isUrl: data.isUrl,
+          sourceUrl: data.sourceUrl,
+          originalTitle: data.originalTitle || '',
+          originalImage: data.originalImage || '',
+        });
+      }
+
+      // 완료 상태로 업데이트 후 알림
+      updatePendingMemo(pendingId, { status: 'completed' });
+      showNotification('메모가 성공적으로 생성되었습니다.', 'success');
+
+      // 잠시 후 목록에서 제거 (UI에서 처리 완료 표시를 보여주기 위해)
+      setTimeout(() => removePendingMemo(pendingId), 3000);
+    } catch (error: any) {
+      // 오류 발생 시 상태 업데이트
+      updatePendingMemo(pendingId, {
+        status: 'error',
+        error: error.message,
+      });
+      showNotification(`오류가 발생했습니다: ${error.message}`, 'error');
+    }
+  };
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastMemoRef = useCallback(
@@ -180,8 +233,73 @@ const MemoPage: React.FC = () => {
           editingMemo={editingMemoId ? memos.find((m) => m.id === editingMemoId) : undefined}
           onClose={handleCloseComposer}
           onSubmit={handleSubmit}
+          onBackgroundProcess={handleBackgroundProcess}
           profile={profile}
         />
+      )}
+
+      {/* 대기 중인 메모 목록 */}
+      {pendingMemos.length > 0 && (
+        <div className="p-2 bg-gray-50">
+          <h3 className="text-sm font-medium text-gray-700 mb-2 px-2">처리 중인 메모</h3>
+          <div className="space-y-2">
+            {pendingMemos.map((pendingMemo) => (
+              <div
+                key={pendingMemo.id}
+                className="p-3 bg-white rounded-lg shadow-sm border border-gray-100"
+              >
+                <div className="flex items-center">
+                  {/* 상태에 따른 아이콘 */}
+                  <div className="mr-3">
+                    {pendingMemo.status === 'extracting' && (
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <span className="animate-pulse">🔍</span>
+                      </div>
+                    )}
+                    {pendingMemo.status === 'analyzing' && (
+                      <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
+                        <span className="animate-pulse">🧠</span>
+                      </div>
+                    )}
+                    {pendingMemo.status === 'completed' && (
+                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                        <span>✅</span>
+                      </div>
+                    )}
+                    {pendingMemo.status === 'error' && (
+                      <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                        <span>❌</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">
+                      {pendingMemo.extractedData?.title || '처리 중인 메모'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {pendingMemo.status === 'extracting' && '콘텐츠 추출 중...'}
+                      {pendingMemo.status === 'analyzing' && 'AI 분석 중...'}
+                      {pendingMemo.status === 'completed' && '처리 완료!'}
+                      {(pendingMemo.status === 'error' && pendingMemo.error) || '오류 발생'}
+                    </p>
+                  </div>
+
+                  {/* 이미지 미리보기 (있는 경우) */}
+                  {pendingMemo.extractedData?.imageUrl && (
+                    <div className="ml-2 w-12 h-12">
+                      <img
+                        src={pendingMemo.extractedData.imageUrl}
+                        alt="미리보기"
+                        className="w-full h-full object-cover rounded"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* 메모 목록 */}

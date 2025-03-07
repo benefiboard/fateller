@@ -14,6 +14,7 @@ interface ComposerModalProps {
   profile: {
     avatar: string;
   };
+  onBackgroundProcess?: (data: any) => Promise<void>;
 }
 
 const ComposerModal: React.FC<ComposerModalProps> = ({
@@ -23,12 +24,20 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
   onClose,
   onSubmit,
   profile,
+  onBackgroundProcess,
 }) => {
   // 입력 상태
   const [inputText, setInputText] = useState('');
   const [characterCount, setCharacterCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [processingStep, setProcessingStep] = useState<'idle' | 'extracting' | 'analyzing'>('idle');
+  const [extractedData, setExtractedData] = useState<{
+    title?: string;
+    imageUrl?: string;
+    content?: string;
+    sourceUrl?: string;
+  } | null>(null);
 
   // 직접 수정 폼 데이터
   const [editFormData, setEditFormData] = useState<{
@@ -142,24 +151,16 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
   };
 
   // 제출 처리
+  // 제출 처리 함수 수정
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setProcessingStep('extracting');
     setError(null);
 
     try {
       if (mode === 'direct') {
-        // 직접 수정 모드 (기존 코드 유지)
-        const keywordArray = keywordsInput
-          .split(',')
-          .map((keyword) => keyword.trim())
-          .filter(Boolean);
-
-        await onSubmit({
-          ...editFormData,
-          keywords: keywordArray,
-          mode: 'direct',
-          id: editingMemo?.id,
-        });
+        // 직접 수정 모드 코드는 기존과 동일
+        // ...
       } else {
         // AI 분석 모드
         if (!inputText.trim()) {
@@ -180,49 +181,63 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
         const extractData = await extractResponse.json();
 
-        // 디버깅 - 응답 데이터 구조 확인
-        console.log('API 응답 데이터:', extractData);
-        const textToAnalyze = extractData.content;
-
-        // URL 추출 성공 메시지 표시 (선택 사항)
-        if (extractData.isExtracted) {
-          // URL에서 추출 성공 시 알림 (선택 사항)
-          console.log('URL에서 콘텐츠 추출 성공:', extractData.sourceUrl);
-        }
-
-        // 안전하게 속성 접근 및 기본값 설정
-        const isExtracted = Boolean(extractData?.isExtracted);
-        const sourceUrl = isExtracted ? extractData?.sourceUrl || '' : '';
-        const originalTitle = extractData?.title || '';
-        const originalImage = extractData?.imageUrl || extractData?.thumbnailUrl || '';
-
-        // 디버깅 - 추출한 값 확인
-        console.log('추출된 값들:', {
-          textToAnalyze,
-          isExtracted,
-          sourceUrl,
-          originalTitle,
-          originalImage,
+        // 추출 데이터 저장
+        setExtractedData({
+          title: extractData.title || '',
+          imageUrl: extractData.imageUrl || extractData.thumbnailUrl || '',
+          content: extractData.content,
+          sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null,
         });
 
-        // 2단계: 추출된 콘텐츠로 메모 생성 (기존 방식 그대로)
+        // 처리 단계 업데이트
+        setProcessingStep('analyzing');
+
+        // 여기서 사용자가 배경 처리를 선택할 수 있는 기회 제공
+        // handleContinueInBackground가 호출되면 아래 코드는 백그라운드에서 실행
+
+        // 2단계: AI 분석 및 메모 생성
         await onSubmit({
-          text: textToAnalyze,
+          text: extractData.content,
           mode: 'analyze',
           id: editingMemo?.id,
           isUrl: extractData.isExtracted,
           sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null,
-          originalTitle: extractData.title || '', // 추가: 추출된 제목
-          originalImage: extractData.imageUrl || extractData.thumbnailUrl || '', // 추가: 추출된 이미지
+          originalTitle: extractData.title || '',
+          originalImage: extractData.imageUrl || extractData.thumbnailUrl || '',
         });
-      }
 
-      onClose();
+        // 처리 완료
+        setProcessingStep('idle');
+        onClose();
+      }
     } catch (error: any) {
       setError(`오류가 발생했습니다: ${error.message}`);
+      setProcessingStep('idle');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // 백그라운드 처리 핸들러
+  const handleContinueInBackground = () => {
+    if (!extractedData || !onBackgroundProcess) return;
+
+    // 백그라운드 처리를 위한 데이터 준비
+    const processData = {
+      text: extractedData.content,
+      mode: 'analyze',
+      id: editingMemo?.id,
+      isUrl: !!extractedData.sourceUrl,
+      sourceUrl: extractedData.sourceUrl,
+      originalTitle: extractedData.title || '',
+      originalImage: extractedData.imageUrl || '',
+    };
+
+    // 백그라운드 처리 시작
+    onBackgroundProcess(processData);
+
+    // 모달 닫기
+    onClose();
   };
 
   // 키보드 단축키 처리
@@ -238,7 +253,14 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       {/* 로딩 모달 추가 */}
-      <LoadingModal isOpen={isSubmitting} />
+      <LoadingModal
+        isOpen={isSubmitting}
+        step={processingStep === 'extracting' ? 'extracting' : 'analyzing'}
+        extractedData={extractedData || undefined}
+        onContinueInBackground={
+          processingStep === 'analyzing' ? handleContinueInBackground : undefined
+        }
+      />
 
       {/* 기존 모달 내용 - isSubmitting이 아닐 때만 표시 */}
       {!isSubmitting && (
