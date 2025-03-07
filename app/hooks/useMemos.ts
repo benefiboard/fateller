@@ -366,6 +366,9 @@ export const useMemos = () => {
         hashtags: newMemo.hashtags,
         thread: newMemo.thread,
         original_text: newMemo.original_text,
+        original_title: newMemo.original_title || options.originalTitle || '',
+        original_image: newMemo.original_image || options.originalImage || '',
+        original_url: newMemo.original_url || options.sourceUrl || '',
         labeling: {
           category: newMemo.category,
           keywords: newMemo.keywords,
@@ -478,6 +481,9 @@ export const useMemos = () => {
                 hashtags: aiResponse.hashtags || [],
                 thread: aiResponse.thread || [],
                 original_text: text,
+                original_title: aiResponse.originalTitle || options.originalTitle || '', // 추가
+                original_image: aiResponse.originalImage || options.originalImage || '', // 추가
+                original_url: options.isUrl ? options.sourceUrl : '',
                 labeling: {
                   category: aiResponse.labeling?.category || '미분류',
                   keywords: aiResponse.labeling?.keywords || [],
