@@ -58,7 +58,7 @@ const MemoPage: React.FC = () => {
     try {
       // 추출 상태 업데이트
       updatePendingMemo(pendingId, {
-        status: 'analyzing',
+        status: 'analyzing', // 확실히 'analyzing' 상태로 설정
         extractedData: {
           title: data.originalTitle,
           imageUrl: data.originalImage,
@@ -96,7 +96,6 @@ const MemoPage: React.FC = () => {
         status: 'error',
         error: error.message,
       });
-      showNotification(`오류가 발생했습니다: ${error.message}`, 'error');
     }
   };
 
@@ -281,7 +280,6 @@ const MemoPage: React.FC = () => {
                       {pendingMemo.status === 'extracting' && '콘텐츠 추출 중...'}
                       {pendingMemo.status === 'analyzing' && 'AI 분석 중...'}
                       {pendingMemo.status === 'completed' && '처리 완료!'}
-                      {(pendingMemo.status === 'error' && pendingMemo.error) || '오류 발생'}
                     </p>
                   </div>
 
