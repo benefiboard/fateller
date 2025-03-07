@@ -2,7 +2,11 @@
   "functions": {
     "app/api/extract-and-analyze/*.js": {
       "memory": 1024,
-      "maxDuration": 60
+      "maxDuration": 50
+    },
+    "app/api/labeling/*.js": {
+      "memory": 1024,
+      "maxDuration": 50
     }
   }
 }
