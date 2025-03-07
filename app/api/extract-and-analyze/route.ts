@@ -1,3 +1,621 @@
+// // app/api/extract-and-analyze/route.ts
+// import { NextResponse, type NextRequest } from 'next/server';
+// import puppeteerCore from 'puppeteer-core';
+// import chromium from '@sparticuz/chromium-min';
+// import { Readability } from '@mozilla/readability';
+// import { JSDOM } from 'jsdom';
+// import { Innertube } from 'youtubei.js';
+
+// // 크롬 실행 경로 (로컬 개발용)
+// const CHROME_PATH =
+//   process.env.CHROME_PATH ||
+//   (process.platform === 'win32'
+//     ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+//     : process.platform === 'darwin'
+//     ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+//     : '/usr/bin/google-chrome');
+
+// // 환경 확인 함수
+// const isVercelProduction = () => {
+//   return process.env.VERCEL === '1' || process.env.VERCEL_ENV === 'production';
+// };
+
+// // 유튜브 URL 확인 함수
+// function isYoutubeUrl(url: string): boolean {
+//   return /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\/.+/i.test(url);
+// }
+
+// // 유튜브 비디오 ID 추출 함수
+// function extractYoutubeId(url: string): string | null {
+//   const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+//   const match = url.match(regExp);
+//   return match && match[7]?.length === 11 ? match[7] : null;
+// }
+
+// // youtubei.js를 사용한 자막 추출 함수
+// async function fetchYoutubeTranscriptWithInnertube(videoId: string): Promise<string> {
+//   try {
+//     console.log('Innertube를 사용하여 자막 추출 시작...');
+
+//     // Innertube 인스턴스 생성
+//     const yt = await Innertube.create({ generate_session_locally: true });
+
+//     // 비디오 정보 가져오기
+//     const videoInfo = await yt.getInfo(videoId);
+
+//     try {
+//       // 자막 정보 가져오기
+//       const transcriptInfo = await videoInfo.getTranscript();
+
+//       // 안전하게 속성에 접근하기 위한 옵셔널 체이닝 사용
+//       const transcript = transcriptInfo?.transcript?.content?.body?.initial_segments || [];
+
+//       if (!transcript || transcript.length === 0) {
+//         throw new Error('자막 세그먼트를 찾을 수 없습니다');
+//       }
+
+//       console.log(`자막 추출 성공: ${transcript.length}개 세그먼트`);
+
+//       // 각 세그먼트의 text 부분만 추출해서 연결
+//       const fullText = transcript
+//         .map((segment: any) => {
+//           // 여러 형태의 자막 데이터 구조 처리
+//           if (segment.snippet && segment.snippet.text) {
+//             return segment.snippet.text;
+//           } else if (segment.text) {
+//             return segment.text;
+//           } else if (segment.snippet && typeof segment.snippet === 'object') {
+//             // 중첩된 객체 구조 처리
+//             return segment.snippet.text || '';
+//           }
+//           return '';
+//         })
+//         .filter((text: string) => text.trim() !== '') // 빈 문자열 제거
+//         .join(' '); // 공백으로 연결
+
+//       if (!fullText || fullText.trim().length === 0) {
+//         throw new Error('추출된 자막 텍스트가 없습니다');
+//       }
+
+//       return fullText;
+//     } catch (transcriptError: any) {
+//       console.error('자막 추출 오류:', transcriptError);
+//       // 자막을 가져오지 못한 경우 오류 메시지 던지기
+//       throw new Error('이 동영상에서 자막을 가져올 수 없습니다: ' + transcriptError.message);
+//     }
+//   } catch (error: any) {
+//     console.error('유튜브 자막 추출 오류:', error);
+//     throw new Error(`유튜브 자막 추출 실패: ${error.message}`);
+//   }
+// }
+
+// // 유튜브 메타데이터(제목, 썸네일) 가져오기 함수 추가
+// // async function getYoutubeMetadata(
+// //   videoId: string
+// // ): Promise<{ title: string; thumbnailUrl: string }> {
+// //   try {
+// //     console.log('유튜브 메타데이터 가져오기 시작...');
+
+// //     // Innertube 인스턴스 생성
+// //     const yt = await Innertube.create({ generate_session_locally: true });
+
+// //     // 비디오 정보 가져오기
+// //     const videoInfo = await yt.getInfo(videoId);
+// //     console.log('유튜브 비디오 정보:', videoInfo);
+
+// //     // 제목 가져오기
+// //     const title = videoInfo.basic_info.title || '제목 없음';
+
+// //     // 썸네일 URL 가져오기 (가장 높은 해상도 선택)
+// //     const thumbnails = videoInfo.basic_info.thumbnail || [];
+// //     let thumbnailUrl = '';
+
+// //     if (thumbnails.length > 0) {
+// //       // 썸네일이 여러 개 있을 경우 마지막 항목이 일반적으로 가장 높은 해상도
+// //       thumbnailUrl = thumbnails[thumbnails.length - 1].url;
+// //     } else {
+// //       // 기본 유튜브 썸네일 URL 형식 사용
+// //       thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+// //     }
+
+// //     // 콘솔에 유튜브 메타데이터 출력
+// //     console.log('유튜브 제목:', title);
+// //     console.log('유튜브 썸네일 URL:', thumbnailUrl);
+
+// //     console.log('유튜브 메타데이터 가져오기 성공');
+// //     return { title, thumbnailUrl };
+// //   } catch (error: any) {
+// //     console.error('유튜브 메타데이터 가져오기 오류:', error);
+// //     // 기본값 반환
+// //     const defaultTitle = '제목을 가져올 수 없음';
+// //     const defaultThumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+// //     console.log('유튜브 제목(기본값):', defaultTitle);
+// //     console.log('유튜브 썸네일 URL(기본값):', defaultThumbnailUrl);
+
+// //     return {
+// //       title: defaultTitle,
+// //       thumbnailUrl: defaultThumbnailUrl,
+// //     };
+// //   }
+// // }
+
+// // app/api/extract-and-analyze/route.ts 수정
+
+// async function getYoutubeMetadata(
+//   videoId: string
+// ): Promise<{ title: string; thumbnailUrl: string }> {
+//   console.log(`[${new Date().toISOString()}] 유튜브 메타데이터 가져오기 시작: ${videoId}`);
+//   const startTime = Date.now();
+
+//   try {
+//     console.log(`[${new Date().toISOString()}] Innertube 인스턴스 생성 시도...`);
+//     const innertubeStartTime = Date.now();
+
+//     // Innertube 인스턴스 생성
+//     const yt = await Innertube.create({ generate_session_locally: true });
+
+//     console.log(
+//       `[${new Date().toISOString()}] Innertube 인스턴스 생성 완료 (${
+//         Date.now() - innertubeStartTime
+//       }ms)`
+//     );
+
+//     console.log(`[${new Date().toISOString()}] 비디오 정보 가져오기 시도...`);
+//     const videoInfoStartTime = Date.now();
+
+//     // 비디오 정보 가져오기
+//     const videoInfo = await yt.getInfo(videoId);
+
+//     console.log(
+//       `[${new Date().toISOString()}] 비디오 정보 가져오기 완료 (${
+//         Date.now() - videoInfoStartTime
+//       }ms)`
+//     );
+
+//     // 비디오 정보 객체 구조 확인을 위한 로깅
+//     console.log(`[${new Date().toISOString()}] 비디오 정보 객체 키:`, Object.keys(videoInfo));
+//     console.log(`[${new Date().toISOString()}] basic_info 존재 여부:`, !!videoInfo.basic_info);
+
+//     if (videoInfo.basic_info) {
+//       console.log(
+//         `[${new Date().toISOString()}] basic_info 키:`,
+//         Object.keys(videoInfo.basic_info)
+//       );
+//       console.log(`[${new Date().toISOString()}] title 값:`, videoInfo.basic_info.title);
+//       console.log(
+//         `[${new Date().toISOString()}] thumbnail 존재 여부:`,
+//         !!videoInfo.basic_info.thumbnail
+//       );
+//     }
+
+//     // 제목 가져오기
+//     const title = videoInfo.basic_info.title || '제목 없음';
+//     console.log(`[${new Date().toISOString()}] 추출된 제목:`, title);
+
+//     // 썸네일 URL 가져오기 (가장 높은 해상도 선택)
+//     const thumbnails = videoInfo.basic_info.thumbnail || [];
+//     let thumbnailUrl = '';
+
+//     console.log(`[${new Date().toISOString()}] 썸네일 배열 길이:`, thumbnails.length);
+
+//     if (thumbnails.length > 0) {
+//       // 썸네일 정보 로깅
+//       console.log(`[${new Date().toISOString()}] 첫 번째 썸네일:`, JSON.stringify(thumbnails[0]));
+//       console.log(
+//         `[${new Date().toISOString()}] 마지막 썸네일:`,
+//         JSON.stringify(thumbnails[thumbnails.length - 1])
+//       );
+
+//       // 썸네일이 여러 개 있을 경우 마지막 항목이 일반적으로 가장 높은 해상도
+//       thumbnailUrl = thumbnails[thumbnails.length - 1].url;
+//     } else {
+//       // 기본 유튜브 썸네일 URL 형식 사용
+//       thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+//       console.log(`[${new Date().toISOString()}] 썸네일 정보 없음, 기본 URL 사용:`, thumbnailUrl);
+//     }
+
+//     const totalTime = Date.now() - startTime;
+//     console.log(
+//       `[${new Date().toISOString()}] 유튜브 메타데이터 가져오기 성공 (총 ${totalTime}ms)`
+//     );
+//     console.log(`[${new Date().toISOString()}] 제목: "${title}", 썸네일: "${thumbnailUrl}"`);
+
+//     return { title, thumbnailUrl };
+//   } catch (error: any) {
+//     const totalTime = Date.now() - startTime;
+//     console.error(
+//       `[${new Date().toISOString()}] 유튜브 메타데이터 가져오기 오류 (${totalTime}ms):`,
+//       error
+//     );
+//     console.error(
+//       `[${new Date().toISOString()}] 오류 이름: ${error.name}, 메시지: ${error.message}`
+//     );
+//     console.error(`[${new Date().toISOString()}] 스택 트레이스: ${error.stack}`);
+
+//     // 타임아웃 관련 오류인지 확인
+//     const isTimeoutError =
+//       error.message.includes('timeout') ||
+//       error.message.includes('시간 초과') ||
+//       error.name === 'AbortError';
+
+//     console.log(`[${new Date().toISOString()}] 타임아웃 오류 여부: ${isTimeoutError}`);
+
+//     // 기본값 반환
+//     const defaultTitle = '제목을 가져올 수 없음';
+//     const defaultThumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+//     console.log(
+//       `[${new Date().toISOString()}] 기본값 반환: 제목="${defaultTitle}", 썸네일="${defaultThumbnailUrl}"`
+//     );
+
+//     return {
+//       title: defaultTitle,
+//       thumbnailUrl: defaultThumbnailUrl,
+//     };
+//   }
+// }
+
+// // 웹페이지 이미지 추출 함수 추가
+// async function extractMainImage(page: any): Promise<string> {
+//   try {
+//     // OpenGraph 이미지 추출 시도
+//     const ogImage = await page.evaluate(() => {
+//       const ogImageMeta = document.querySelector('meta[property="og:image"]');
+//       return ogImageMeta ? ogImageMeta.getAttribute('content') : null;
+//     });
+
+//     if (ogImage) {
+//       console.log('OpenGraph 이미지 찾음:', ogImage);
+//       return ogImage;
+//     }
+
+//     // Twitter 카드 이미지 추출 시도
+//     const twitterImage = await page.evaluate(() => {
+//       const twitterImageMeta = document.querySelector('meta[name="twitter:image"]');
+//       return twitterImageMeta ? twitterImageMeta.getAttribute('content') : null;
+//     });
+
+//     if (twitterImage) {
+//       console.log('Twitter 카드 이미지 찾음:', twitterImage);
+//       return twitterImage;
+//     }
+
+//     // 큰 이미지 찾기
+//     const largeImage = await page.evaluate(() => {
+//       const images = Array.from(document.querySelectorAll('img'));
+//       // 크기 속성이 있는 큰 이미지 찾기
+//       for (const img of images) {
+//         const width = parseInt(img.getAttribute('width') || '0');
+//         const height = parseInt(img.getAttribute('height') || '0');
+//         if (width >= 200 && height >= 200) {
+//           return img.src;
+//         }
+//       }
+
+//       // 크기 속성이 없는 경우 computed style 확인
+//       for (const img of images) {
+//         const rect = img.getBoundingClientRect();
+//         if (rect.width >= 200 && rect.height >= 200) {
+//           return img.src;
+//         }
+//       }
+
+//       // 첫 번째 이미지 반환 (다른 조건이 없는 경우)
+//       return images.length > 0 ? images[0].src : null;
+//     });
+
+//     if (largeImage) {
+//       console.log('페이지 내 큰 이미지 찾음:', largeImage);
+//       return largeImage;
+//     }
+
+//     console.log('이미지를 찾을 수 없음');
+//     return '';
+//   } catch (error) {
+//     console.error('이미지 추출 오류:', error);
+//     return '';
+//   }
+// }
+
+// export const dynamic = 'force-dynamic';
+// export const maxDuration = 60;
+
+// export async function POST(request: NextRequest) {
+//   const { text } = await request.json();
+
+//   if (!text) {
+//     return NextResponse.json({ error: '텍스트가 필요합니다' }, { status: 400 });
+//   }
+
+//   try {
+//     // URL 여부 확인
+//     let isUrl = false;
+//     try {
+//       new URL(text);
+//       isUrl = text.trim().indexOf('\n') === -1 && /^https?:\/\//i.test(text.trim());
+//     } catch (e) {
+//       isUrl = false;
+//     }
+
+//     // URL이 아니면 그대로 반환 (클라이언트에서 labeling API 호출)
+//     if (!isUrl) {
+//       return NextResponse.json({
+//         content: text,
+//         isExtracted: false,
+//       });
+//     }
+
+//     // 네이버 블로그 체크
+//     if (isUrl && /blog\.naver\.com/i.test(text)) {
+//       return NextResponse.json(
+//         {
+//           error: '네이버 블로그는 지원되지 않습니다. 내용을 직접 복사하여 입력해주세요.',
+//         },
+//         { status: 400 }
+//       );
+//     }
+
+//     // 유튜브 URL 확인
+//     // if (isYoutubeUrl(text)) {
+//     //   const videoId = extractYoutubeId(text);
+//     //   if (!videoId) {
+//     //     return NextResponse.json({ error: '유효한 유튜브 URL이 아닙니다' }, { status: 400 });
+//     //   }
+
+//     //   try {
+//     //     // 병렬로 자막과 메타데이터 가져오기
+//     //     const [transcriptText, metadata] = await Promise.all([
+//     //       fetchYoutubeTranscriptWithInnertube(videoId),
+//     //       getYoutubeMetadata(videoId),
+//     //     ]);
+
+//     //     console.log('유튜브 처리 결과 요약:');
+//     //     console.log('----------------------------');
+//     //     console.log('비디오 ID:', videoId);
+//     //     console.log('제목:', metadata.title);
+//     //     console.log('썸네일 URL:', metadata.thumbnailUrl);
+//     //     console.log('자막 길이:', transcriptText.length, '자');
+//     //     console.log('----------------------------');
+
+//     //     // 자막 추출 성공 시 반환
+//     //     return NextResponse.json({
+//     //       content: transcriptText,
+//     //       sourceUrl: text,
+//     //       isExtracted: true,
+//     //       type: 'youtube',
+//     //       title: metadata.title,
+//     //       imageUrl: metadata.thumbnailUrl,
+//     //       thumbnailUrl: metadata.thumbnailUrl,
+//     //     });
+//     //   } catch (error: any) {
+//     //     // 자막 추출 실패 시 오류 반환
+//     //     return NextResponse.json(
+//     //       {
+//     //         error: `이 영상에서 자막을 가져올 수 없습니다: ${error.message || '알 수 없는 오류'}`,
+//     //       },
+//     //       { status: 400 }
+//     //     );
+//     //   }
+//     // }
+
+//     if (isYoutubeUrl(text)) {
+//       const videoId = extractYoutubeId(text);
+//       if (!videoId) {
+//         return NextResponse.json({ error: '유효한 유튜브 URL이 아닙니다' }, { status: 400 });
+//       }
+
+//       try {
+//         console.log(`[${new Date().toISOString()}] 유튜브 처리 시작: ${videoId}`);
+//         const totalStartTime = Date.now();
+
+//         // 병렬 요청 시작 시간 기록
+//         console.log(`[${new Date().toISOString()}] 자막 및 메타데이터 병렬 요청 시작`);
+//         const parallelStartTime = Date.now();
+
+//         // 병렬로 자막과 메타데이터 가져오기
+//         const [transcriptText, metadata] = await Promise.all([
+//           fetchYoutubeTranscriptWithInnertube(videoId),
+//           getYoutubeMetadata(videoId),
+//         ]);
+
+//         console.log(
+//           `[${new Date().toISOString()}] 병렬 요청 완료 (${Date.now() - parallelStartTime}ms)`
+//         );
+//         console.log(`[${new Date().toISOString()}] 총 처리 시간: ${Date.now() - totalStartTime}ms`);
+
+//         // 결과 요약 더 자세히 기록
+//         console.log('유튜브 처리 결과 요약:');
+//         console.log('----------------------------');
+//         console.log('비디오 ID:', videoId);
+//         console.log('제목 (길이):', metadata.title, `(${metadata.title.length}자)`);
+//         console.log('썸네일 URL:', metadata.thumbnailUrl);
+//         console.log('썸네일 기본 URL 여부:', metadata.thumbnailUrl.indexOf('?') === -1);
+//         console.log('자막 길이:', transcriptText.length, '자');
+//         console.log('자막 일부:', transcriptText.substring(0, 100) + '...');
+//         console.log('----------------------------');
+
+//         // 자막 추출 성공 시 반환
+//         return NextResponse.json({
+//           content: transcriptText,
+//           sourceUrl: text,
+//           isExtracted: true,
+//           type: 'youtube',
+//           title: metadata.title,
+//           imageUrl: metadata.thumbnailUrl,
+//           thumbnailUrl: metadata.thumbnailUrl,
+//         });
+//       } catch (error: any) {
+//         // 자막 추출 실패 시 오류 반환
+//         return NextResponse.json(
+//           {
+//             error: `이 영상에서 자막을 가져올 수 없습니다: ${error.message || '알 수 없는 오류'}`,
+//           },
+//           { status: 400 }
+//         );
+//       }
+//     }
+
+//     // 일반 웹페이지 콘텐츠 추출 (최적화: HTML 추출 후 즉시 브라우저 종료)
+//     let browser = null;
+//     let html = '';
+//     let mainImageUrl = '';
+
+//     try {
+//       // 환경에 따른 브라우저 시작
+//       if (isVercelProduction()) {
+//         console.log('Vercel 환경에서 실행 중...');
+//         const executablePath = await chromium.executablePath(
+//           'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+//         );
+
+//         browser = await puppeteerCore.launch({
+//           executablePath,
+//           args: chromium.args,
+//           headless: chromium.headless,
+//           defaultViewport: chromium.defaultViewport,
+//         });
+//       } else {
+//         console.log('로컬 환경에서 실행 중...', CHROME_PATH);
+//         browser = await puppeteerCore.launch({
+//           executablePath: CHROME_PATH,
+//           headless: true,
+//           args: ['--no-sandbox', '--disable-setuid-sandbox'],
+//         });
+//       }
+
+//       const page = await browser.newPage();
+
+//       // 이미지는 가져올 수 있도록 리소스 요청 선택적 차단
+//       await page.setRequestInterception(true);
+//       page.on('request', (req) => {
+//         const resourceType = req.resourceType();
+//         if (['font', 'media', 'stylesheet'].includes(resourceType)) {
+//           req.abort();
+//         } else {
+//           req.continue();
+//         }
+//       });
+
+//       // 페이지 로드
+//       await page.goto(text, { waitUntil: 'domcontentloaded', timeout: 25000 });
+
+//       // 페이지 제목 가져오기
+//       const pageTitle = await page.title();
+//       console.log('웹페이지 제목(브라우저):', pageTitle);
+
+//       // 메인 이미지 추출
+//       mainImageUrl = await extractMainImage(page);
+
+//       // 상대 경로 URL을 절대 경로로 변환
+//       if (mainImageUrl && !mainImageUrl.startsWith('http')) {
+//         const pageUrl = new URL(text);
+//         if (mainImageUrl.startsWith('/')) {
+//           mainImageUrl = `${pageUrl.protocol}//${pageUrl.host}${mainImageUrl}`;
+//         } else {
+//           mainImageUrl = `${pageUrl.protocol}//${pageUrl.host}/${mainImageUrl}`;
+//         }
+//         console.log('변환된 이미지 URL:', mainImageUrl);
+//       }
+
+//       // HTML 콘텐츠 가져오기
+//       html = await page.content();
+
+//       // 중요: HTML을 얻은 즉시 브라우저 종료
+//       await browser.close();
+//       browser = null;
+//     } catch (error: any) {
+//       // 브라우저 관련 오류 처리
+//       if (browser) {
+//         await browser.close();
+//         browser = null;
+//       }
+
+//       console.error('웹페이지 로딩 오류:', error);
+//       return NextResponse.json(
+//         { error: error.message || '웹페이지를 로드할 수 없습니다' },
+//         { status: 500 }
+//       );
+//     }
+
+//     // 브라우저 없이 Readability로 콘텐츠 추출
+//     try {
+//       const dom = new JSDOM(html, { url: text });
+//       const reader = new Readability(dom.window.document);
+//       const article = reader.parse();
+
+//       if (!article || !article.textContent || article.textContent.length < 100) {
+//         throw new Error('콘텐츠를 충분히 추출할 수 없습니다. 직접 내용을 입력해주세요.');
+//       }
+
+//       // 제목 출력
+//       console.log('웹페이지 제목(Readability):', article.title || '제목 없음');
+
+//       // 추출된 텍스트 정제
+//       const extractedContent = article.textContent
+//         .replace(/\n{3,}/g, '\n\n')
+//         .replace(/[ \t]+/g, ' ')
+//         .split('\n')
+//         .map((line) => line.trim())
+//         .join('\n')
+//         .trim();
+
+//       // 이미지 URL이 없는 경우 HTML에서 추가로 검색
+//       if (!mainImageUrl) {
+//         // og:image 메타 태그에서 이미지 URL 추출 시도
+//         const ogImageMatch = html.match(
+//           /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i
+//         );
+//         if (ogImageMatch && ogImageMatch[1]) {
+//           mainImageUrl = ogImageMatch[1];
+//           console.log('HTML에서 추출한 OG 이미지:', mainImageUrl);
+//         } else {
+//           // twitter:image 메타 태그에서 이미지 URL 추출 시도
+//           const twitterImageMatch = html.match(
+//             /<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i
+//           );
+//           if (twitterImageMatch && twitterImageMatch[1]) {
+//             mainImageUrl = twitterImageMatch[1];
+//             console.log('HTML에서 추출한 Twitter 이미지:', mainImageUrl);
+//           }
+//         }
+//       }
+
+//       console.log('웹페이지 처리 결과 요약:');
+//       console.log('----------------------------');
+//       console.log('URL:', text);
+//       console.log('제목:', article.title || '제목 없음');
+//       console.log('이미지 URL:', mainImageUrl || '이미지 없음');
+//       console.log('콘텐츠 길이:', extractedContent.length, '자');
+//       console.log('----------------------------');
+
+//       // 추출 성공 응답
+//       return NextResponse.json({
+//         content: extractedContent,
+//         sourceUrl: text,
+//         title: article.title || '',
+//         imageUrl: mainImageUrl || '',
+//         isExtracted: true,
+//         type: 'webpage',
+//       });
+//     } catch (error: any) {
+//       console.error('콘텐츠 추출 오류:', error);
+//       return NextResponse.json(
+//         { error: error.message || '웹페이지 처리 중 오류가 발생했습니다' },
+//         { status: 500 }
+//       );
+//     }
+//   } catch (error: any) {
+//     console.error('처리 오류:', error);
+//     return NextResponse.json(
+//       {
+//         error: error.message || '처리 중 오류가 발생했습니다',
+//       },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 // app/api/extract-and-analyze/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import puppeteerCore from 'puppeteer-core';
@@ -89,170 +707,84 @@ async function fetchYoutubeTranscriptWithInnertube(videoId: string): Promise<str
   }
 }
 
-// 유튜브 메타데이터(제목, 썸네일) 가져오기 함수 추가
-// async function getYoutubeMetadata(
-//   videoId: string
-// ): Promise<{ title: string; thumbnailUrl: string }> {
-//   try {
-//     console.log('유튜브 메타데이터 가져오기 시작...');
-
-//     // Innertube 인스턴스 생성
-//     const yt = await Innertube.create({ generate_session_locally: true });
-
-//     // 비디오 정보 가져오기
-//     const videoInfo = await yt.getInfo(videoId);
-//     console.log('유튜브 비디오 정보:', videoInfo);
-
-//     // 제목 가져오기
-//     const title = videoInfo.basic_info.title || '제목 없음';
-
-//     // 썸네일 URL 가져오기 (가장 높은 해상도 선택)
-//     const thumbnails = videoInfo.basic_info.thumbnail || [];
-//     let thumbnailUrl = '';
-
-//     if (thumbnails.length > 0) {
-//       // 썸네일이 여러 개 있을 경우 마지막 항목이 일반적으로 가장 높은 해상도
-//       thumbnailUrl = thumbnails[thumbnails.length - 1].url;
-//     } else {
-//       // 기본 유튜브 썸네일 URL 형식 사용
-//       thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-//     }
-
-//     // 콘솔에 유튜브 메타데이터 출력
-//     console.log('유튜브 제목:', title);
-//     console.log('유튜브 썸네일 URL:', thumbnailUrl);
-
-//     console.log('유튜브 메타데이터 가져오기 성공');
-//     return { title, thumbnailUrl };
-//   } catch (error: any) {
-//     console.error('유튜브 메타데이터 가져오기 오류:', error);
-//     // 기본값 반환
-//     const defaultTitle = '제목을 가져올 수 없음';
-//     const defaultThumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-
-//     console.log('유튜브 제목(기본값):', defaultTitle);
-//     console.log('유튜브 썸네일 URL(기본값):', defaultThumbnailUrl);
-
-//     return {
-//       title: defaultTitle,
-//       thumbnailUrl: defaultThumbnailUrl,
-//     };
-//   }
-// }
-
-// app/api/extract-and-analyze/route.ts 수정
-
+// 유튜브 메타데이터(제목, 썸네일) 가져오기 함수 - OEmbed API 사용
 async function getYoutubeMetadata(
   videoId: string
 ): Promise<{ title: string; thumbnailUrl: string }> {
-  console.log(`[${new Date().toISOString()}] 유튜브 메타데이터 가져오기 시작: ${videoId}`);
+  console.log(
+    `[${new Date().toISOString()}] 유튜브 메타데이터 가져오기 시작: ${videoId} (OEmbed API 사용)`
+  );
   const startTime = Date.now();
 
   try {
-    console.log(`[${new Date().toISOString()}] Innertube 인스턴스 생성 시도...`);
-    const innertubeStartTime = Date.now();
+    // OEmbed API URL 구성
+    const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+    console.log(`[${new Date().toISOString()}] OEmbed API 요청: ${oembedUrl}`);
 
-    // Innertube 인스턴스 생성
-    const yt = await Innertube.create({ generate_session_locally: true });
+    // OEmbed API 호출
+    const response = await fetch(oembedUrl);
 
-    console.log(
-      `[${new Date().toISOString()}] Innertube 인스턴스 생성 완료 (${
-        Date.now() - innertubeStartTime
-      }ms)`
-    );
-
-    console.log(`[${new Date().toISOString()}] 비디오 정보 가져오기 시도...`);
-    const videoInfoStartTime = Date.now();
-
-    // 비디오 정보 가져오기
-    const videoInfo = await yt.getInfo(videoId);
-
-    console.log(
-      `[${new Date().toISOString()}] 비디오 정보 가져오기 완료 (${
-        Date.now() - videoInfoStartTime
-      }ms)`
-    );
-
-    // 비디오 정보 객체 구조 확인을 위한 로깅
-    console.log(`[${new Date().toISOString()}] 비디오 정보 객체 키:`, Object.keys(videoInfo));
-    console.log(`[${new Date().toISOString()}] basic_info 존재 여부:`, !!videoInfo.basic_info);
-
-    if (videoInfo.basic_info) {
-      console.log(
-        `[${new Date().toISOString()}] basic_info 키:`,
-        Object.keys(videoInfo.basic_info)
-      );
-      console.log(`[${new Date().toISOString()}] title 값:`, videoInfo.basic_info.title);
-      console.log(
-        `[${new Date().toISOString()}] thumbnail 존재 여부:`,
-        !!videoInfo.basic_info.thumbnail
-      );
+    if (!response.ok) {
+      throw new Error(`OEmbed API 오류: ${response.status} ${response.statusText}`);
     }
 
-    // 제목 가져오기
-    const title = videoInfo.basic_info.title || '제목 없음';
-    console.log(`[${new Date().toISOString()}] 추출된 제목:`, title);
+    // 응답 JSON 파싱
+    const oembedData = await response.json();
+    console.log(
+      `[${new Date().toISOString()}] OEmbed 응답 성공:`,
+      JSON.stringify(oembedData, null, 2).substring(0, 200) + '...'
+    );
 
-    // 썸네일 URL 가져오기 (가장 높은 해상도 선택)
-    const thumbnails = videoInfo.basic_info.thumbnail || [];
-    let thumbnailUrl = '';
+    // 제목 추출
+    const title = oembedData.title || '제목 없음';
 
-    console.log(`[${new Date().toISOString()}] 썸네일 배열 길이:`, thumbnails.length);
-
-    if (thumbnails.length > 0) {
-      // 썸네일 정보 로깅
-      console.log(`[${new Date().toISOString()}] 첫 번째 썸네일:`, JSON.stringify(thumbnails[0]));
-      console.log(
-        `[${new Date().toISOString()}] 마지막 썸네일:`,
-        JSON.stringify(thumbnails[thumbnails.length - 1])
-      );
-
-      // 썸네일이 여러 개 있을 경우 마지막 항목이 일반적으로 가장 높은 해상도
-      thumbnailUrl = thumbnails[thumbnails.length - 1].url;
-    } else {
-      // 기본 유튜브 썸네일 URL 형식 사용
-      thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-      console.log(`[${new Date().toISOString()}] 썸네일 정보 없음, 기본 URL 사용:`, thumbnailUrl);
-    }
+    // 고화질 썸네일 URL 구성 (OEmbed는 썸네일 URL을 제공하지 않으므로 ID로 구성)
+    const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
     const totalTime = Date.now() - startTime;
     console.log(
-      `[${new Date().toISOString()}] 유튜브 메타데이터 가져오기 성공 (총 ${totalTime}ms)`
+      `[${new Date().toISOString()}] OEmbed API 메타데이터 가져오기 성공 (총 ${totalTime}ms)`
     );
     console.log(`[${new Date().toISOString()}] 제목: "${title}", 썸네일: "${thumbnailUrl}"`);
 
     return { title, thumbnailUrl };
   } catch (error: any) {
-    const totalTime = Date.now() - startTime;
-    console.error(
-      `[${new Date().toISOString()}] 유튜브 메타데이터 가져오기 오류 (${totalTime}ms):`,
-      error
-    );
-    console.error(
-      `[${new Date().toISOString()}] 오류 이름: ${error.name}, 메시지: ${error.message}`
-    );
-    console.error(`[${new Date().toISOString()}] 스택 트레이스: ${error.stack}`);
+    console.error(`[${new Date().toISOString()}] OEmbed API 오류:`, error);
 
-    // 타임아웃 관련 오류인지 확인
-    const isTimeoutError =
-      error.message.includes('timeout') ||
-      error.message.includes('시간 초과') ||
-      error.name === 'AbortError';
+    try {
+      // OEmbed 실패 시 HTML 메타태그 추출 시도
+      console.log(`[${new Date().toISOString()}] OEmbed 실패, HTML 메타태그 시도`);
+      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      const response = await fetch(videoUrl);
+      const html = await response.text();
 
-    console.log(`[${new Date().toISOString()}] 타임아웃 오류 여부: ${isTimeoutError}`);
+      // 정규식으로 제목 추출
+      const titleMatch = html.match(/<title>([^<]*)<\/title>/i);
+      let title = '제목을 가져올 수 없음';
 
-    // 기본값 반환
-    const defaultTitle = '제목을 가져올 수 없음';
-    const defaultThumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+      if (titleMatch && titleMatch[1]) {
+        title = titleMatch[1].replace(' - YouTube', '');
+        console.log(`[${new Date().toISOString()}] HTML에서 제목 추출 성공: "${title}"`);
+      }
 
-    console.log(
-      `[${new Date().toISOString()}] 기본값 반환: 제목="${defaultTitle}", 썸네일="${defaultThumbnailUrl}"`
-    );
+      const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+      return { title, thumbnailUrl };
+    } catch (backupError) {
+      console.error(`[${new Date().toISOString()}] 백업 메타데이터 추출 오류:`, backupError);
 
-    return {
-      title: defaultTitle,
-      thumbnailUrl: defaultThumbnailUrl,
-    };
+      // 모든 방법 실패 시 기본값 반환
+      const defaultTitle = '제목을 가져올 수 없음';
+      const defaultThumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+      console.log(
+        `[${new Date().toISOString()}] 기본값 반환: 제목="${defaultTitle}", 썸네일="${defaultThumbnailUrl}"`
+      );
+
+      return {
+        title: defaultTitle,
+        thumbnailUrl: defaultThumbnailUrl,
+      };
+    }
   }
 }
 
@@ -357,48 +889,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 유튜브 URL 확인
-    // if (isYoutubeUrl(text)) {
-    //   const videoId = extractYoutubeId(text);
-    //   if (!videoId) {
-    //     return NextResponse.json({ error: '유효한 유튜브 URL이 아닙니다' }, { status: 400 });
-    //   }
-
-    //   try {
-    //     // 병렬로 자막과 메타데이터 가져오기
-    //     const [transcriptText, metadata] = await Promise.all([
-    //       fetchYoutubeTranscriptWithInnertube(videoId),
-    //       getYoutubeMetadata(videoId),
-    //     ]);
-
-    //     console.log('유튜브 처리 결과 요약:');
-    //     console.log('----------------------------');
-    //     console.log('비디오 ID:', videoId);
-    //     console.log('제목:', metadata.title);
-    //     console.log('썸네일 URL:', metadata.thumbnailUrl);
-    //     console.log('자막 길이:', transcriptText.length, '자');
-    //     console.log('----------------------------');
-
-    //     // 자막 추출 성공 시 반환
-    //     return NextResponse.json({
-    //       content: transcriptText,
-    //       sourceUrl: text,
-    //       isExtracted: true,
-    //       type: 'youtube',
-    //       title: metadata.title,
-    //       imageUrl: metadata.thumbnailUrl,
-    //       thumbnailUrl: metadata.thumbnailUrl,
-    //     });
-    //   } catch (error: any) {
-    //     // 자막 추출 실패 시 오류 반환
-    //     return NextResponse.json(
-    //       {
-    //         error: `이 영상에서 자막을 가져올 수 없습니다: ${error.message || '알 수 없는 오류'}`,
-    //       },
-    //       { status: 400 }
-    //     );
-    //   }
-    // }
-
     if (isYoutubeUrl(text)) {
       const videoId = extractYoutubeId(text);
       if (!videoId) {
