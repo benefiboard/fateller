@@ -38,6 +38,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     content?: string;
     sourceUrl?: string;
   } | null>(null);
+  const [isCancelled, setIsCancelled] = useState(false);
 
   // 직접 수정 폼 데이터
   const [editFormData, setEditFormData] = useState<{
@@ -82,6 +83,9 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
       // 새 메모 작성 모드
       resetForm();
     }
+
+    // 모달이 열릴 때마다 취소 상태 초기화
+    setIsCancelled(false);
   }, [isOpen, editingMemo, mode]);
 
   // 폼 리셋
@@ -98,6 +102,8 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
       key_sentence: '',
     });
     setKeywordsInput('');
+    setProcessingStep('idle');
+    setExtractedData(null);
   };
 
   // 입력 텍스트 변경 처리
@@ -150,8 +156,14 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     setKeywordsInput(e.target.value);
   };
 
+  // 백그라운드 처리 핸들러
+  const handleContinueInBackground = () => {
+    // 사용자가 배경 처리 버튼을 누르면 모달만 닫고, 처리는 계속 진행
+    setIsSubmitting(false);
+    onClose();
+  };
+
   // 제출 처리
-  // 제출 처리 함수 수정
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setProcessingStep('extracting');
@@ -159,8 +171,20 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
     try {
       if (mode === 'direct') {
-        // 직접 수정 모드 코드는 기존과 동일
-        // ...
+        // 직접 수정 모드는 그대로 유지 (기존 코드)
+        const keywordArray = keywordsInput
+          .split(',')
+          .map((keyword) => keyword.trim())
+          .filter(Boolean);
+
+        await onSubmit({
+          ...editFormData,
+          keywords: keywordArray,
+          mode: 'direct',
+          id: editingMemo?.id,
+        });
+
+        onClose();
       } else {
         // AI 분석 모드
         if (!inputText.trim()) {
@@ -181,7 +205,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
         const extractData = await extractResponse.json();
 
-        // 추출 데이터 저장
+        // 추출 데이터 저장 및 UI 업데이트
         setExtractedData({
           title: extractData.title || '',
           imageUrl: extractData.imageUrl || extractData.thumbnailUrl || '',
@@ -189,14 +213,11 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
           sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null,
         });
 
-        // 처리 단계 업데이트
+        // 분석 단계로 변경
         setProcessingStep('analyzing');
 
-        // 여기서 사용자가 배경 처리를 선택할 수 있는 기회 제공
-        // handleContinueInBackground가 호출되면 아래 코드는 백그라운드에서 실행
-
-        // 2단계: AI 분석 및 메모 생성
-        await onSubmit({
+        // 백그라운드 처리를 위한 데이터 준비
+        const processData = {
           text: extractData.content,
           mode: 'analyze',
           id: editingMemo?.id,
@@ -204,40 +225,23 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
           sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null,
           originalTitle: extractData.title || '',
           originalImage: extractData.imageUrl || extractData.thumbnailUrl || '',
-        });
+        };
 
-        // 처리 완료
-        setProcessingStep('idle');
-        onClose();
+        // 백그라운드 처리 시작 (여기서 onSubmit 대신 onBackgroundProcess 사용)
+        if (onBackgroundProcess) {
+          // 모달은 닫지 않고 로딩 상태 유지 (사용자가 버튼 클릭 시에만 모달 닫힘)
+          await onBackgroundProcess(processData);
+
+          // 백그라운드 처리 완료 후 모달 닫기 (사용자가 기다리기로 선택한 경우)
+          setIsSubmitting(false);
+          onClose();
+        }
       }
     } catch (error: any) {
       setError(`오류가 발생했습니다: ${error.message}`);
       setProcessingStep('idle');
-    } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // 백그라운드 처리 핸들러
-  const handleContinueInBackground = () => {
-    if (!extractedData || !onBackgroundProcess) return;
-
-    // 백그라운드 처리를 위한 데이터 준비
-    const processData = {
-      text: extractedData.content,
-      mode: 'analyze',
-      id: editingMemo?.id,
-      isUrl: !!extractedData.sourceUrl,
-      sourceUrl: extractedData.sourceUrl,
-      originalTitle: extractedData.title || '',
-      originalImage: extractedData.imageUrl || '',
-    };
-
-    // 백그라운드 처리 시작
-    onBackgroundProcess(processData);
-
-    // 모달 닫기
-    onClose();
   };
 
   // 키보드 단축키 처리

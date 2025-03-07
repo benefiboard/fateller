@@ -22,7 +22,7 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
   const [showExtendedMessage, setShowExtendedMessage] = useState(false);
 
   // 단계별 메시지 정의
-  const steps = {
+  const steps: Record<string, { title: string; description: string }[]> = {
     extracting: [
       { title: '초기화 중...', description: '데이터를 준비하고 있어요' },
       { title: 'URL 확인 중...', description: '콘텐츠 위치를 확인하고 있어요' },
