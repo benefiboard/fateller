@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle } from 'lucide-react';
 
 // UI 컴포넌트 임포트
@@ -43,7 +43,31 @@ const MemoPage: React.FC = () => {
     likeMemo,
     retweetMemo,
     replyToMemo,
+    loadMoreMemos,
+    hasMore,
   } = useMemos();
+
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastMemoRef = useCallback(
+    (node: HTMLDivElement) => {
+      if (isLoading) return;
+
+      // 이전 observer 정리
+      if (observer.current) observer.current.disconnect();
+
+      // 새 observer 생성
+      observer.current = new IntersectionObserver((entries) => {
+        // 마지막 메모가 화면에 보이고 더 불러올 메모가 있으면 추가 로드
+        if (entries[0].isIntersecting && hasMore) {
+          loadMoreMemos();
+        }
+      });
+
+      // 마지막 메모 요소 관찰 시작
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, hasMore, loadMoreMemos]
+  );
 
   // 메모 상태 훅
   const { memoStates, toggleThread, toggleLabeling, toggleOriginal } = useMemosState(memos);
@@ -162,37 +186,52 @@ const MemoPage: React.FC = () => {
 
       {/* 메모 목록 */}
       <div className="divide-y divide-gray-200">
-        {memos.length === 0 ? (
+        {memos.length === 0 && !isLoading ? (
           <div className="p-10 text-center text-gray-500">
             <MessageCircle size={48} className="mx-auto mb-4 opacity-30" />
             <p>아직 메모가 없습니다. 첫 번째 메모를 작성해보세요!</p>
           </div>
         ) : (
-          memos.map((memo) => (
-            <MemoItem
-              key={memo.id}
-              memo={memo}
-              profile={profile}
-              memoState={
-                memo.id
-                  ? memoStates[memo.id] || {
-                      expanded: false,
-                      showLabeling: false,
-                      showOriginal: false,
-                    }
-                  : { expanded: false, showLabeling: false, showOriginal: false }
-              }
-              onToggleThread={toggleThread}
-              onToggleLabeling={toggleLabeling}
-              onToggleOriginal={toggleOriginal}
-              onEdit={handleEdit}
-              onAnalyze={handleAnalyze}
-              onDelete={handleDelete}
-              //onLike={likeMemo}
-              //onRetweet={retweetMemo}
-              //onReply={replyToMemo}
-            />
-          ))
+          <>
+            {memos.map((memo, index) => (
+              <div
+                key={memo.id}
+                // 마지막 메모인 경우 ref 연결
+                ref={index === memos.length - 1 ? lastMemoRef : undefined}
+              >
+                <MemoItem
+                  memo={memo}
+                  profile={profile}
+                  memoState={
+                    memo.id
+                      ? memoStates[memo.id] || {
+                          expanded: false,
+                          showLabeling: false,
+                          showOriginal: false,
+                        }
+                      : { expanded: false, showLabeling: false, showOriginal: false }
+                  }
+                  onToggleThread={toggleThread}
+                  onToggleLabeling={toggleLabeling}
+                  onToggleOriginal={toggleOriginal}
+                  onEdit={handleEdit}
+                  onAnalyze={handleAnalyze}
+                  onDelete={handleDelete}
+                  //onLike={likeMemo}
+                  //onRetweet={retweetMemo}
+                  //onReply={replyToMemo}
+                />
+              </div>
+            ))}
+
+            {/* 로딩 인디케이터 */}
+            {isLoading && (
+              <div className="p-4 text-center">
+                <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-sm text-gray-500 mt-2">메모를 불러오는 중...</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 

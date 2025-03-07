@@ -12,28 +12,43 @@ export const useMemos = () => {
   const [memos, setMemos] = useState<Memo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0); // 페이지 번호 (0부터 시작)
+  const [hasMore, setHasMore] = useState(true); // 더 불러올 메모가 있는지 여부
+  const PAGE_SIZE = 10; // 한 번에 로드할 메모 개수
   const currentUser = useUserStore((state) => state.currentUser);
   const supabase = createSupabaseBrowserClient();
 
   const user_id = currentUser?.id || '';
 
   // Supabase에서 메모 불러오기
-  const loadMemos = async () => {
+  const loadMemos = async (resetPage = false) => {
     if (!user_id) {
       console.warn('로그인된 사용자가 없습니다.');
       setMemos([]);
       return;
     }
 
+    if (resetPage) {
+      setPage(0);
+      setMemos([]);
+    }
+
+    // 더 불러올 메모가 없으면 중단
+    if (!hasMore && !resetPage) return;
+
     setIsLoading(true);
     setError(null);
 
     try {
-      const { data, error } = await supabase
+      const start = page * PAGE_SIZE;
+      const end = start + PAGE_SIZE - 1;
+
+      const { data, error, count } = await supabase
         .from('memos')
-        .select('*')
+        .select('*', { count: 'exact' }) // 전체 개수도 가져옴
         .eq('user_id', user_id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(start, end);
 
       if (error) {
         console.error('메모 불러오기 오류:', error);
@@ -62,12 +77,27 @@ export const useMemos = () => {
         replies: memo.replies || 0,
       }));
 
-      setMemos(formattedMemos);
+      // 기존 메모에 새로 불러온 메모 추가 (첫 페이지면 교체)
+      setMemos((prevMemos) => (resetPage ? formattedMemos : [...prevMemos, ...formattedMemos]));
+
+      // 더 불러올 메모가 있는지 확인
+      setHasMore(data.length === PAGE_SIZE);
+
+      // 다음 페이지로 설정
+      if (data.length > 0) {
+        setPage((prevPage) => prevPage + 1);
+      }
     } catch (error: any) {
       console.error('메모 불러오기 중 오류가 발생했습니다:', error);
       setError(error.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadMoreMemos = () => {
+    if (!isLoading && hasMore) {
+      loadMemos(false);
     }
   };
 
@@ -701,7 +731,7 @@ export const useMemos = () => {
   // 초기 로딩
   useEffect(() => {
     if (user_id) {
-      loadMemos();
+      loadMemos(true); // 리셋하고 첫 페이지부터 로드
     } else {
       setMemos([]);
     }
@@ -712,6 +742,8 @@ export const useMemos = () => {
     isLoading,
     error,
     loadMemos,
+    loadMoreMemos, // 새로운 함수 추가
+    hasMore,
     createMemo,
     updateMemoWithAI,
     updateMemoDirect,
