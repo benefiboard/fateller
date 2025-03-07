@@ -232,11 +232,61 @@ async function extractMainImage(page: any): Promise<string> {
   }
 }
 
+// PC URL을 모바일 URL로 변환하는 함수
+function convertToNaverMobileUrl(url: string): string {
+  try {
+    // PC URL 형식 확인: https://blog.naver.com/유저명/포스트ID
+    const pcUrlPattern = /^https?:\/\/(blog\.naver\.com)\/([^\/]+)\/(\d+)/i;
+    const matches = url.match(pcUrlPattern);
+
+    if (matches && matches.length >= 4) {
+      const username = matches[2];
+      const postId = matches[3];
+
+      // 모바일 URL 생성: https://m.blog.naver.com/유저명/포스트ID
+      return `https://m.blog.naver.com/${username}/${postId}`;
+    }
+
+    return url; // 패턴이 일치하지 않으면 원래 URL 반환
+  } catch (e) {
+    console.error('URL 변환 오류:', e);
+    return url; // 오류 발생 시 원래 URL 반환
+  }
+}
+
+// 네이버 블로그 이미지 URL 수정 함수
+function fixNaverImageUrl(imageUrl: string): string {
+  if (!imageUrl) return '';
+
+  try {
+    // 네이버 블로그 썸네일 URL 패턴 확인
+    if (imageUrl.includes('blogthumb.pstatic.net') || imageUrl.includes('postfiles.pstatic.net')) {
+      // URL에 캐시 버스팅 파라미터 추가
+      const separator = imageUrl.includes('?') ? '&' : '?';
+      // User-Agent 관련 문제를 우회하기 위해 파라미터 추가
+      return `${imageUrl}${separator}type=w966&nocache=${Date.now()}`;
+    }
+
+    return imageUrl; // 패턴이 일치하지 않으면 원래 URL 반환
+  } catch (e) {
+    console.error('이미지 URL 수정 오류:', e);
+    return imageUrl; // 오류 발생 시 원래 URL 반환
+  }
+}
+
 // 네이버 블로그 특화 처리 함수
 async function extractNaverBlogContent(
   url: string
 ): Promise<{ content: string; title: string; imageUrl: string }> {
   console.log(`[${new Date().toISOString()}] 네이버 블로그 처리 시작: ${url}`);
+
+  // URL을 모바일 버전으로 변환 (여기에 추가)
+  const mobileUrl = convertToNaverMobileUrl(url);
+  if (mobileUrl !== url) {
+    console.log(`[${new Date().toISOString()}] PC URL을 모바일 URL로 변환: ${url} -> ${mobileUrl}`);
+    url = mobileUrl; // 변환된 URL로 업데이트
+  }
+
   let browser = null;
 
   try {
@@ -468,10 +518,20 @@ async function extractNaverBlogContent(
       `[${new Date().toISOString()}] 네이버 블로그 컨텐츠 추출 성공 (${content.length}자)`
     );
 
+    let fixedImageUrl = mainImageUrl;
+    if (mainImageUrl) {
+      fixedImageUrl = fixNaverImageUrl(mainImageUrl);
+      if (fixedImageUrl !== mainImageUrl) {
+        console.log(
+          `[${new Date().toISOString()}] 이미지 URL 수정: ${mainImageUrl} -> ${fixedImageUrl}`
+        );
+      }
+    }
+
     return {
       content,
       title: pageTitle.replace(' : 네이버 블로그', ''),
-      imageUrl: mainImageUrl || '',
+      imageUrl: fixedImageUrl || '', // mainImageUrl 대신 fixedImageUrl 사용
     };
   } catch (error) {
     console.error(`[${new Date().toISOString()}] 네이버 블로그 처리 오류:`, error);

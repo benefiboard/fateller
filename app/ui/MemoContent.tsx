@@ -158,6 +158,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
                     src={memo.original_image}
                     alt="Original Image"
                     className="h-24 w-auto object-contain rounded-lg"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      // 이미지 로드 실패 시 대체 이미지나 에러 처리
+                      console.log('이미지 로드 실패:', e);
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
                 </div>
                 <p className="text-sm text-gray-500 flex-grow overflow-hidden">
