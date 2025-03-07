@@ -89,6 +89,118 @@ async function fetchYoutubeTranscriptWithInnertube(videoId: string): Promise<str
   }
 }
 
+// 유튜브 메타데이터(제목, 썸네일) 가져오기 함수 추가
+async function getYoutubeMetadata(
+  videoId: string
+): Promise<{ title: string; thumbnailUrl: string }> {
+  try {
+    console.log('유튜브 메타데이터 가져오기 시작...');
+
+    // Innertube 인스턴스 생성
+    const yt = await Innertube.create({ generate_session_locally: true });
+
+    // 비디오 정보 가져오기
+    const videoInfo = await yt.getInfo(videoId);
+
+    // 제목 가져오기
+    const title = videoInfo.basic_info.title || '제목 없음';
+
+    // 썸네일 URL 가져오기 (가장 높은 해상도 선택)
+    const thumbnails = videoInfo.basic_info.thumbnail || [];
+    let thumbnailUrl = '';
+
+    if (thumbnails.length > 0) {
+      // 썸네일이 여러 개 있을 경우 마지막 항목이 일반적으로 가장 높은 해상도
+      thumbnailUrl = thumbnails[thumbnails.length - 1].url;
+    } else {
+      // 기본 유튜브 썸네일 URL 형식 사용
+      thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+    }
+
+    // 콘솔에 유튜브 메타데이터 출력
+    console.log('유튜브 제목:', title);
+    console.log('유튜브 썸네일 URL:', thumbnailUrl);
+
+    console.log('유튜브 메타데이터 가져오기 성공');
+    return { title, thumbnailUrl };
+  } catch (error: any) {
+    console.error('유튜브 메타데이터 가져오기 오류:', error);
+    // 기본값 반환
+    const defaultTitle = '제목을 가져올 수 없음';
+    const defaultThumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+    console.log('유튜브 제목(기본값):', defaultTitle);
+    console.log('유튜브 썸네일 URL(기본값):', defaultThumbnailUrl);
+
+    return {
+      title: defaultTitle,
+      thumbnailUrl: defaultThumbnailUrl,
+    };
+  }
+}
+
+// 웹페이지 이미지 추출 함수 추가
+async function extractMainImage(page: any): Promise<string> {
+  try {
+    // OpenGraph 이미지 추출 시도
+    const ogImage = await page.evaluate(() => {
+      const ogImageMeta = document.querySelector('meta[property="og:image"]');
+      return ogImageMeta ? ogImageMeta.getAttribute('content') : null;
+    });
+
+    if (ogImage) {
+      console.log('OpenGraph 이미지 찾음:', ogImage);
+      return ogImage;
+    }
+
+    // Twitter 카드 이미지 추출 시도
+    const twitterImage = await page.evaluate(() => {
+      const twitterImageMeta = document.querySelector('meta[name="twitter:image"]');
+      return twitterImageMeta ? twitterImageMeta.getAttribute('content') : null;
+    });
+
+    if (twitterImage) {
+      console.log('Twitter 카드 이미지 찾음:', twitterImage);
+      return twitterImage;
+    }
+
+    // 큰 이미지 찾기
+    const largeImage = await page.evaluate(() => {
+      const images = Array.from(document.querySelectorAll('img'));
+      // 크기 속성이 있는 큰 이미지 찾기
+      for (const img of images) {
+        const width = parseInt(img.getAttribute('width') || '0');
+        const height = parseInt(img.getAttribute('height') || '0');
+        if (width >= 200 && height >= 200) {
+          return img.src;
+        }
+      }
+
+      // 크기 속성이 없는 경우 computed style 확인
+      for (const img of images) {
+        const rect = img.getBoundingClientRect();
+        if (rect.width >= 200 && rect.height >= 200) {
+          return img.src;
+        }
+      }
+
+      // 첫 번째 이미지 반환 (다른 조건이 없는 경우)
+      return images.length > 0 ? images[0].src : null;
+    });
+
+    if (largeImage) {
+      console.log('페이지 내 큰 이미지 찾음:', largeImage);
+      return largeImage;
+    }
+
+    console.log('이미지를 찾을 수 없음');
+    return '';
+  } catch (error) {
+    console.error('이미지 추출 오류:', error);
+    return '';
+  }
+}
+
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
@@ -135,10 +247,19 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        // youtubei.js를 사용하여 자막 추출 (모든 환경에서 동일하게 적용)
-        console.log('youtubei.js를 사용하여 자막 추출 시도');
-        const transcriptText = await fetchYoutubeTranscriptWithInnertube(videoId);
-        console.log('자막 추출 성공');
+        // 병렬로 자막과 메타데이터 가져오기
+        const [transcriptText, metadata] = await Promise.all([
+          fetchYoutubeTranscriptWithInnertube(videoId),
+          getYoutubeMetadata(videoId),
+        ]);
+
+        console.log('유튜브 처리 결과 요약:');
+        console.log('----------------------------');
+        console.log('비디오 ID:', videoId);
+        console.log('제목:', metadata.title);
+        console.log('썸네일 URL:', metadata.thumbnailUrl);
+        console.log('자막 길이:', transcriptText.length, '자');
+        console.log('----------------------------');
 
         // 자막 추출 성공 시 반환
         return NextResponse.json({
@@ -146,6 +267,9 @@ export async function POST(request: NextRequest) {
           sourceUrl: text,
           isExtracted: true,
           type: 'youtube',
+          title: metadata.title,
+          imageUrl: metadata.thumbnailUrl,
+          thumbnailUrl: metadata.thumbnailUrl,
         });
       } catch (error: any) {
         // 자막 추출 실패 시 오류 반환
@@ -161,6 +285,7 @@ export async function POST(request: NextRequest) {
     // 일반 웹페이지 콘텐츠 추출 (최적화: HTML 추출 후 즉시 브라우저 종료)
     let browser = null;
     let html = '';
+    let mainImageUrl = '';
 
     try {
       // 환경에 따른 브라우저 시작
@@ -187,11 +312,11 @@ export async function POST(request: NextRequest) {
 
       const page = await browser.newPage();
 
-      // 리소스 차단하여 속도 향상
+      // 이미지는 가져올 수 있도록 리소스 요청 선택적 차단
       await page.setRequestInterception(true);
       page.on('request', (req) => {
         const resourceType = req.resourceType();
-        if (['image', 'font', 'media', 'stylesheet'].includes(resourceType)) {
+        if (['font', 'media', 'stylesheet'].includes(resourceType)) {
           req.abort();
         } else {
           req.continue();
@@ -200,6 +325,24 @@ export async function POST(request: NextRequest) {
 
       // 페이지 로드
       await page.goto(text, { waitUntil: 'domcontentloaded', timeout: 25000 });
+
+      // 페이지 제목 가져오기
+      const pageTitle = await page.title();
+      console.log('웹페이지 제목(브라우저):', pageTitle);
+
+      // 메인 이미지 추출
+      mainImageUrl = await extractMainImage(page);
+
+      // 상대 경로 URL을 절대 경로로 변환
+      if (mainImageUrl && !mainImageUrl.startsWith('http')) {
+        const pageUrl = new URL(text);
+        if (mainImageUrl.startsWith('/')) {
+          mainImageUrl = `${pageUrl.protocol}//${pageUrl.host}${mainImageUrl}`;
+        } else {
+          mainImageUrl = `${pageUrl.protocol}//${pageUrl.host}/${mainImageUrl}`;
+        }
+        console.log('변환된 이미지 URL:', mainImageUrl);
+      }
 
       // HTML 콘텐츠 가져오기
       html = await page.content();
@@ -231,6 +374,9 @@ export async function POST(request: NextRequest) {
         throw new Error('콘텐츠를 충분히 추출할 수 없습니다. 직접 내용을 입력해주세요.');
       }
 
+      // 제목 출력
+      console.log('웹페이지 제목(Readability):', article.title || '제목 없음');
+
       // 추출된 텍스트 정제
       const extractedContent = article.textContent
         .replace(/\n{3,}/g, '\n\n')
@@ -240,11 +386,41 @@ export async function POST(request: NextRequest) {
         .join('\n')
         .trim();
 
+      // 이미지 URL이 없는 경우 HTML에서 추가로 검색
+      if (!mainImageUrl) {
+        // og:image 메타 태그에서 이미지 URL 추출 시도
+        const ogImageMatch = html.match(
+          /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i
+        );
+        if (ogImageMatch && ogImageMatch[1]) {
+          mainImageUrl = ogImageMatch[1];
+          console.log('HTML에서 추출한 OG 이미지:', mainImageUrl);
+        } else {
+          // twitter:image 메타 태그에서 이미지 URL 추출 시도
+          const twitterImageMatch = html.match(
+            /<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i
+          );
+          if (twitterImageMatch && twitterImageMatch[1]) {
+            mainImageUrl = twitterImageMatch[1];
+            console.log('HTML에서 추출한 Twitter 이미지:', mainImageUrl);
+          }
+        }
+      }
+
+      console.log('웹페이지 처리 결과 요약:');
+      console.log('----------------------------');
+      console.log('URL:', text);
+      console.log('제목:', article.title || '제목 없음');
+      console.log('이미지 URL:', mainImageUrl || '이미지 없음');
+      console.log('콘텐츠 길이:', extractedContent.length, '자');
+      console.log('----------------------------');
+
       // 추출 성공 응답
       return NextResponse.json({
         content: extractedContent,
         sourceUrl: text,
         title: article.title || '',
+        imageUrl: mainImageUrl || '',
         isExtracted: true,
         type: 'webpage',
       });

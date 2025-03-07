@@ -77,12 +77,16 @@ const MemoPage: React.FC = () => {
           await updateMemoWithAI(editingMemoId, data.text, {
             isUrl: data.isUrl,
             sourceUrl: data.sourceUrl,
+            originalTitle: data.originalTitle || '',
+            originalImage: data.originalImage || '',
           });
           showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
         } else {
           await createMemo(data.text, {
             isUrl: data.isUrl,
             sourceUrl: data.sourceUrl,
+            originalTitle: data.originalTitle || '',
+            originalImage: data.originalImage || '',
           });
           showNotification('새 메모가 성공적으로 생성되었습니다.', 'success');
         }

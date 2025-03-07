@@ -49,6 +49,8 @@ export const useMemos = () => {
         thread: memo.thread,
         original_text: memo.original_text,
         original_url: memo.original_url,
+        original_title: memo.original_title,
+        original_image: memo.original_image,
         labeling: {
           category: memo.category,
           keywords: memo.keywords,
@@ -82,7 +84,12 @@ export const useMemos = () => {
   };
 
   // API 호출하여 트윗 분석하기
-  const analyzeWithAI = async (text: string, retryCount = 0, maxRetries = 2) => {
+  const analyzeWithAI = async (
+    text: string,
+    metadata: any = {},
+    retryCount = 0,
+    maxRetries = 2
+  ) => {
     try {
       console.log(
         `텍스트 분석 요청 ${retryCount > 0 ? `(재시도 ${retryCount}/${maxRetries})` : ''}`
@@ -93,7 +100,11 @@ export const useMemos = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({
+          text,
+          originalTitle: metadata.originalTitle || '',
+          originalImage: metadata.originalImage || '',
+        }),
       });
 
       const responseData = await response.json();
@@ -111,7 +122,7 @@ export const useMemos = () => {
           await new Promise((resolve) => setTimeout(resolve, 1500));
 
           // 재귀적으로 재시도
-          return analyzeWithAI(text, retryCount + 1, maxRetries);
+          return analyzeWithAI(text, metadata, retryCount + 1, maxRetries);
         }
 
         // 최대 재시도 횟수를 초과한 경우 사용자 친화적인 메시지 표시
@@ -130,7 +141,7 @@ export const useMemos = () => {
         if (retryCount < maxRetries) {
           console.log(`API 응답이 올바르지 않음, ${retryCount + 1}번째 재시도 중...`);
           await new Promise((resolve) => setTimeout(resolve, 1500));
-          return analyzeWithAI(text, retryCount + 1, maxRetries);
+          return analyzeWithAI(text, metadata, retryCount + 1, maxRetries);
         } else {
           showAIOverloadAlert();
           throw new Error('AI 응답이 올바른 형식이 아닙니다. 현재 시스템이 혼잡한 것 같습니다.');
@@ -148,7 +159,7 @@ export const useMemos = () => {
       ) {
         console.log(`네트워크 오류, ${retryCount + 1}번째 재시도 중...`);
         await new Promise((resolve) => setTimeout(resolve, 1500));
-        return analyzeWithAI(text, retryCount + 1, maxRetries);
+        return analyzeWithAI(text, metadata, retryCount + 1, maxRetries);
       }
 
       // 최대 재시도 후 실패 시 사용자 친화적인 알림
@@ -244,7 +255,10 @@ export const useMemos = () => {
       // AI 분석 요청을 별도의 try-catch 블록으로 분리
       let aiResponse;
       try {
-        aiResponse = await analyzeWithAI(text);
+        aiResponse = await analyzeWithAI(text, {
+          originalTitle: options.originalTitle,
+          originalImage: options.originalImage,
+        });
 
         // API 응답 확인
         if (aiResponse.error) {
@@ -292,6 +306,8 @@ export const useMemos = () => {
           tweet_main: aiResponse.tweet_main,
           hashtags: aiResponse.hashtags || [],
           thread: aiResponse.thread || [],
+          original_title: aiResponse.originalTitle || options.originalTitle || '',
+          original_image: aiResponse.originalImage || options.originalImage || '',
           original_text: originalTextToSave,
           original_url: originalUrl || '', // URL 또는 원본 텍스트
           category: aiResponse.labeling?.category || '미분류',
@@ -387,7 +403,10 @@ export const useMemos = () => {
 
     try {
       // AI 분석 요청
-      const aiResponse = await analyzeWithAI(text);
+      const aiResponse = await analyzeWithAI(text, {
+        originalTitle: options.originalTitle,
+        originalImage: options.originalImage,
+      });
 
       const originalTextToSave = text; // 항상 추출된 텍스트나 사용자가 입력한 텍스트 저장
       const originalUrl = options.isUrl ? options.sourceUrl : null; // URL이면 URL 저장, 아니면 null
@@ -400,6 +419,8 @@ export const useMemos = () => {
           tweet_main: aiResponse.tweet_main,
           hashtags: aiResponse.hashtags || [],
           thread: aiResponse.thread || [],
+          original_title: aiResponse.originalTitle || options.originalTitle || '',
+          original_image: aiResponse.originalImage || options.originalImage || '',
           original_text: originalTextToSave,
           original_url: originalUrl || '',
           category: aiResponse.labeling?.category || '미분류',

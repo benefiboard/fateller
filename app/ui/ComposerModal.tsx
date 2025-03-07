@@ -179,6 +179,9 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
         }
 
         const extractData = await extractResponse.json();
+
+        // 디버깅 - 응답 데이터 구조 확인
+        console.log('API 응답 데이터:', extractData);
         const textToAnalyze = extractData.content;
 
         // URL 추출 성공 메시지 표시 (선택 사항)
@@ -187,13 +190,30 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
           console.log('URL에서 콘텐츠 추출 성공:', extractData.sourceUrl);
         }
 
+        // 안전하게 속성 접근 및 기본값 설정
+        const isExtracted = Boolean(extractData?.isExtracted);
+        const sourceUrl = isExtracted ? extractData?.sourceUrl || '' : '';
+        const originalTitle = extractData?.title || '';
+        const originalImage = extractData?.imageUrl || extractData?.thumbnailUrl || '';
+
+        // 디버깅 - 추출한 값 확인
+        console.log('추출된 값들:', {
+          textToAnalyze,
+          isExtracted,
+          sourceUrl,
+          originalTitle,
+          originalImage,
+        });
+
         // 2단계: 추출된 콘텐츠로 메모 생성 (기존 방식 그대로)
         await onSubmit({
           text: textToAnalyze,
           mode: 'analyze',
           id: editingMemo?.id,
-          isUrl: extractData.isExtracted, // 추가: URL에서 추출된 것인지 여부
-          sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null, // 추가: 원본 URL
+          isUrl: extractData.isExtracted,
+          sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null,
+          originalTitle: extractData.title || '', // 추가: 추출된 제목
+          originalImage: extractData.imageUrl || extractData.thumbnailUrl || '', // 추가: 추출된 이미지
         });
       }
 

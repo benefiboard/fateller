@@ -58,6 +58,8 @@ export interface Memo {
   replies: number;
   original_text?: string;
   original_url?: string;
+  original_title?: string;
+  original_image?: string;
   has_embedding?: boolean;
 }
 
