@@ -17,6 +17,7 @@ import useMemos from './hooks/useMemos';
 import useMemosState from './hooks/useMemosState';
 import useNotification from './hooks/useNotification';
 import usePendingMemos, { PendingMemoStatus } from './hooks/usePendingMemos';
+import AlertModal from './ui/AlertModal';
 
 // 프로필 정보
 const profile = {
@@ -45,6 +46,10 @@ const MemoPage: React.FC = () => {
     message: '',
     type: 'info',
   });
+
+  // 에러 관련 상태
+  const [showGlobalAlert, setShowGlobalAlert] = useState(false);
+  const [alertData, setAlertData] = useState({ title: '', message: '', url: '' });
 
   // 메모 관련 훅
   const {
@@ -126,15 +131,106 @@ const MemoPage: React.FC = () => {
     });
   };
 
+  // 글로벌 오류 알림 표시 함수
+  const showGlobalExtractionAlert = (message: string, url: string) => {
+    setAlertData({
+      title: '콘텐츠 추출 실패',
+      message: message,
+      url: url,
+    });
+    setShowGlobalAlert(true);
+  };
+
   // 백그라운드 처리 함수
   const handleBackgroundProcess = async (data: any) => {
     console.log('백그라운드 처리 데이터:', data);
+
+    // 추출 실패 플래그가 있는 경우 처리
+    if (data.extractionFailed) {
+      console.log('추출 실패 감지:', data.errorMessage);
+
+      // 전역 알림 모달 표시
+      setAlertData({
+        title: '콘텐츠 추출 실패',
+        message:
+          data.errorMessage || '콘텐츠를 추출할 수 없습니다. 직접 내용을 복사하여 붙여넣어 주세요.',
+        url: data.originalUrl || data.text || '',
+      });
+      setShowGlobalAlert(true);
+      return; // 더 이상 처리하지 않음
+    }
 
     // 백그라운드 계속 버튼을 클릭한 경우 (isOngoing=true)
     if (data.isOngoing) {
       // ✨ 추출 단계일 때는 처리 중인 메모에 추가하지 않음 ✨
       if (data.currentStep === 'extracting') {
         console.log('추출 단계에서는 처리 중인 메모를 표시하지 않습니다.');
+
+        // 추출 단계에서 백그라운드 처리 요청의 경우에도 URL 유효성 체크
+        try {
+          // 원본 URL이 있는 경우 추출 시도
+          if (data.originalUrl && data.originalUrl.match(/^https?:\/\//i)) {
+            console.log('백그라운드에서 URL 추출 시도:', data.originalUrl);
+
+            const extractResponse = await fetch('/api/extract-and-analyze', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: data.originalUrl }),
+            });
+
+            if (!extractResponse.ok) {
+              const errorData = await extractResponse.json();
+              // 전역 알림 모달 표시
+              setAlertData({
+                title: '콘텐츠 추출 실패',
+                message:
+                  errorData.error ||
+                  '콘텐츠를 추출할 수 없습니다. 직접 내용을 복사하여 붙여넣어 주세요.',
+                url: data.originalUrl,
+              });
+              setShowGlobalAlert(true);
+              return;
+            }
+
+            // 추출 성공 시 데이터 가져오기
+            const extractData = await extractResponse.json();
+
+            // 추출된 콘텐츠 유효성 검사
+            if (
+              !extractData.content ||
+              extractData.content.trim().length < 200 ||
+              (extractData.title &&
+                (extractData.title.toLowerCase().includes('access denied') ||
+                  extractData.title.toLowerCase().includes('error')))
+            ) {
+              setAlertData({
+                title: '콘텐츠 추출 실패',
+                message: `URL에서 유효한 콘텐츠를 찾을 수 없습니다. 직접 내용을 복사하여 붙여넣어 주세요.`,
+                url: data.originalUrl,
+              });
+              setShowGlobalAlert(true);
+              return;
+            }
+
+            // 유효한 콘텐츠가 있는 경우 처리 계속
+            data.text = extractData.content;
+            data.isUrl = true;
+            data.sourceUrl = extractData.sourceUrl || data.originalUrl;
+            data.originalTitle = extractData.title || '';
+            data.originalImage = extractData.imageUrl || '';
+            data.currentStep = 'analyzing';
+          }
+        } catch (error: any) {
+          console.error('백그라운드 URL 추출 오류:', error);
+          setAlertData({
+            title: '콘텐츠 추출 실패',
+            message: `오류가 발생했습니다: ${error.message}. 직접 내용을 복사하여 붙여넣어 주세요.`,
+            url: data.originalUrl || '',
+          });
+          setShowGlobalAlert(true);
+          return;
+        }
+
         // 알림만 표시하고 처리 중인 메모에는 추가하지 않음
         return;
       }
@@ -583,6 +679,23 @@ const MemoPage: React.FC = () => {
 
       {/* 바텀 네비게이션 */}
       <BottomNavigation />
+
+      {/* 글로벌 알림 모달 */}
+      <AlertModal
+        isOpen={showGlobalAlert}
+        title={alertData.title}
+        message={
+          <>
+            <p>{alertData.message}</p>
+            {alertData.url && (
+              <div className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
+                <code>{alertData.url}</code>
+              </div>
+            )}
+          </>
+        }
+        onConfirm={() => setShowGlobalAlert(false)}
+      />
 
       {/* CSS 애니메이션 정의 */}
       <style jsx global>{`

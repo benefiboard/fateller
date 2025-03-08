@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Image, Video, Loader, AlertCircle } from 'lucide-react';
 import { Memo } from '../utils/types';
 import LoadingModal from './LoadingModal';
+import AlertModal from './AlertModal';
 
 // 처리 단계 타입 정의
 export type ProcessingStep = 'idle' | 'extracting' | 'analyzing';
@@ -64,6 +65,11 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
   // 키워드 입력을 위한 별도의 상태
   const [keywordsInput, setKeywordsInput] = useState<string>('');
+
+  // 오류 알람
+  const [showExtractionAlert, setShowExtractionAlert] = useState(false);
+  const [extractionAlertMessage, setExtractionAlertMessage] = useState('');
+  const [isUrlExtracting, setIsUrlExtracting] = useState(false);
 
   // 모달이 열릴 때 초기 데이터 설정
   useEffect(() => {
@@ -168,6 +174,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     // 배경 처리 데이터 준비
     const processData = {
       text: extractedData?.content || inputText,
+      originalUrl: inputText.trim(), // 원본 URL 추가
       mode: 'analyze',
       id: editingMemo?.id,
       isUrl: !!extractedData?.sourceUrl,
@@ -228,56 +235,183 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
           throw new Error('내용을 입력해주세요');
         }
 
-        // 1단계: URL 확인 및 콘텐츠 추출
-        const extractResponse = await fetch('/api/extract-and-analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: inputText.trim() }),
-        });
+        // URL 입력인지 확인 (http 또는 https로 시작하는지)
+        const isUrl = inputText.trim().match(/^https?:\/\//i);
 
-        if (!extractResponse.ok) {
-          const errorData = await extractResponse.json();
-          throw new Error(errorData.error || '추출 중 오류가 발생했습니다');
-        }
+        // 1단계: URL 확인 및 콘텐츠 추출 (URL인 경우만)
+        if (isUrl) {
+          // 이미 추출 중이면 중복 요청 방지
+          if (isUrlExtracting) {
+            console.log('이미 URL 추출 중입니다, 중복 요청 방지');
+            return;
+          }
 
-        const extractData = await extractResponse.json();
+          setIsUrlExtracting(true);
+          try {
+            const extractResponse = await fetch('/api/extract-and-analyze', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: inputText.trim() }),
+            });
 
-        // 추출 데이터 저장 및 UI 업데이트
-        setExtractedData({
-          title: extractData.title || '',
-          imageUrl: extractData.imageUrl || extractData.thumbnailUrl || '',
-          content: extractData.content,
-          sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null,
-        });
+            // 디버깅을 위한 로그 추가
+            console.log('추출 응답 상태:', extractResponse.status);
+            const contentType = extractResponse.headers.get('content-type');
+            console.log('응답 콘텐츠 타입:', contentType);
 
-        // 분석 단계로 변경
-        setProcessingStep('analyzing');
+            // 추출 API 응답 처리 개선 (에러 처리 강화)
+            if (!extractResponse.ok) {
+              let errorData;
+              try {
+                errorData = await extractResponse.json();
+                console.log('추출 API 에러 데이터:', errorData);
+              } catch (e) {
+                console.error('에러 응답 파싱 실패:', e);
+                errorData = { error: '콘텐츠 추출 중 오류가 발생했습니다.' };
+              }
 
-        // 백그라운드 처리를 위한 데이터 준비
-        const processData = {
-          text: extractData.content,
-          mode: 'analyze',
-          id: editingMemo?.id,
-          isUrl: extractData.isExtracted,
-          sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null,
-          originalTitle: extractData.title || '',
-          originalImage: extractData.imageUrl || extractData.thumbnailUrl || '',
-          currentStep: 'analyzing' as ProcessingStep,
-          isOngoing: false, // 새로운 요청임을 표시
-        };
+              // 알림 메시지 설정 및 로깅
+              const errorMessage =
+                errorData.error ||
+                `URL(${inputText.trim()})에서 콘텐츠를 추출할 수 없습니다. 직접 내용을 복사하여 붙여넣어 주세요.`;
 
-        // 백그라운드 처리 시작 (여기서 onSubmit 대신 onBackgroundProcess 사용)
-        if (onBackgroundProcess) {
-          // 모달은 닫지 않고 로딩 상태 유지 (사용자가 버튼 클릭 시에만 모달 닫힘)
-          await onBackgroundProcess(processData);
+              console.log('알림 메시지 설정:', errorMessage);
 
-          // 백그라운드 처리 완료 후 모달 닫기 (사용자가 기다리기로 선택한 경우)
-          setIsSubmitting(false);
-          onClose();
+              // 모달 내 알림 표시 (명시적으로 상태 설정)
+              setShowExtractionAlert(true);
+              setExtractionAlertMessage(errorMessage);
+              console.log('알림 모달 표시 요청됨:', errorMessage);
+
+              setProcessingStep('idle');
+              setIsSubmitting(false);
+              return;
+            }
+
+            const extractData = await extractResponse.json();
+
+            // 추출 데이터 유효성 검사 강화
+            if (
+              !extractData.content ||
+              extractData.content.trim().length < 200 ||
+              (extractData.title &&
+                (extractData.title.toLowerCase().includes('access denied') ||
+                  extractData.title.toLowerCase().includes('error')))
+            ) {
+              const errorMessage = `URL(${inputText.trim()})에서 유효한 콘텐츠를 찾을 수 없습니다. 직접 내용을 복사하여 붙여넣어 주세요.`;
+              console.error('유효하지 않은 콘텐츠:', errorMessage);
+
+              setShowExtractionAlert(true);
+              setExtractionAlertMessage(errorMessage);
+              setProcessingStep('idle');
+              setIsSubmitting(false);
+              return;
+            }
+
+            // 추출 데이터 저장 및 UI 업데이트
+            setExtractedData({
+              title: extractData.title || '',
+              imageUrl: extractData.imageUrl || extractData.thumbnailUrl || '',
+              content: extractData.content,
+              sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null,
+            });
+
+            // 분석 단계로 변경
+            setProcessingStep('analyzing');
+
+            // 백그라운드 처리를 위한 데이터 준비
+            const processData = {
+              text: extractData.content,
+              originalUrl: inputText.trim(),
+              mode: 'analyze',
+              id: editingMemo?.id,
+              isUrl: extractData.isExtracted,
+              sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null,
+              originalTitle: extractData.title || '',
+              originalImage: extractData.imageUrl || extractData.thumbnailUrl || '',
+              currentStep: 'analyzing' as ProcessingStep,
+              isOngoing: false, // 새로운 요청임을 표시
+            };
+
+            // 백그라운드 처리 시작 (여기서 onSubmit 대신 onBackgroundProcess 사용)
+            if (onBackgroundProcess) {
+              // 모달은 닫지 않고 로딩 상태 유지 (사용자가 버튼 클릭 시에만 모달 닫힘)
+              await onBackgroundProcess(processData);
+
+              // 백그라운드 처리 완료 후 모달 닫기 (사용자가 기다리기로 선택한 경우)
+              setIsSubmitting(false);
+              onClose();
+            }
+          } catch (error) {
+            console.error('추출 과정 예외 발생:', error);
+
+            // 에러 메시지 추출
+            let errorMessage = '알 수 없는 오류가 발생했습니다';
+            if (error instanceof Error) {
+              errorMessage = error.message;
+            } else if (typeof error === 'string') {
+              errorMessage = error;
+            }
+
+            setShowExtractionAlert(true);
+            setExtractionAlertMessage(
+              `오류가 발생했습니다: ${errorMessage}. 직접 내용을 복사하여 붙여넣어 주세요.`
+            );
+            setProcessingStep('idle');
+            setIsSubmitting(false);
+            return;
+          } finally {
+            // 성공 또는 실패와 관계없이 플래그 해제
+            setIsUrlExtracting(false);
+          }
+        } else {
+          // URL이 아닌 일반 텍스트 - 바로 분석 단계로
+          setProcessingStep('analyzing');
+
+          // 백그라운드 처리 데이터 준비
+          const processData = {
+            text: inputText.trim(),
+            mode: 'analyze',
+            id: editingMemo?.id,
+            isUrl: false,
+            currentStep: 'analyzing' as ProcessingStep,
+            isOngoing: false,
+          };
+
+          // 백그라운드 처리
+          if (onBackgroundProcess) {
+            await onBackgroundProcess(processData);
+            setIsSubmitting(false);
+            onClose();
+          }
         }
       }
-    } catch (error: any) {
-      setError(`오류가 발생했습니다: ${error.message}`);
+    } catch (error) {
+      console.error('처리 오류:', error);
+
+      // 에러 메시지 추출
+      let errorMessage = '알 수 없는 오류가 발생했습니다';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+
+      // URL 추출 관련 오류는 전용 알림으로 표시
+      if (
+        inputText.trim().match(/^https?:\/\//i) &&
+        (errorMessage.includes('추출') ||
+          errorMessage.includes('URL') ||
+          errorMessage.includes('웹') ||
+          errorMessage.includes('접근') ||
+          errorMessage.includes('권한'))
+      ) {
+        setShowExtractionAlert(true);
+        setExtractionAlertMessage(`${errorMessage}. 직접 내용을 복사하여 붙여넣어 주세요.`);
+      } else {
+        // 일반 오류 메시지
+        setError(`오류가 발생했습니다: ${errorMessage}`);
+      }
+
       setProcessingStep('idle');
       setIsSubmitting(false);
     }
@@ -301,6 +435,23 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
         step={processingStep === 'extracting' ? 'extracting' : 'analyzing'}
         extractedData={extractedData || undefined}
         onContinueInBackground={handleContinueInBackground} // 단계에 관계없이 항상 전달
+      />
+
+      {/* 오류 렌더링 부분 내에 추가 */}
+      <AlertModal
+        isOpen={showExtractionAlert}
+        title="콘텐츠 추출 실패"
+        message={
+          <>
+            <p>{extractionAlertMessage}</p>
+            {inputText && inputText.startsWith('http') && (
+              <div className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
+                <code>{inputText}</code>
+              </div>
+            )}
+          </>
+        }
+        onConfirm={() => setShowExtractionAlert(false)}
       />
 
       {/* 기존 모달 내용 - isSubmitting이 아닐 때만 표시 */}

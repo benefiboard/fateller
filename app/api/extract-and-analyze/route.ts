@@ -1062,14 +1062,48 @@ export async function POST(request: NextRequest) {
       const reader = new Readability(dom.window.document);
       const article = reader.parse();
 
+      // 여기에 접근 거부 감지 로직 추가
       if (!article || !article.textContent || article.textContent.length < 100) {
         throw new Error('콘텐츠를 충분히 추출할 수 없습니다. 직접 내용을 입력해주세요.');
       }
 
-      // 제목 출력
-      console.log('웹페이지 제목(Readability):', article.title || '제목 없음');
+      // 페이지 제목과 콘텐츠에서 접근 제한 관련 키워드 체크
+      const accessDeniedKeywords = [
+        'access denied',
+        'permission denied',
+        'forbidden',
+        '접근 금지',
+        '권한 없음',
+      ];
+      const pageTitle = article.title?.toLowerCase() || '';
+      const pageContent = article.textContent.toLowerCase();
 
-      // 개선된 정제 함수를 사용해 텍스트 정제
+      // 접근 제한 메시지 감지
+      for (const keyword of accessDeniedKeywords) {
+        if (pageTitle.includes(keyword) || pageContent.includes(keyword)) {
+          console.error(`웹사이트 접근 거부 감지: ${article.title}`);
+          return NextResponse.json(
+            {
+              error: `웹사이트에 접근이 거부되었습니다 (${article.title}). 직접 내용을 입력해주세요.`,
+            },
+            { status: 400 } // 500이 아닌 400으로 변경
+          );
+        }
+      }
+
+      // 내용의 품질 체크 - 단순 오류 메시지만 있는 경우 필터링
+      if (
+        article.textContent.length < 500 &&
+        (pageTitle.includes('error') ||
+          pageTitle.includes('denied') ||
+          pageTitle.includes('forbidden'))
+      ) {
+        throw new Error(
+          `웹페이지에서 유효한 콘텐츠를 찾을 수 없습니다 (${article.title}). 직접 내용을 입력해주세요.`
+        );
+      }
+
+      // 정제된 콘텐츠 생성
       const extractedContent = cleanWebContent(article.textContent);
 
       // 이미지 URL이 없는 경우 HTML에서 추가로 검색
