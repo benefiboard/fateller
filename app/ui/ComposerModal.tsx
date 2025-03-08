@@ -1,10 +1,12 @@
 //app/memo/ui/ComposerModal.tsx
 
 import React, { useState, useEffect } from 'react';
-import { X, Image, Video, Loader, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Image, Video, Loader, AlertCircle } from 'lucide-react';
 import { Memo } from '../utils/types';
 import LoadingModal from './LoadingModal';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+// 처리 단계 타입 정의
+export type ProcessingStep = 'idle' | 'extracting' | 'analyzing';
 
 interface ComposerModalProps {
   isOpen: boolean;
@@ -16,6 +18,7 @@ interface ComposerModalProps {
     avatar: string;
   };
   onBackgroundProcess?: (data: any) => Promise<void>;
+  onBackgroundProcessWithAlert?: (data: any, message: string) => void; // 알림 메시지를 위한 콜백 추가
 }
 
 const ComposerModal: React.FC<ComposerModalProps> = ({
@@ -26,13 +29,14 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
   onSubmit,
   profile,
   onBackgroundProcess,
+  onBackgroundProcessWithAlert,
 }) => {
   // 입력 상태
   const [inputText, setInputText] = useState('');
   const [characterCount, setCharacterCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [processingStep, setProcessingStep] = useState<'idle' | 'extracting' | 'analyzing'>('idle');
+  const [processingStep, setProcessingStep] = useState<ProcessingStep>('idle');
   const [extractedData, setExtractedData] = useState<{
     title?: string;
     imageUrl?: string;
@@ -60,8 +64,6 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
   // 키워드 입력을 위한 별도의 상태
   const [keywordsInput, setKeywordsInput] = useState<string>('');
-  const [showBackgroundAlert, setShowBackgroundAlert] = useState(false);
-  const [backgroundAlertMessage, setBackgroundAlertMessage] = useState('');
 
   // 모달이 열릴 때 초기 데이터 설정
   useEffect(() => {
@@ -161,21 +163,41 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
   // 백그라운드 처리 핸들러
   const handleContinueInBackground = () => {
-    // 백그라운드 처리 데이터 준비 및 API 호출
+    console.log('배경 처리 버튼 클릭됨, 현재 단계:', processingStep);
 
-    // Alert 메시지 설정 및 표시
+    // 배경 처리 데이터 준비
+    const processData = {
+      text: extractedData?.content || inputText,
+      mode: 'analyze',
+      id: editingMemo?.id,
+      isUrl: !!extractedData?.sourceUrl,
+      sourceUrl: extractedData?.sourceUrl || null,
+      originalTitle: extractedData?.title || '',
+      originalImage: extractedData?.imageUrl || '',
+      currentStep: processingStep, // 현재 진행 단계 전달
+      isOngoing: true, // 백그라운드 처리 플래그
+    };
+
+    // 알림 메시지 생성
     const stepText = processingStep === 'extracting' ? '추출' : '분석';
-    setBackgroundAlertMessage(`${stepText} 작업을 백그라운드에서 계속 진행합니다.`);
-    setShowBackgroundAlert(true);
+    const alertMessage = `${stepText} 작업을 백그라운드에서 계속 진행합니다.`;
 
-    // 로딩 상태는 끝내고
+    console.log('알림 메시지:', alertMessage);
+
+    // 모달 닫기 및 백그라운드 처리 시작
     setIsSubmitting(false);
 
-    // 2초 후 모달 닫기
-    setTimeout(() => {
-      setShowBackgroundAlert(false);
-      onClose();
-    }, 2000);
+    // 알림과 함께 백그라운드 처리 요청
+    if (onBackgroundProcessWithAlert) {
+      console.log('알림 콜백 함수 호출');
+      onBackgroundProcessWithAlert(processData, alertMessage);
+    } else if (onBackgroundProcess) {
+      console.log('일반 백그라운드 처리 함수 호출');
+      onBackgroundProcess(processData);
+    }
+
+    // 모달 즉시 닫기
+    onClose();
   };
 
   // 제출 처리
@@ -240,6 +262,8 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
           sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null,
           originalTitle: extractData.title || '',
           originalImage: extractData.imageUrl || extractData.thumbnailUrl || '',
+          currentStep: 'analyzing' as ProcessingStep,
+          isOngoing: false, // 새로운 요청임을 표시
         };
 
         // 백그라운드 처리 시작 (여기서 onSubmit 대신 onBackgroundProcess 사용)
@@ -271,17 +295,6 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      {/* 백그라운드 처리 알림 Alert */}
-      {showBackgroundAlert && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-xs">
-          <Alert className="bg-teal-50 border-teal-200">
-            <CheckCircle2 className="h-4 w-4 text-teal-500" />
-            <AlertTitle className="text-teal-700">백그라운드 처리 시작</AlertTitle>
-            <AlertDescription className="text-teal-600">{backgroundAlertMessage}</AlertDescription>
-          </Alert>
-        </div>
-      )}
-
       {/* 로딩 모달 추가 */}
       <LoadingModal
         isOpen={isSubmitting}
