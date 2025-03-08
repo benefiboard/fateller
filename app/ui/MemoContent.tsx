@@ -1,4 +1,3 @@
-// MemoContent.tsx with redesigned "아이디어" tab
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Memo } from '../utils/types';
@@ -6,7 +5,7 @@ import { Sparkle, ChevronDown, ChevronUp, ExternalLink, Quote } from 'lucide-rea
 import Link from 'next/link';
 
 // 탭 인덱스 타입 정의
-type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 핵심 문장, 2: 주요 내용, 3: 원문
+type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 주요 내용, 2: 핵심 문장, 3: 원문
 
 interface MemoContentProps {
   memo: Memo;
@@ -206,35 +205,56 @@ const MemoContent: React.FC<MemoContentProps> = ({
             )}
           </div>
         );
-      case 1:
+      case 1: // 주요 내용 (이전의 2번 탭)
         return (
-          <div className="mt-4 space-y-2">
-            <h3 className="text-sm font-medium text-emerald-700">핵심 문장</h3>
-            <p className="py-2 text-sm italic text-gray-800 bg-gray-100 p-4 rounded-lg leading-relaxed">
-              "{renderHTML(memo.tweet_main)}"
-            </p>
+          <div className="pt-4">
+            {/* 미니멀한 명함 스타일의 디자인 */}
+            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3">
+              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">주요 내용</h2>
+            </div>
+
+            {/* 주요 내용 - 아이디어 탭 스타일 적용 */}
+            <div className="space-y-2">
+              {memo.thread.map((tweet, tweetIndex) => (
+                <div
+                  key={tweetIndex}
+                  className="p-4 rounded-lg border bg-gradient-to-r from-emerald-600 to-emerald-400 border-gray-100 shadow-sm"
+                >
+                  <p className="text-sm text-gray-100 leading-relaxed">{renderHTML(tweet)}</p>
+                </div>
+              ))}
+            </div>
           </div>
         );
-      case 2:
+      case 2: // 핵심 문장 (이전의 1번 탭)
         return (
-          <div className="mt-4 space-y-3">
-            <h3 className="text-sm font-medium text-emerald-700">주요 내용</h3>
-            <div className="mt-2">
-              {memo.thread.map((tweet, tweetIndex) => (
-                <p key={tweetIndex} className="text-gray-700 text-sm mb-4">
-                  {renderHTML(tweet)}
+          <div className="pt-4">
+            {/* 미니멀한 명함 스타일의 디자인 */}
+            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3">
+              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">핵심 문장</h2>
+            </div>
+
+            {/* 핵심 문장을 강조 - 아이디어 탭 스타일 적용 */}
+            <div className="p-4 my-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md">
+              <div className="relative px-2">
+                <p className="text-lg font-medium text-gray-100 leading-tight py-4">
+                  "{renderHTML(memo.tweet_main)}"
                 </p>
-              ))}
+              </div>
             </div>
           </div>
         );
       case 3:
         return (
-          <div className="mt-4 space-y-1">
-            <h3 className="text-sm font-medium text-emerald-700">원문</h3>
+          <div className="pt-4">
+            {/* 미니멀한 명함 스타일의 디자인 */}
+            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3">
+              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">원문</h2>
+            </div>
+
             {memo.original_url ? (
               // URL인 경우 링크와 원문 내용 토글 버튼 표시
-              <div>
+              <div className="">
                 {/* URL을 일반 텍스트로 표시 */}
                 <p className="text-sm text-gray-700 break-all">{memo.original_url}</p>
 
@@ -270,16 +290,18 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                 {/* 원문 내용이 있고 보기 상태일 때만 표시 */}
                 {showOriginalText && memo.original_text && (
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     {memo.original_text}
                   </p>
                 )}
               </div>
             ) : (
               // 일반 텍스트인 경우 기존처럼 표시
-              <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-gray-50 rounded-lg">
-                {memo.original_text || '원문이 없습니다.'}
-              </p>
+              <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 shadow-sm">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {memo.original_text || '원문이 없습니다.'}
+                </p>
+              </div>
             )}
           </div>
         );
@@ -290,7 +312,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
   return (
     <>
-      {/* 개선된 탭 네비게이션 */}
+      {/* 개선된 탭 네비게이션 - 탭 순서 변경 */}
       <div className="mt-2 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <button
@@ -318,7 +340,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {activeTab === 1 && (
               <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
             )}
-            핵심 문장
+            주요 내용
           </button>
 
           <button
@@ -332,7 +354,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {activeTab === 2 && (
               <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
             )}
-            주요 내용
+            핵심 문장
           </button>
 
           <button
