@@ -46,7 +46,7 @@ export interface MemoStats {
 export interface Memo {
   id?: string;
   title: string;
-  tweet_main: string;
+  tweet_main: any;
   hashtags: string[];
   thread: string[];
   labeling: MemoLabeling;

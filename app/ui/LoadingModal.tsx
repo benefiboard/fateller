@@ -137,9 +137,9 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
         {(step === 'analyzing' || step === 'extracting') && onContinueInBackground && (
           <button
             onClick={onContinueInBackground}
-            className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+            className=" p-4  rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md text-gray-100"
           >
-            배경에서 계속 처리하기
+            백그라운드애서 처리하기
           </button>
         )}
       </div>

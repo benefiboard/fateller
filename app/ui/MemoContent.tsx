@@ -234,14 +234,127 @@ const MemoContent: React.FC<MemoContentProps> = ({
               <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">핵심 문장</h2>
             </div>
 
-            {/* 핵심 문장을 강조 - 아이디어 탭 스타일 적용 */}
-            <div className="p-4 my-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md">
-              <div className="relative px-2">
-                <p className="text-lg font-medium text-gray-100 leading-tight py-4">
-                  "{renderHTML(memo.tweet_main)}"
-                </p>
-              </div>
-            </div>
+            {/* 안전하게 내용 렌더링 */}
+            {(() => {
+              // 기본적으로 일반 문자열로 처리
+              let content = memo.tweet_main;
+              let parsedContent = null;
+
+              // 문자열인 경우 파싱 시도
+              if (typeof content === 'string') {
+                try {
+                  // JSON 형식인지 확인 (중괄호로 시작하는지)
+                  if (content.trim().startsWith('{')) {
+                    parsedContent = JSON.parse(content);
+                  }
+                } catch (error) {
+                  console.error('JSON 파싱 오류:', error);
+                  // 에러 발생 시 원본 문자열 사용
+                  parsedContent = null;
+                }
+              } else if (typeof content === 'object' && content !== null) {
+                // 이미 객체인 경우 그대로 사용
+                parsedContent = content;
+              }
+
+              // 파싱된 내용이 있고 sections 배열을 가지고 있는 경우
+              if (
+                parsedContent &&
+                typeof parsedContent === 'object' &&
+                parsedContent.sections &&
+                Array.isArray(parsedContent.sections)
+              ) {
+                const sections = parsedContent.sections;
+
+                return (
+                  // 하나의 통합된 박스로 변경
+                  <div className="p-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md">
+                    {sections.map((section: any, idx: number) => {
+                      // 섹션 유효성 검사
+                      if (!section || typeof section !== 'object') return null;
+
+                      const heading = section.heading || '섹션';
+                      const points = Array.isArray(section.points) ? section.points : [];
+                      const subSections = Array.isArray(section.sub_sections)
+                        ? section.sub_sections
+                        : [];
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`${idx > 0 ? 'mt-6 pt-4 border-t border-white/30' : ''}`}
+                        >
+                          {/* 섹션 제목 */}
+                          <h3 className="text-lg font-bold text-white mb-3 pb-2">
+                            {renderHTML(heading)}
+                          </h3>
+
+                          {/* 섹션 포인트 */}
+                          {points.length > 0 && (
+                            <div className="space-y-2 mb-3">
+                              {points.map((point: any, pidx: number) => (
+                                <p key={pidx} className="text-sm text-gray-100 leading-relaxed">
+                                  {renderHTML(point || '')}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 하위 섹션이 있는 경우 렌더링 */}
+                          {subSections.length > 0 && (
+                            <div className="mt-3 pl-3 border-l-2 border-white/30">
+                              {subSections.map((subSection: any, ssidx: number) => {
+                                // 하위 섹션 유효성 검사
+                                if (!subSection || typeof subSection !== 'object') return null;
+
+                                const subHeading = subSection.sub_heading || '하위 섹션';
+                                const subPoints = Array.isArray(subSection.sub_points)
+                                  ? subSection.sub_points
+                                  : [];
+
+                                return (
+                                  <div key={ssidx} className="mb-2">
+                                    {/* 하위 섹션 제목 */}
+                                    <h4 className="text-sm font-semibold text-gray-100 mb-1">
+                                      {renderHTML(subHeading)}
+                                    </h4>
+
+                                    {/* 하위 섹션 포인트 */}
+                                    {subPoints.length > 0 && (
+                                      <div className="space-y-1 pl-2">
+                                        {subPoints.map((subPoint: any, spidx: number) => (
+                                          <p
+                                            key={spidx}
+                                            className="text-xs text-gray-100 leading-relaxed"
+                                          >
+                                            {renderHTML(subPoint || '')}
+                                          </p>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
+              // 기존 문자열 형식으로 표시 - 폴백 처리
+              return (
+                <div className="p-4 my-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md">
+                  <div className="relative px-2">
+                    <p className="text-lg font-medium text-gray-100 leading-tight py-4">
+                      {typeof content === 'string' ? renderHTML(content) : JSON.stringify(content)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         );
       case 3:
