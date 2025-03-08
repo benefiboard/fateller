@@ -20,6 +20,210 @@ const isVercelProduction = () => {
   return process.env.VERCEL === '1' || process.env.VERCEL_ENV === 'production';
 };
 
+// 웹페이지 컨텐츠 정제 함수 - 불필요한 빈 공백/빈 줄 제거
+function cleanWebContent(text: string): string {
+  if (!text) return '';
+
+  console.log(`[${new Date().toISOString()}] 컨텐츠 정제 시작 (원본 길이: ${text.length}자)`);
+
+  // 1단계: 기본 정제
+  let cleaned = text
+    .replace(/\r\n/g, '\n') // Windows 줄바꿈 통일
+    .replace(/\t/g, ' ') // 탭을 공백으로 변환
+    .replace(/[ \t]+/g, ' ') // 여러 공백을 하나로 통합
+    .trim();
+
+  // 2단계: 의미 없는 짧은 줄과 메뉴 항목 제거
+  let lines = cleaned.split('\n');
+
+  // 짧은 텍스트(3글자 이하)만 있는 줄 필터링
+  // 단, 숫자만 있는 경우(날짜, 시간 등)는 유지
+  lines = lines.filter((line) => {
+    const trimmed = line.trim();
+
+    // 빈 줄 제거
+    if (!trimmed) return false;
+
+    // 짧은 줄 중 의미 있는 것 보존 (숫자, 날짜 등)
+    if (trimmed.length <= 3) {
+      // 숫자만 있는 줄은 유지 (날짜, 시간 등)
+      if (/^\d+$/.test(trimmed)) return true;
+
+      // 화살표, 기호만 있는 줄 제거
+      if (/^[>•※◆★☆\-_=+<>,.]+$/.test(trimmed)) return false;
+
+      return false; // 그 외 짧은 줄 제거
+    }
+
+    // 메뉴, 탐색, 기능 버튼 패턴 제거
+    const menuPatterns = [
+      '메뉴',
+      '홈',
+      '로그인',
+      '회원가입',
+      '검색',
+      '설정',
+      '공지사항',
+      '이용약관',
+      '개인정보',
+      '고객센터',
+      '결제',
+      '배송',
+      '주문',
+      '장바구니',
+      '최근 본',
+      '찜한',
+      '좋아요',
+      '공유',
+      '복사',
+      '신고',
+      '페이지',
+      '카테고리',
+      '전체보기',
+      '더보기',
+      '이전',
+      '다음',
+      'TOP',
+      'FAQ',
+    ];
+
+    // 메뉴 패턴이 포함된 짧은 줄(10자 이하) 제거
+    if (trimmed.length <= 10) {
+      for (const pattern of menuPatterns) {
+        if (trimmed.includes(pattern)) return false;
+      }
+    }
+
+    return true;
+  });
+
+  // 3단계: 연속된 빈 줄 하나로 통합
+  let lastLineEmpty = false;
+  let consolidatedLines: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const isEmpty = !trimmed;
+
+    if (isEmpty) {
+      if (!lastLineEmpty) {
+        consolidatedLines.push('');
+        lastLineEmpty = true;
+      }
+    } else {
+      consolidatedLines.push(trimmed);
+      lastLineEmpty = false;
+    }
+  }
+
+  // 4단계: 추가 특수 패턴 정제
+  // 화살표, 특수문자로 시작하는 메뉴/내비게이션 항목 제거
+  consolidatedLines = consolidatedLines.filter((line) => {
+    // 화살표로 시작하는 내비게이션 메뉴 항목 제거
+    if (/^[>▶▷→⇒◀◁←⇐]/.test(line)) return false;
+
+    // 기호로 시작하는 짧은 항목 제거 (10자 이하)
+    if (line.length <= 10 && /^[•※◆★☆\-_=+]/.test(line)) return false;
+
+    return true;
+  });
+
+  // 5단계: 중복 텍스트 섹션 제거 (예: 반복된 푸터/헤더)
+  let uniqueSections = new Set<string>();
+  let isDuplicate = false;
+  let finalLines: string[] = [];
+
+  // 4줄 이상의 섹션을 비교하여 중복 제거
+  for (let i = 0; i < consolidatedLines.length; i++) {
+    isDuplicate = false;
+
+    // 4줄 이상 남아있는 경우에만 검사
+    if (i <= consolidatedLines.length - 4) {
+      // 4줄 섹션 생성
+      const section = consolidatedLines.slice(i, i + 4).join('\n');
+
+      // 이미 등장한 섹션인지 확인
+      if (uniqueSections.has(section)) {
+        isDuplicate = true;
+        i += 3; // 중복 섹션 건너뛰기
+      } else {
+        uniqueSections.add(section);
+      }
+    }
+
+    if (!isDuplicate) {
+      finalLines.push(consolidatedLines[i]);
+    }
+  }
+
+  // 6단계: 컨텐츠의 시작과 끝에 있는 잔여 메뉴 항목 제거
+  // 본문은 일반적으로 여러 줄의 문장이 연속되므로, 앞뒤에 고립된 짧은 줄은 메뉴일 가능성 높음
+  let startContent = 0;
+  let endContent = finalLines.length - 1;
+
+  // 시작 위치 찾기: 첫 번째 의미 있는 텍스트 블록 시작점
+  for (let i = 0; i < finalLines.length; i++) {
+    const line = finalLines[i].trim();
+    const nextLine = i < finalLines.length - 1 ? finalLines[i + 1].trim() : '';
+
+    // 현재 줄이 비어있지 않고, 다음 줄이 있으며 둘 다 적당한 길이가 있으면 본문 시작으로 간주
+    if (line && nextLine && line.length > 10 && nextLine.length > 10) {
+      startContent = i;
+      break;
+    }
+
+    // 긴 줄(30자 이상)은 제목일 가능성이 높으므로 본문 시작으로 간주
+    if (line.length >= 30) {
+      startContent = i;
+      break;
+    }
+  }
+
+  // 끝 위치 찾기: 마지막 의미 있는 텍스트 블록 종료점
+  for (let i = finalLines.length - 1; i >= 0; i--) {
+    const line = finalLines[i].trim();
+    const prevLine = i > 0 ? finalLines[i - 1].trim() : '';
+
+    // 현재 줄이 비어있지 않고, 이전 줄이 있으며 둘 다 적당한 길이가 있으면 본문 끝으로 간주
+    if (line && prevLine && line.length > 10 && prevLine.length > 10) {
+      endContent = i;
+      break;
+    }
+
+    // 긴 줄은 본문 끝으로 간주
+    if (line.length >= 30) {
+      endContent = i;
+      break;
+    }
+  }
+
+  // 시작과 끝 위치가 타당한지 확인 (최소 25%의 컨텐츠를 유지)
+  const contentLength = endContent - startContent + 1;
+  if (contentLength < finalLines.length * 0.25) {
+    // 너무 많은 컨텐츠가 잘릴 경우 원래 텍스트 유지
+    startContent = 0;
+    endContent = finalLines.length - 1;
+  }
+
+  // 최종 결과 조합
+  let result = finalLines.slice(startContent, endContent + 1).join('\n');
+
+  // 7단계: 최종 정리
+  result = result
+    .replace(/\n{3,}/g, '\n\n') // 3줄 이상 공백을 2줄로 정리
+    .trim();
+
+  console.log(`[${new Date().toISOString()}] 컨텐츠 정제 완료 (최종 길이: ${result.length}자)`);
+  console.log(
+    `[${new Date().toISOString()}] 제거된 용량: ${text.length - result.length}자 (${(
+      ((text.length - result.length) / text.length) *
+      100
+    ).toFixed(1)}%)`
+  );
+
+  return result;
+}
+
 // 유튜브 URL 확인 함수
 function isYoutubeUrl(url: string): boolean {
   return /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\/.+/i.test(url);
@@ -57,7 +261,7 @@ async function fetchYoutubeTranscriptWithInnertube(videoId: string): Promise<str
       console.log(`자막 추출 성공: ${transcript.length}개 세그먼트`);
 
       // 각 세그먼트의 text 부분만 추출해서 연결
-      const fullText = transcript
+      let fullText = transcript
         .map((segment: any) => {
           // 여러 형태의 자막 데이터 구조 처리
           if (segment.snippet && segment.snippet.text) {
@@ -76,6 +280,16 @@ async function fetchYoutubeTranscriptWithInnertube(videoId: string): Promise<str
       if (!fullText || fullText.trim().length === 0) {
         throw new Error('추출된 자막 텍스트가 없습니다');
       }
+
+      // 추가: 동일한 변수명을 사용하여 텍스트 정제
+      fullText = fullText
+        .replace(/\n{3,}/g, '\n\n') // 여러 줄바꿈 제거
+        .replace(/[ \t]+/g, ' ') // 여러 공백 제거
+        .split('\n')
+        .map((line) => line.trim()) // 각 라인 앞뒤 공백 제거
+        .filter((line) => line) // 빈 라인 제거
+        .join('\n')
+        .trim(); // 전체 앞뒤 공백 제거
 
       return fullText;
     } catch (transcriptError: any) {
@@ -497,8 +711,9 @@ async function extractNaverBlogContent(
     await browser.close();
     browser = null;
 
-    // 컨텐츠 정제
+    // ---------- 네이버 블로그 컨텐츠 정제 로직 ----------
     if (content) {
+      // 1. 기본 텍스트 정제
       content = content
         .replace(/\n{3,}/g, '\n\n') // 여러 줄바꿈 제거
         .replace(/[ \t]+/g, ' ') // 여러 공백 제거
@@ -507,7 +722,104 @@ async function extractNaverBlogContent(
         .filter((line) => line) // 빈 라인 제거
         .join('\n')
         .trim();
+
+      // 2. 네이버 블로그 UI 요소 및 반복 패턴 제거
+
+      // 로그인, 메뉴 관련 UI 상단 텍스트 제거
+      const commonHeaderPatterns = [
+        '로그인이 필요합니다.',
+        '내소식',
+        '이웃목록',
+        '통계',
+        '클립만들기',
+        '글쓰기',
+        'My Menu 닫기',
+        '내 체크인',
+        '최근 본 글',
+        '내 동영상',
+        '내 클립',
+        '내 상품 관리',
+        'NEW',
+        '마켓 플레이스',
+        '장바구니',
+        '마켓 구매내역',
+        '블로그팀 공식블로그',
+        '이달의 블로그',
+        '공식 블로그',
+        '블로그 앱',
+        'PC버전으로 보기',
+        '블로그 고객센터',
+        'ⓒ NAVER Corp.',
+        '블로그',
+        '카테고리 이동',
+        '검색',
+        'MY메뉴 열기',
+      ];
+
+      // 본문 하단 네비게이션 UI 제거
+      const commonFooterPatterns = [
+        '공감한 사람 보러가기',
+        '댓글',
+        '공유하기',
+        '이웃추가',
+        '공식블로그',
+        '{"title":',
+        '닫기',
+        '카테고리',
+        '이 블로그 홈',
+      ];
+
+      // 상단 메뉴 부분 전체 블록 제거 (시작부터 본문 제목 전까지)
+      // 정규표현식을 사용하여 본문 시작 전 UI 부분 제거
+      content = content.replace(/^로그인이 필요합니다[\s\S]*?MY메뉴 열기[\s\S]*?/, '');
+
+      // 하단 UI 관련 텍스트 제거 (공감, 댓글 부분부터 끝까지)
+      content = content.replace(/\d+\s*공감한 사람 보러가기[\s\S]*$/, '');
+
+      // 개별 패턴 제거 (위 패턴으로 완전히 제거되지 않은 경우를 위한 백업 처리)
+      let lines = content.split('\n');
+      lines = lines.filter((line) => {
+        // 공통 헤더/푸터 패턴과 일치하는 라인 제거
+        for (const pattern of [...commonHeaderPatterns, ...commonFooterPatterns]) {
+          if (line.includes(pattern)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      // 포스트 본문의 시작을 찾아 그 이전의 모든 불필요한 텍스트 제거
+      let contentStartIndex = -1;
+      for (let i = 0; i < lines.length; i++) {
+        // 일반적으로 본문 제목은 두 줄 이상의 빈 줄 뒤에 나타남
+        if (lines[i].length > 10 && i > 5) {
+          contentStartIndex = i - 1;
+          break;
+        }
+      }
+
+      if (contentStartIndex > 0) {
+        lines = lines.slice(contentStartIndex);
+      }
+
+      // 다시 문자열로 합치기
+      content = lines.join('\n').trim();
+
+      // 추가 정제: 반복되는 "본문 폰트 크기 조정" 등의 UI 요소 제거
+      content = content.replace(/본문 기타 기능[\s\S]*?본문 폰트 크기 크게 보기/, '');
+
+      // 정리된 콘텐츠의 최종 정제
+      content = content
+        .replace(/^\s*가\s*$/, '') // "가" 단일 문자 제거 (폰트 크기 조정 관련)
+        .replace(/공감\s*공유하기\s*URL복사\s*신고하기/, '') // 하단 액션 버튼 텍스트 제거
+        .replace(/\n{3,}/g, '\n\n') // 다시 한번 여러 줄바꿈 제거
+        .trim();
+
+      console.log(
+        `[${new Date().toISOString()}] 네이버 블로그 컨텐츠 정제 완료 (${content.length}자)`
+      );
     }
+    // --------------------------------------------------------
 
     // 충분한 컨텐츠가 추출되었는지 확인
     if (!content || content.trim().length < 200) {
@@ -528,10 +840,13 @@ async function extractNaverBlogContent(
       }
     }
 
+    // 최종 추출된 컨텐츠에 추가로 빈 줄/공백 정제 함수 적용
+    content = cleanWebContent(content);
+
     return {
       content,
       title: pageTitle.replace(' : 네이버 블로그', ''),
-      imageUrl: fixedImageUrl || '', // mainImageUrl 대신 fixedImageUrl 사용
+      imageUrl: fixedImageUrl || '',
     };
   } catch (error) {
     console.error(`[${new Date().toISOString()}] 네이버 블로그 처리 오류:`, error);
@@ -635,9 +950,12 @@ export async function POST(request: NextRequest) {
         console.log('자막 일부:', transcriptText.substring(0, 100) + '...');
         console.log('----------------------------');
 
+        // 정제 함수 적용
+        const cleanedText = cleanWebContent(transcriptText);
+
         // 자막 추출 성공 시 반환
         return NextResponse.json({
-          content: transcriptText,
+          content: cleanedText,
           sourceUrl: text,
           isExtracted: true,
           type: 'youtube',
@@ -751,14 +1069,8 @@ export async function POST(request: NextRequest) {
       // 제목 출력
       console.log('웹페이지 제목(Readability):', article.title || '제목 없음');
 
-      // 추출된 텍스트 정제
-      const extractedContent = article.textContent
-        .replace(/\n{3,}/g, '\n\n')
-        .replace(/[ \t]+/g, ' ')
-        .split('\n')
-        .map((line) => line.trim())
-        .join('\n')
-        .trim();
+      // 개선된 정제 함수를 사용해 텍스트 정제
+      const extractedContent = cleanWebContent(article.textContent);
 
       // 이미지 URL이 없는 경우 HTML에서 추가로 검색
       if (!mainImageUrl) {
