@@ -1,9 +1,10 @@
 //app/memo/ui/ComposerModal.tsx
 
 import React, { useState, useEffect } from 'react';
-import { X, Image, Video, Loader, AlertCircle } from 'lucide-react';
+import { X, Image, Video, Loader, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Memo } from '../utils/types';
 import LoadingModal from './LoadingModal';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface ComposerModalProps {
   isOpen: boolean;
@@ -59,6 +60,8 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
   // 키워드 입력을 위한 별도의 상태
   const [keywordsInput, setKeywordsInput] = useState<string>('');
+  const [showBackgroundAlert, setShowBackgroundAlert] = useState(false);
+  const [backgroundAlertMessage, setBackgroundAlertMessage] = useState('');
 
   // 모달이 열릴 때 초기 데이터 설정
   useEffect(() => {
@@ -158,9 +161,21 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
   // 백그라운드 처리 핸들러
   const handleContinueInBackground = () => {
-    // 사용자가 배경 처리 버튼을 누르면 모달만 닫고, 처리는 계속 진행
+    // 백그라운드 처리 데이터 준비 및 API 호출
+
+    // Alert 메시지 설정 및 표시
+    const stepText = processingStep === 'extracting' ? '추출' : '분석';
+    setBackgroundAlertMessage(`${stepText} 작업을 백그라운드에서 계속 진행합니다.`);
+    setShowBackgroundAlert(true);
+
+    // 로딩 상태는 끝내고
     setIsSubmitting(false);
-    onClose();
+
+    // 2초 후 모달 닫기
+    setTimeout(() => {
+      setShowBackgroundAlert(false);
+      onClose();
+    }, 2000);
   };
 
   // 제출 처리
@@ -256,6 +271,17 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      {/* 백그라운드 처리 알림 Alert */}
+      {showBackgroundAlert && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-xs">
+          <Alert className="bg-teal-50 border-teal-200">
+            <CheckCircle2 className="h-4 w-4 text-teal-500" />
+            <AlertTitle className="text-teal-700">백그라운드 처리 시작</AlertTitle>
+            <AlertDescription className="text-teal-600">{backgroundAlertMessage}</AlertDescription>
+          </Alert>
+        </div>
+      )}
+
       {/* 로딩 모달 추가 */}
       <LoadingModal
         isOpen={isSubmitting}
