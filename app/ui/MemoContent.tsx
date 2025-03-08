@@ -218,7 +218,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
               {memo.thread.map((tweet, tweetIndex) => (
                 <div
                   key={tweetIndex}
-                  className="p-4 rounded-lg border bg-gradient-to-r from-emerald-600 to-emerald-400 border-gray-100 shadow-sm"
+                  className="p-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-sm"
                 >
                   <p className="text-sm text-gray-100 leading-relaxed">{renderHTML(tweet)}</p>
                 </div>
@@ -293,6 +293,36 @@ const MemoContent: React.FC<MemoContentProps> = ({
                   <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     {memo.original_text}
                   </p>
+                )}
+
+                {/* 원본이미지와 제목 */}
+                {memo.original_image && (
+                  <div className="flex flex-col gap-2 mt-2">
+                    <hr className="w-full" />
+                    <div className="flex gap-4 items-center justify-between -mt-1">
+                      <hr className="w-1/3" />
+                      <p className="text-xs text-gray-400">원문 내용</p>
+                      <hr className="w-1/3" />
+                    </div>
+                    <div className="grid grid-cols-8 items-center gap-2 w-full   bg-gray-50">
+                      <div className="h-16 col-span-3 relative">
+                        <img
+                          src={memo.original_image}
+                          alt="Original Image"
+                          className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            // 이미지 로드 실패 시 대체 이미지나 에러 처리
+                            console.log('이미지 로드 실패:', e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                      <p className="col-span-5 text-sm leading-tight text-gray-600 flex-grow overflow-hidden">
+                        {memo.original_title || 'no title'}
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
             ) : (
