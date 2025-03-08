@@ -117,10 +117,13 @@ const MemoPage: React.FC = () => {
     console.log('백그라운드 처리 + 알림 함수 호출됨:', alertMessage);
 
     // 알림을 먼저 표시 (데이터 처리 전에)
-    showTopAlert(alertMessage, 'success', 2000);
+    showTopAlert(alertMessage, 'success', 3000);
 
     // 백그라운드 처리 시작
-    await handleBackgroundProcess(data);
+    await handleBackgroundProcess({
+      ...data,
+      skipPendingCreation: true, // 중복 생성 방지 플래그
+    });
   };
 
   // 백그라운드 처리 함수
@@ -133,6 +136,12 @@ const MemoPage: React.FC = () => {
       if (data.currentStep === 'extracting') {
         console.log('추출 단계에서는 처리 중인 메모를 표시하지 않습니다.');
         // 알림만 표시하고 처리 중인 메모에는 추가하지 않음
+        return;
+      }
+
+      // 중복 생성 방지 플래그 확인
+      if (data.skipPendingCreation) {
+        console.log('중복 생성 방지 플래그가 설정되어 있어 pendingMemo를 생성하지 않습니다.');
         return;
       }
 
@@ -150,7 +159,38 @@ const MemoPage: React.FC = () => {
         },
       });
 
-      return; // API 호출 없이 종료
+      // 백그라운드 처리에도 API 호출 및 완료 처리 추가
+      try {
+        // OpenAI API 호출 및 메모 저장
+        if (data.id) {
+          await updateMemoWithAI(data.id, data.text || data.content, {
+            isUrl: data.isUrl,
+            sourceUrl: data.sourceUrl || null,
+            originalTitle: data.originalTitle || '',
+            originalImage: data.originalImage || '',
+          });
+        } else {
+          await createMemo(data.text || data.content, {
+            isUrl: data.isUrl,
+            sourceUrl: data.sourceUrl || null,
+            originalTitle: data.originalTitle || '',
+            originalImage: data.originalImage || '',
+          });
+        }
+
+        // 완료 상태로 업데이트 후 제거
+        updatePendingMemo(pendingId, { status: 'completed' });
+        setTimeout(() => removePendingMemo(pendingId), 3000);
+      } catch (error: any) {
+        // 오류 발생 시 상태 업데이트
+        updatePendingMemo(pendingId, {
+          status: 'error',
+          error: error.message,
+        });
+        showNotification(`오류가 발생했습니다: ${error.message}`, 'error');
+      }
+
+      return;
     }
 
     // 새로운 요청인 경우 (handleSubmit에서 호출된 경우)
@@ -467,17 +507,6 @@ const MemoPage: React.FC = () => {
                         )}
                       </p>
                     </div>
-                    {/* <img
-                      src={memo.original_image}
-                      alt="Original Image"
-                      className="h-24 w-auto object-contain rounded-lg"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        // 이미지 로드 실패 시 대체 이미지나 에러 처리
-                        console.log('이미지 로드 실패:', e);
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    /> */}
 
                     {/* 이미지 미리보기 (있는 경우) */}
                     {pendingMemo.extractedData?.imageUrl && (
