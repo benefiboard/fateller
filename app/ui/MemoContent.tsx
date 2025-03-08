@@ -146,17 +146,23 @@ const MemoContent: React.FC<MemoContentProps> = ({
             </div>
 
             {/* 핵심 문장을 강조 - 심플한 디자인 */}
-            <div className="bg-white p-4 my-4 rounded-lg border border-gray-100 shadow-sm">
+            <div className=" p-4 my-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md">
+              {/* <div className=" p-4 my-4 rounded-lg border bg-gradient-to-br from-emerald-600 to-lime-600 border-gray-100 shadow-md"> */}
               <div className="relative px-2">
                 {/* 장식적인 구분선 */}
-                <div className="absolute top-0 left-0 w-12 h-[2px] bg-emerald-400 rounded-full"></div>
+                {/* <div className="absolute -top-2 left-0">
+                  <Quote size={24} class
+                  Name="text-gray-400" />
+                </div> */}
 
-                <p className="text-lg font-medium text-gray-800 leading-tight py-4">
+                <p className="text-lg font-medium text-gray-100 leading-tight py-4">
                   {renderHTML(memo.labeling.key_sentence)}
                 </p>
 
                 {/* 장식적인 구분선 */}
-                <div className="absolute bottom-0 right-0 w-12 h-[2px] bg-emerald-400 rounded-full"></div>
+                {/* <div className="absolute -bottom-2 right-0  rounded-full">
+                  <Quote size={24} className="text-gray-400" />
+                </div> */}
               </div>
             </div>
 
@@ -174,19 +180,26 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
             {/* 원본이미지와 제목 */}
             {memo.original_image && (
-              <div className="mt-4 bg-gray-50 p-2 rounded-lg flex items-center gap-3">
-                <img
-                  src={memo.original_image}
-                  alt="Original"
-                  className="w-16 h-16 object-cover rounded"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                <p className="text-xs text-gray-500 flex-grow">
-                  {memo.original_title || 'no title'}
-                </p>
+              <div className="flex flex-col gap-2 mt-2">
+                <hr />
+                <div className="grid grid-cols-8 items-center gap-2 w-full   bg-gray-50">
+                  <div className="h-16 col-span-3 relative">
+                    <img
+                      src={memo.original_image}
+                      alt="Original Image"
+                      className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        // 이미지 로드 실패 시 대체 이미지나 에러 처리
+                        console.log('이미지 로드 실패:', e);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <p className="col-span-5 text-xs leading-tight text-gray-500 flex-grow overflow-hidden">
+                    {memo.original_title || 'no title'}
+                  </p>
+                </div>
               </div>
             )}
           </div>
