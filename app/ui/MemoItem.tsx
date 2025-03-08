@@ -23,7 +23,10 @@ import {
   Cpu, // 기술/공학
   Stethoscope, // 의학/건강
   Palette, // 예술/문화
-  PenTool, // 문학/창작
+  PenTool,
+  Languages,
+  Globe,
+  SquareRadical, // 문학/창작
 } from 'lucide-react';
 import { Memo, Profile } from '../utils/types';
 import MemoContent from './MemoContent';
@@ -122,27 +125,31 @@ const MemoItem: React.FC<MemoItemProps> = ({
 
     switch (category) {
       case '인문/철학':
-        return <BookOpen size={20} />;
+        return <BookOpen size={24} />;
       case '경영/경제':
-        return <BarChart3 size={20} />;
+        return <BarChart3 size={24} />;
+      case '언어':
+        return <Languages size={24} />;
       case '정치':
-        return <LandPlot size={20} />;
-      case '사회과학':
-        return <Users size={20} />;
-      case '자연과학':
-        return <Atom size={20} />;
+        return <LandPlot size={24} />;
+      case '사회':
+        return <Users size={24} />;
+      case '국제':
+        return <Globe size={24} />;
+      case '과학/IT':
+        return <Atom size={24} />;
       case '수학':
-        return <PiSquare size={20} />;
+        return <SquareRadical size={24} />;
       case '기술/공학':
-        return <Cpu size={20} />;
+        return <Cpu size={24} />;
       case '의학/건강':
-        return <Stethoscope size={20} />;
+        return <Stethoscope size={24} />;
       case '예술/문화':
-        return <Palette size={20} />;
+        return <Palette size={24} />;
       case '문학/창작':
-        return <PenTool size={20} />;
+        return <PenTool size={24} />;
       default:
-        return <Tag size={20} />;
+        return <Tag size={24} />;
     }
   };
 

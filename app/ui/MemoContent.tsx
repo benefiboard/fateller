@@ -1,7 +1,8 @@
+// MemoContent.tsx with redesigned "아이디어" tab
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Memo } from '../utils/types';
-import { Sparkle, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { Sparkle, ChevronDown, ChevronUp, ExternalLink, Quote } from 'lucide-react';
 import Link from 'next/link';
 
 // 탭 인덱스 타입 정의
@@ -31,8 +32,6 @@ const MemoContent: React.FC<MemoContentProps> = ({
   const [direction, setDirection] = useState(0); // 슬라이드 방향 (-1: 왼쪽, 1: 오른쪽)
   // 원문 내용 표시 여부를 관리하는 상태 추가
   const [showOriginalText, setShowOriginalText] = useState(false);
-
-  console.log('memo', memo);
 
   // 탭 변경 함수 - 수정된 버전
   const changeTab = (newTab: TabIndex) => {
@@ -101,14 +100,6 @@ const MemoContent: React.FC<MemoContentProps> = ({
     }
   };
 
-  // HTML 태그를 완전히 제거하는 함수
-  const removeHtmlTags = (text: string): string => {
-    if (!text) return '';
-
-    // 모든 HTML 태그를 제거하고 태그 내용만 남김
-    return text.replace(/<\/?[^>]+(>|$)/g, '');
-  };
-
   // HTML 태그를 처리하는 함수 추가
   const processStrongTags = (text: string): string => {
     if (!text) return '';
@@ -147,40 +138,57 @@ const MemoContent: React.FC<MemoContentProps> = ({
       case 0:
         return (
           <div className="pt-4">
-            <h2 className="mt-2 flex gap-1 underline underline-offset-4">- {memo.title} -</h2>
-            <p className="py-8 my-2 text-lg font-semibold tracking-tighter leading-relaxed">
-              "{renderHTML(memo.labeling.key_sentence)}"
-            </p>
-            {memo.original_image && (
-              <div className="flex items-center gap-2 w-full">
-                <div className="flex-shrink-0">
-                  <img
-                    src={memo.original_image}
-                    alt="Original Image"
-                    className="h-24 w-auto object-contain rounded-lg"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      // 이미지 로드 실패 시 대체 이미지나 에러 처리
-                      console.log('이미지 로드 실패:', e);
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-                <p className="text-sm text-gray-500 flex-grow overflow-hidden">
-                  {memo.original_title || 'no title'}
+            {/* 미니멀한 명함 스타일의 디자인 */}
+            <div className="border-l-2 border-emerald-400 pl-2 py-1 mb-3">
+              <h2 className="tracking-tighter font-medium text-sm text-emerald-800">
+                {memo.title}
+              </h2>
+            </div>
+
+            {/* 핵심 문장을 강조 - 심플한 디자인 */}
+            <div className="bg-white p-4 my-4 rounded-lg border border-gray-100 shadow-sm">
+              <div className="relative px-2">
+                {/* 장식적인 구분선 */}
+                <div className="absolute top-0 left-0 w-12 h-[2px] bg-emerald-400 rounded-full"></div>
+
+                <p className="text-lg font-medium text-gray-800 leading-tight py-4">
+                  {renderHTML(memo.labeling.key_sentence)}
                 </p>
+
+                {/* 장식적인 구분선 */}
+                <div className="absolute bottom-0 right-0 w-12 h-[2px] bg-emerald-400 rounded-full"></div>
               </div>
-            )}
-            <div className="flex flex-wrap items-center text-emerald-700 gap-2">
+            </div>
+
+            {/* 키워드 - 심플한 디자인 */}
+            <div className="flex flex-wrap items-center gap-2 mt-3">
               {memo.labeling.keywords.map((keyword, keywordIndex) => (
                 <span
                   key={keywordIndex}
-                  className="text-sm text-emerald-800 p-1 rounded border border-emerald-100"
+                  className="text-xs text-emerald-700 py-1 px-2 rounded-full bg-emerald-50"
                 >
                   #{keyword}
                 </span>
               ))}
             </div>
+
+            {/* 원본이미지와 제목 */}
+            {memo.original_image && (
+              <div className="mt-4 bg-gray-50 p-2 rounded-lg flex items-center gap-3">
+                <img
+                  src={memo.original_image}
+                  alt="Original"
+                  className="w-16 h-16 object-cover rounded"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <p className="text-xs text-gray-500 flex-grow">
+                  {memo.original_title || 'no title'}
+                </p>
+              </div>
+            )}
           </div>
         );
       case 1:
@@ -267,52 +275,66 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
   return (
     <>
-      {/* 탭 네비게이션 */}
-      <hr className="border-1 border-gray-200 mb-1" />
-      <div className="flex space-x-4">
-        <button
-          onClick={() => changeTab(0)}
-          className={`text-sm transition-colors ${
-            activeTab === 0 ? 'font-bold text-emerald-700' : 'text-gray-400'
-          }`}
-        >
-          아이디어
-        </button>
+      {/* 개선된 탭 네비게이션 */}
+      <div className="mt-2 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => changeTab(0)}
+            className={`relative py-2 px-2 text-sm transition-colors ${
+              activeTab === 0
+                ? 'font-bold text-emerald-700 border-b-2 border-emerald-500'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            {activeTab === 0 && (
+              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-400" />
+            )}
+            아이디어
+          </button>
 
-        <p className="text-gray-400">|</p>
+          <button
+            onClick={() => changeTab(1)}
+            className={`relative py-2 px-2 text-sm transition-colors ${
+              activeTab === 1
+                ? 'font-bold text-emerald-700 border-b-2 border-emerald-500'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            {activeTab === 1 && (
+              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-400" />
+            )}
+            핵심 문장
+          </button>
 
-        <button
-          onClick={() => changeTab(1)}
-          className={`text-sm transition-colors ${
-            activeTab === 1 ? 'font-bold text-emerald-700' : 'text-gray-400'
-          }`}
-        >
-          핵심 문장
-        </button>
+          <button
+            onClick={() => changeTab(2)}
+            className={`relative py-2 px-2 text-sm transition-colors ${
+              activeTab === 2
+                ? 'font-bold text-emerald-700 border-b-2 border-emerald-500'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            {activeTab === 2 && (
+              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-400" />
+            )}
+            주요 내용
+          </button>
 
-        <p className="text-gray-400">|</p>
-
-        <button
-          onClick={() => changeTab(2)}
-          className={`text-sm transition-colors ${
-            activeTab === 2 ? 'font-bold text-emerald-700' : 'text-gray-400'
-          }`}
-        >
-          주요 내용
-        </button>
-
-        <p className="text-gray-400">|</p>
-
-        <button
-          onClick={() => changeTab(3)}
-          className={`text-sm transition-colors ${
-            activeTab === 3 ? 'font-bold text-emerald-700' : 'text-gray-400'
-          }`}
-        >
-          원문
-        </button>
+          <button
+            onClick={() => changeTab(3)}
+            className={`relative py-2 px-2 text-sm transition-colors ${
+              activeTab === 3
+                ? 'font-bold text-emerald-700 border-b-2 border-emerald-500'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            {activeTab === 3 && (
+              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-400" />
+            )}
+            원문
+          </button>
+        </div>
       </div>
-      <hr className="border-1 border-gray-200 mt-1" />
 
       {/* 슬라이드 컨텐츠 영역 */}
       <div className="relative overflow-hidden">
