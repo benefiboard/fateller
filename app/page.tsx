@@ -467,6 +467,17 @@ const MemoPage: React.FC = () => {
                         )}
                       </p>
                     </div>
+                    {/* <img
+                      src={memo.original_image}
+                      alt="Original Image"
+                      className="h-24 w-auto object-contain rounded-lg"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        // 이미지 로드 실패 시 대체 이미지나 에러 처리
+                        console.log('이미지 로드 실패:', e);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    /> */}
 
                     {/* 이미지 미리보기 (있는 경우) */}
                     {pendingMemo.extractedData?.imageUrl && (
@@ -475,6 +486,7 @@ const MemoPage: React.FC = () => {
                           src={pendingMemo.extractedData.imageUrl}
                           alt="미리보기"
                           className="w-full h-full object-cover rounded"
+                          referrerPolicy="no-referrer"
                         />
                       </div>
                     )}
