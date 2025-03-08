@@ -139,8 +139,8 @@ const MemoContent: React.FC<MemoContentProps> = ({
         return (
           <div className="pt-4">
             {/* 미니멀한 명함 스타일의 디자인 */}
-            <div className="border-l-2 border-emerald-400 pl-2 py-1 mb-3">
-              <h2 className="tracking-tighter font-medium text-sm text-emerald-800">
+            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3">
+              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">
                 {memo.title}
               </h2>
             </div>
@@ -167,12 +167,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
             </div>
 
             {/* 키워드 - 심플한 디자인 */}
-            <div className="flex flex-wrap items-center gap-2 mt-3">
+            <div className="flex flex-wrap items-center  mt-3">
               {memo.labeling.keywords.map((keyword, keywordIndex) => (
-                <span
-                  key={keywordIndex}
-                  className="text-xs text-emerald-700 py-1 px-2 rounded-full bg-emerald-50"
-                >
+                <span key={keywordIndex} className="text-sm text-emerald-800  px-1 rounded-full ">
                   #{keyword}
                 </span>
               ))}
@@ -181,7 +178,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {/* 원본이미지와 제목 */}
             {memo.original_image && (
               <div className="flex flex-col gap-2 mt-2">
-                <hr />
+                <hr className="w-full" />
+                <div className="flex gap-4 items-center justify-between -mt-1">
+                  <hr className="w-1/3" />
+                  <p className="text-xs text-gray-400">원문 내용</p>
+                  <hr className="w-1/3" />
+                </div>
                 <div className="grid grid-cols-8 items-center gap-2 w-full   bg-gray-50">
                   <div className="h-16 col-span-3 relative">
                     <img
@@ -196,7 +198,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                       }}
                     />
                   </div>
-                  <p className="col-span-5 text-xs leading-tight text-gray-500 flex-grow overflow-hidden">
+                  <p className="col-span-5 text-sm leading-tight text-gray-600 flex-grow overflow-hidden">
                     {memo.original_title || 'no title'}
                   </p>
                 </div>
@@ -295,12 +297,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
             onClick={() => changeTab(0)}
             className={`relative py-2 px-2 text-sm transition-colors ${
               activeTab === 0
-                ? 'font-bold text-emerald-700 border-b-2 border-emerald-500'
+                ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             {activeTab === 0 && (
-              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-400" />
+              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
             )}
             아이디어
           </button>
@@ -309,12 +311,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
             onClick={() => changeTab(1)}
             className={`relative py-2 px-2 text-sm transition-colors ${
               activeTab === 1
-                ? 'font-bold text-emerald-700 border-b-2 border-emerald-500'
+                ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             {activeTab === 1 && (
-              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-400" />
+              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
             )}
             핵심 문장
           </button>
@@ -323,12 +325,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
             onClick={() => changeTab(2)}
             className={`relative py-2 px-2 text-sm transition-colors ${
               activeTab === 2
-                ? 'font-bold text-emerald-700 border-b-2 border-emerald-500'
+                ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             {activeTab === 2 && (
-              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-400" />
+              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
             )}
             주요 내용
           </button>
@@ -337,12 +339,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
             onClick={() => changeTab(3)}
             className={`relative py-2 px-2 text-sm transition-colors ${
               activeTab === 3
-                ? 'font-bold text-emerald-700 border-b-2 border-emerald-500'
+                ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             {activeTab === 3 && (
-              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-400" />
+              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
             )}
             원문
           </button>

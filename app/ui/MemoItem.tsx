@@ -188,7 +188,9 @@ const MemoItem: React.FC<MemoItemProps> = ({
       <div className="flex">
         {/* 카테고리 아이콘 (각 카테고리에 맞게 변경) */}
         <div className="mr-3 flex-shrink-0">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-emerald-100`}>
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center border border-emerald-800 text-emerald-800`}
+          >
             {getCategoryIcon()}
           </div>
         </div>
@@ -198,7 +200,9 @@ const MemoItem: React.FC<MemoItemProps> = ({
           {/* 헤더 - 카테고리, 시간 및 옵션 */}
           <div className="flex items-start justify-between">
             <div className="flex items-center">
-              <span className={`font-bold text-sm px-2 py-0.5 rounded-full mr-2 bg-emerald-100`}>
+              <span
+                className={` text-sm px-2 py-0.5 rounded-full mr-2 font-semibold border border-emerald-800 text-emerald-800`}
+              >
                 {memo.labeling?.category || '미분류'}
               </span>
               <span className="text-gray-500 text-sm">{memo.time || '방금 전'}</span>
