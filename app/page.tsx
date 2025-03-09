@@ -170,14 +170,7 @@ const MemoPage: React.FC = () => {
         if (data.currentStep === 'extracting') {
           console.log('추출 단계 처리 시작');
 
-          // 중복 생성 방지 플래그 확인
-          if (data.skipPendingCreation) {
-            console.log('중복 생성 방지 플래그가 설정되어 있어 pendingMemo를 생성하지 않습니다.');
-            // 알림은 이미 표시되었으므로 추가 처리 없이 return
-            return;
-          }
-
-          // 추출 단계에서도 처리 중인 메모에 추가
+          // 표시용 pendingMemo 생성 (skipPendingCreation 플래그가 있어도 UI 표시 목적으로 생성)
           const pendingId = addPendingMemo(data.originalUrl || data.text || '');
 
           // 상태 및 데이터 업데이트
@@ -188,6 +181,18 @@ const MemoPage: React.FC = () => {
               content: data.originalUrl || data.text || '',
             },
           });
+
+          // 중복 생성 방지 플래그 확인 - 실제 API 호출은 이 플래그에 따라 결정
+          if (data.skipPendingCreation) {
+            console.log('중복 생성 방지 플래그가 설정되어 있어 실제 API 호출은 하지 않습니다.');
+
+            // UI 표시 목적으로 잠시 후 pendingMemo 제거
+            setTimeout(() => {
+              removePendingMemo(pendingId);
+            }, 3000); // 3초 후 제거 (UI 표시 목적)
+
+            return; // API 호출은 하지 않고 종료
+          }
 
           // 추출 단계에서 백그라운드 처리 요청의 경우에도 URL 유효성 체크
           try {
