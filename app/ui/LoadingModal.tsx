@@ -139,7 +139,7 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
             onClick={onContinueInBackground}
             className=" p-4  rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md text-gray-100"
           >
-            백그라운드애서 처리하기
+            백그라운드에서 처리하기
           </button>
         )}
       </div>
