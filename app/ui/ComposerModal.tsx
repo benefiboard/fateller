@@ -5,6 +5,8 @@ import { X, Image, Video, Loader, AlertCircle } from 'lucide-react';
 import { Memo } from '../utils/types';
 import LoadingModal from './LoadingModal';
 import AlertModal from './AlertModal';
+import { RequestTracker } from '../utils/requestTracker';
+import { extractAndAnalyze } from '../utils/apiClient';
 
 // 처리 단계 타입 정의
 export type ProcessingStep = 'idle' | 'extracting' | 'analyzing';
@@ -240,65 +242,47 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
         // 1단계: URL 확인 및 콘텐츠 추출 (URL인 경우만)
         if (isUrl) {
-          // 이미 추출 중이면 중복 요청 방지
-          if (isUrlExtracting) {
-            console.log('이미 URL 추출 중입니다, 중복 요청 방지');
-            return;
-          }
+          const url = inputText.trim();
 
-          setIsUrlExtracting(true);
           try {
-            const extractResponse = await fetch('/api/extract-and-analyze', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text: inputText.trim() }),
-            });
+            // 중복 요청 방지 기능이 내장된 API 클라이언트 사용
+            const extractData = await extractAndAnalyze(url);
 
-            // 디버깅을 위한 로그 추가
-            console.log('추출 응답 상태:', extractResponse.status);
-            const contentType = extractResponse.headers.get('content-type');
-            console.log('응답 콘텐츠 타입:', contentType);
-
-            // 추출 API 응답 처리 개선 (에러 처리 강화)
-            if (!extractResponse.ok) {
-              let errorData;
-              try {
-                errorData = await extractResponse.json();
-                console.log('추출 API 에러 데이터:', errorData);
-              } catch (e) {
-                console.error('에러 응답 파싱 실패:', e);
-                errorData = { error: '콘텐츠 추출 중 오류가 발생했습니다.' };
-              }
-
-              // 알림 메시지 설정 및 로깅
-              const errorMessage =
-                errorData.error ||
-                `URL(${inputText.trim()})에서 콘텐츠를 추출할 수 없습니다. 직접 내용을 복사하여 붙여넣어 주세요.`;
-
-              console.log('알림 메시지 설정:', errorMessage);
-
-              // 모달 내 알림 표시 (명시적으로 상태 설정)
-              setShowExtractionAlert(true);
-              setExtractionAlertMessage(errorMessage);
-              console.log('알림 모달 표시 요청됨:', errorMessage);
-
-              setProcessingStep('idle');
-              setIsSubmitting(false);
-              return;
-            }
-
-            const extractData = await extractResponse.json();
+            // 페이월 콘텐츠 검사 추가
+            const lowerContent = (extractData.content || '').toLowerCase();
+            const paywallKeywords = [
+              'subscribe',
+              'subscription',
+              'sign in',
+              'log in',
+              'member',
+              'verify access',
+            ];
+            const hasPaywallIndicators = paywallKeywords.some((keyword) =>
+              lowerContent.includes(keyword)
+            );
 
             // 추출 데이터 유효성 검사 강화
             if (
               !extractData.content ||
               extractData.content.trim().length < 200 ||
+              (hasPaywallIndicators && extractData.content.trim().length < 1000) ||
               (extractData.title &&
                 (extractData.title.toLowerCase().includes('access denied') ||
                   extractData.title.toLowerCase().includes('error')))
             ) {
-              const errorMessage = `URL(${inputText.trim()})에서 유효한 콘텐츠를 찾을 수 없습니다. 직접 내용을 복사하여 붙여넣어 주세요.`;
-              console.error('유효하지 않은 콘텐츠:', errorMessage);
+              let errorMessage = `URL(${url})에서 유효한 콘텐츠를 찾을 수 없습니다. 직접 내용을 복사하여 붙여넣어 주세요.`;
+
+              // 페이월 발견 시 메시지 수정
+              if (hasPaywallIndicators) {
+                errorMessage = `이 콘텐츠는 구독이 필요한 페이지로 보입니다. 직접 내용을 복사하여 붙여넣어 주세요.`;
+              }
+
+              console.error('유효하지 않은 콘텐츠:', {
+                contentLength: extractData.content?.length,
+                hasPaywall: hasPaywallIndicators,
+                preview: extractData.content?.substring(0, 100),
+              });
 
               setShowExtractionAlert(true);
               setExtractionAlertMessage(errorMessage);
@@ -321,7 +305,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
             // 백그라운드 처리를 위한 데이터 준비
             const processData = {
               text: extractData.content,
-              originalUrl: inputText.trim(),
+              originalUrl: url,
               mode: 'analyze',
               id: editingMemo?.id,
               isUrl: extractData.isExtracted,
@@ -358,10 +342,6 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
             );
             setProcessingStep('idle');
             setIsSubmitting(false);
-            return;
-          } finally {
-            // 성공 또는 실패와 관계없이 플래그 해제
-            setIsUrlExtracting(false);
           }
         } else {
           // URL이 아닌 일반 텍스트 - 바로 분석 단계로
