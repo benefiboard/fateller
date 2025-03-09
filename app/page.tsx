@@ -146,12 +146,12 @@ const MemoPage: React.FC = () => {
   // 백그라운드 처리 함수
   const handleBackgroundProcess = async (data: any) => {
     console.log('백그라운드 처리 데이터:', data);
-
+  
     try {
       // 추출 실패 플래그가 있는 경우 처리
       if (data.extractionFailed) {
         console.log('추출 실패 감지:', data.errorMessage);
-
+  
         // 전역 알림 모달 표시
         setAlertData({
           title: '콘텐츠 추출 실패',
@@ -163,16 +163,16 @@ const MemoPage: React.FC = () => {
         setShowGlobalAlert(true);
         return; // 더 이상 처리하지 않음
       }
-
+  
       // 백그라운드 계속 버튼을 클릭한 경우 (isOngoing=true)
       if (data.isOngoing) {
         // 추출 단계일 때도 처리 중인 메모에 추가
         if (data.currentStep === 'extracting') {
           console.log('추출 단계 처리 시작');
-
+  
           // 표시용 pendingMemo 생성 (skipPendingCreation 플래그가 있어도 UI 표시 목적으로 생성)
           const pendingId = addPendingMemo(data.originalUrl || data.text || '');
-
+  
           // 상태 및 데이터 업데이트
           updatePendingMemo(pendingId, {
             status: 'extracting',
@@ -181,28 +181,28 @@ const MemoPage: React.FC = () => {
               content: data.originalUrl || data.text || '',
             },
           });
-
+  
           // 중복 생성 방지 플래그 확인 - 실제 API 호출은 이 플래그에 따라 결정
           if (data.skipPendingCreation) {
             console.log('중복 생성 방지 플래그가 설정되어 있어 실제 API 호출은 하지 않습니다.');
-
+  
             // UI 표시 목적으로 잠시 후 pendingMemo 제거
             setTimeout(() => {
               removePendingMemo(pendingId);
             }, 3000); // 3초 후 제거 (UI 표시 목적)
-
+  
             return; // API 호출은 하지 않고 종료
           }
-
+  
           // 추출 단계에서 백그라운드 처리 요청의 경우에도 URL 유효성 체크
           try {
             // 원본 URL이 있는 경우 추출 시도
             if (data.originalUrl && data.originalUrl.match(/^https?:\/\//i)) {
               console.log('백그라운드에서 URL 추출 시도:', data.originalUrl);
-
+  
               // 중복 요청 방지 기능이 내장된 API 클라이언트 사용
               const extractData = await extractAndAnalyze(data.originalUrl);
-
+  
               // 페이월 콘텐츠 검사 추가
               const lowerContent = (extractData.content || '').toLowerCase();
               const paywallKeywords = [
@@ -216,7 +216,7 @@ const MemoPage: React.FC = () => {
               const hasPaywallIndicators = paywallKeywords.some((keyword) =>
                 lowerContent.includes(keyword)
               );
-
+  
               // 추출된 콘텐츠 유효성 검사
               if (
                 !extractData.content ||
@@ -227,18 +227,18 @@ const MemoPage: React.FC = () => {
                     extractData.title.toLowerCase().includes('error')))
               ) {
                 let errorMessage = `URL에서 유효한 콘텐츠를 찾을 수 없습니다. 직접 내용을 복사하여 붙여넣어 주세요.`;
-
+  
                 // 페이월 발견 시 메시지 수정
                 if (hasPaywallIndicators) {
                   errorMessage = `이 콘텐츠는 구독이 필요한 페이지로 보입니다. 직접 내용을 복사하여 붙여넣어 주세요.`;
                 }
-
+  
                 // 오류 상태로 업데이트
                 updatePendingMemo(pendingId, {
                   status: 'error',
                   error: errorMessage,
                 });
-
+  
                 setAlertData({
                   title: '콘텐츠 추출 실패',
                   message: errorMessage,
@@ -247,62 +247,94 @@ const MemoPage: React.FC = () => {
                 setShowGlobalAlert(true);
                 return;
               }
-
+  
               // 유효한 콘텐츠가 있는 경우 처리 계속
-              // 분석 단계로 상태 업데이트
+              // 수정: 먼저 processing 상태로 전환
               updatePendingMemo(pendingId, {
-                status: 'analyzing',
+                status: 'processing', // 새로운 중간 상태
                 extractedData: {
-                  title: extractData.title || '분석 중...',
+                  title: '데이터 정제 중...',
                   imageUrl: extractData.imageUrl || '',
                   content: extractData.content,
                   sourceUrl: extractData.sourceUrl || null,
                 },
+                processingStartTime: Date.now(), // 처리 시작 시간 저장
               });
-
+  
+              // 데이터 준비
               data.text = extractData.content;
               data.isUrl = true;
               data.sourceUrl = extractData.sourceUrl || data.originalUrl;
               data.originalTitle = extractData.title || '';
               data.originalImage = extractData.imageUrl || '';
-              data.currentStep = 'analyzing';
-
-              // API 호출 및 메모 저장
-              try {
-                if (data.id) {
-                  await updateMemoWithAI(data.id, data.text, {
-                    isUrl: data.isUrl,
-                    sourceUrl: data.sourceUrl || null,
-                    originalTitle: data.originalTitle || '',
-                    originalImage: data.originalImage || '',
-                  });
-                } else {
-                  await createMemo(data.text, {
-                    isUrl: data.isUrl,
-                    sourceUrl: data.sourceUrl || null,
-                    originalTitle: data.originalTitle || '',
-                    originalImage: data.originalImage || '',
-                  });
+              data.currentStep = 'processing'; // 현재 단계도 업데이트
+  
+              // API 호출 준비
+              const apiCall = async () => {
+                try {
+                  if (data.id) {
+                    await updateMemoWithAI(data.id, data.text, {
+                      isUrl: data.isUrl,
+                      sourceUrl: data.sourceUrl || null,
+                      originalTitle: data.originalTitle || '',
+                      originalImage: data.originalImage || '',
+                    });
+                  } else {
+                    await createMemo(data.text, {
+                      isUrl: data.isUrl,
+                      sourceUrl: data.sourceUrl || null,
+                      originalTitle: data.originalTitle || '',
+                      originalImage: data.originalImage || '',
+                    });
+                  }
+  
+                  // API 호출 성공
+                  console.log('API 호출 성공, 상태 완료로 업데이트 대기 중');
+                } catch (error) {
+                  // API 호출 오류
+                  console.error('API 호출 오류:', error);
+                  let errorMessage = '알 수 없는 오류가 발생했습니다';
+                  if (error instanceof Error) {
+                    errorMessage = error.message;
+                  } else if (typeof error === 'string') {
+                    errorMessage = error;
+                  }
+  
+                  // processing 타이머 완료 후 오류 상태로 업데이트
+                  setTimeout(() => {
+                    updatePendingMemo(pendingId, {
+                      status: 'error',
+                      error: errorMessage,
+                    });
+                    showNotification(`오류가 발생했습니다: ${errorMessage}`, 'error');
+                  }, 8000); // processing 상태 8초 후 오류 업데이트
+                  
+                  return; // 오류 발생 시 여기서 종료
                 }
-
-                // 완료 상태로 업데이트 후 제거
-                updatePendingMemo(pendingId, { status: 'completed' });
-                setTimeout(() => removePendingMemo(pendingId), 3000);
-              } catch (error) {
-                // 오류 발생 시 상태 업데이트
-                let errorMessage = '알 수 없는 오류가 발생했습니다';
-                if (error instanceof Error) {
-                  errorMessage = error.message;
-                } else if (typeof error === 'string') {
-                  errorMessage = error;
-                }
-
+              };
+  
+              // 백그라운드에서 API 호출 시작
+              apiCall();
+  
+              // 8초 동안 processing 상태 유지 후 analyzing으로 전환
+              setTimeout(() => {
+                console.log('processing 타이머 완료, analyzing 상태로 업데이트');
                 updatePendingMemo(pendingId, {
-                  status: 'error',
-                  error: errorMessage,
+                  status: 'analyzing',
+                  extractedData: {
+                    title: extractData.title || '분석 중...',
+                    imageUrl: extractData.imageUrl || '',
+                    content: extractData.content,
+                    sourceUrl: extractData.sourceUrl || null,
+                  },
                 });
-                showNotification(`오류가 발생했습니다: ${errorMessage}`, 'error');
-              }
+  
+                // API 호출이 완료될 때까지 기다린 후 completed로 업데이트
+                setTimeout(() => {
+                  updatePendingMemo(pendingId, { status: 'completed' });
+                  setTimeout(() => removePendingMemo(pendingId), 3000);
+                }, 5000); // analyzing 상태를 5초 정도 더 유지 후 completed로 변경
+              }, 8000); // 8초 동안 processing 상태 유지
             } else {
               // URL이 아닌 경우 오류 상태로 업데이트
               updatePendingMemo(pendingId, {
@@ -316,13 +348,13 @@ const MemoPage: React.FC = () => {
             if (error instanceof Error) {
               errorMessage = error.message;
             }
-
+  
             // 오류 상태로 업데이트
             updatePendingMemo(pendingId, {
               status: 'error',
               error: errorMessage,
             });
-
+  
             setAlertData({
               title: '콘텐츠 추출 실패',
               message: `오류가 발생했습니다: ${errorMessage}. 직접 내용을 복사하여 붙여넣어 주세요.`,
@@ -332,16 +364,16 @@ const MemoPage: React.FC = () => {
           }
           return;
         }
-
+  
         // 중복 생성 방지 플래그 확인
         if (data.skipPendingCreation) {
           console.log('중복 생성 방지 플래그가 설정되어 있어 pendingMemo를 생성하지 않습니다.');
           return;
         }
-
+  
         // 분석 단계일 때 처리 중인 메모에 추가
         const pendingId = addPendingMemo(data.text || data.content || '');
-
+  
         // 상태 및 추출 데이터 업데이트
         updatePendingMemo(pendingId, {
           status: 'analyzing', // 항상 분석 중 상태로 추가
@@ -352,7 +384,7 @@ const MemoPage: React.FC = () => {
             sourceUrl: data.sourceUrl || null,
           },
         });
-
+  
         // 백그라운드 처리에도 API 호출 및 완료 처리 추가
         try {
           // OpenAI API 호출 및 메모 저장
@@ -371,7 +403,7 @@ const MemoPage: React.FC = () => {
               originalImage: data.originalImage || '',
             });
           }
-
+  
           // 완료 상태로 업데이트 후 제거
           updatePendingMemo(pendingId, { status: 'completed' });
           setTimeout(() => removePendingMemo(pendingId), 3000);
@@ -383,25 +415,25 @@ const MemoPage: React.FC = () => {
           } else if (typeof error === 'string') {
             errorMessage = error;
           }
-
+  
           updatePendingMemo(pendingId, {
             status: 'error',
             error: errorMessage,
           });
           showNotification(`오류가 발생했습니다: ${errorMessage}`, 'error');
         }
-
+  
         return;
       }
-
+  
       // 새로운 요청인 경우 (handleSubmit에서 호출된 경우)
       const pendingId = addPendingMemo(data.text);
-
+  
       try {
         // 상태 및 추출 데이터 업데이트
         const status: PendingMemoStatus =
           data.currentStep === 'extracting' ? 'extracting' : 'analyzing';
-
+  
         updatePendingMemo(pendingId, {
           status: status,
           extractedData: {
@@ -411,7 +443,7 @@ const MemoPage: React.FC = () => {
             sourceUrl: data.sourceUrl || null,
           },
         });
-
+  
         // OpenAI API 호출 및 메모 저장
         if (data.id) {
           await updateMemoWithAI(data.id, data.text, {
@@ -428,11 +460,11 @@ const MemoPage: React.FC = () => {
             originalImage: data.originalImage || '',
           });
         }
-
+  
         // 완료 상태로 업데이트 후 알림
         updatePendingMemo(pendingId, { status: 'completed' });
         showNotification('메모가 성공적으로 생성되었습니다.', 'success');
-
+  
         // 잠시 후 목록에서 제거 (UI에서 처리 완료 표시를 보여주기 위해)
         setTimeout(() => removePendingMemo(pendingId), 3000);
       } catch (error) {
@@ -443,7 +475,7 @@ const MemoPage: React.FC = () => {
         } else if (typeof error === 'string') {
           errorMessage = error;
         }
-
+  
         updatePendingMemo(pendingId, {
           status: 'error',
           error: errorMessage,
@@ -697,6 +729,11 @@ const MemoPage: React.FC = () => {
                         <span className="animate-pulse">⬇️</span>
                       </div>
                     )}
+                    {pendingMemo.status === 'processing' && (
+                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                        <span className="animate-pulse">⚙️</span>
+                      </div>
+                    )}
                     {pendingMemo.status === 'analyzing' && (
                       <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
                         <span className="animate-pulse">🧠</span>
@@ -722,6 +759,8 @@ const MemoPage: React.FC = () => {
                     </p>
                     <p className="text-xs text-gray-500">
                       {pendingMemo.status === 'extracting' && 'URL에서 콘텐츠를 추출하는 중...'}
+                      {pendingMemo.status === 'processing' &&
+                        '추출된 콘텐츠 정제 및 데이터 구조화 중...'}
                       {pendingMemo.status === 'analyzing' && 'AI 분석 중...'}
                       {pendingMemo.status === 'completed' && (
                         <span className="text-green-500">처리 완료!</span>

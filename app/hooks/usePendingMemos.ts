@@ -3,7 +3,7 @@
 
 import { useState, useCallback } from 'react';
 
-export type PendingMemoStatus = 'extracting' | 'analyzing' | 'completed' | 'error';
+export type PendingMemoStatus = 'extracting' | 'processing' | 'analyzing' | 'completed' | 'error';
 
 export interface PendingMemo {
   id: string;
@@ -17,6 +17,7 @@ export interface PendingMemo {
   };
   error?: string;
   createdAt: Date;
+  processingStartTime?: number;
 }
 
 const usePendingMemos = () => {
