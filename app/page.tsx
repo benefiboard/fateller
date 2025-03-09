@@ -166,9 +166,28 @@ const MemoPage: React.FC = () => {
 
       // 백그라운드 계속 버튼을 클릭한 경우 (isOngoing=true)
       if (data.isOngoing) {
-        // ✨ 추출 단계일 때는 처리 중인 메모에 추가하지 않음 ✨
+        // 추출 단계일 때도 처리 중인 메모에 추가
         if (data.currentStep === 'extracting') {
-          console.log('추출 단계에서는 처리 중인 메모를 표시하지 않습니다.');
+          console.log('추출 단계 처리 시작');
+
+          // 중복 생성 방지 플래그 확인
+          if (data.skipPendingCreation) {
+            console.log('중복 생성 방지 플래그가 설정되어 있어 pendingMemo를 생성하지 않습니다.');
+            // 알림은 이미 표시되었으므로 추가 처리 없이 return
+            return;
+          }
+
+          // 추출 단계에서도 처리 중인 메모에 추가
+          const pendingId = addPendingMemo(data.originalUrl || data.text || '');
+
+          // 상태 및 데이터 업데이트
+          updatePendingMemo(pendingId, {
+            status: 'extracting',
+            extractedData: {
+              title: '내용 추출 중...',
+              content: data.originalUrl || data.text || '',
+            },
+          });
 
           // 추출 단계에서 백그라운드 처리 요청의 경우에도 URL 유효성 체크
           try {
@@ -209,6 +228,12 @@ const MemoPage: React.FC = () => {
                   errorMessage = `이 콘텐츠는 구독이 필요한 페이지로 보입니다. 직접 내용을 복사하여 붙여넣어 주세요.`;
                 }
 
+                // 오류 상태로 업데이트
+                updatePendingMemo(pendingId, {
+                  status: 'error',
+                  error: errorMessage,
+                });
+
                 setAlertData({
                   title: '콘텐츠 추출 실패',
                   message: errorMessage,
@@ -219,12 +244,66 @@ const MemoPage: React.FC = () => {
               }
 
               // 유효한 콘텐츠가 있는 경우 처리 계속
+              // 분석 단계로 상태 업데이트
+              updatePendingMemo(pendingId, {
+                status: 'analyzing',
+                extractedData: {
+                  title: extractData.title || '분석 중...',
+                  imageUrl: extractData.imageUrl || '',
+                  content: extractData.content,
+                  sourceUrl: extractData.sourceUrl || null,
+                },
+              });
+
               data.text = extractData.content;
               data.isUrl = true;
               data.sourceUrl = extractData.sourceUrl || data.originalUrl;
               data.originalTitle = extractData.title || '';
               data.originalImage = extractData.imageUrl || '';
               data.currentStep = 'analyzing';
+
+              // API 호출 및 메모 저장
+              try {
+                if (data.id) {
+                  await updateMemoWithAI(data.id, data.text, {
+                    isUrl: data.isUrl,
+                    sourceUrl: data.sourceUrl || null,
+                    originalTitle: data.originalTitle || '',
+                    originalImage: data.originalImage || '',
+                  });
+                } else {
+                  await createMemo(data.text, {
+                    isUrl: data.isUrl,
+                    sourceUrl: data.sourceUrl || null,
+                    originalTitle: data.originalTitle || '',
+                    originalImage: data.originalImage || '',
+                  });
+                }
+
+                // 완료 상태로 업데이트 후 제거
+                updatePendingMemo(pendingId, { status: 'completed' });
+                setTimeout(() => removePendingMemo(pendingId), 3000);
+              } catch (error) {
+                // 오류 발생 시 상태 업데이트
+                let errorMessage = '알 수 없는 오류가 발생했습니다';
+                if (error instanceof Error) {
+                  errorMessage = error.message;
+                } else if (typeof error === 'string') {
+                  errorMessage = error;
+                }
+
+                updatePendingMemo(pendingId, {
+                  status: 'error',
+                  error: errorMessage,
+                });
+                showNotification(`오류가 발생했습니다: ${errorMessage}`, 'error');
+              }
+            } else {
+              // URL이 아닌 경우 오류 상태로 업데이트
+              updatePendingMemo(pendingId, {
+                status: 'error',
+                error: '유효한 URL이 아닙니다.',
+              });
             }
           } catch (error) {
             console.error('백그라운드 URL 추출 오류:', error);
@@ -232,16 +311,20 @@ const MemoPage: React.FC = () => {
             if (error instanceof Error) {
               errorMessage = error.message;
             }
+
+            // 오류 상태로 업데이트
+            updatePendingMemo(pendingId, {
+              status: 'error',
+              error: errorMessage,
+            });
+
             setAlertData({
               title: '콘텐츠 추출 실패',
               message: `오류가 발생했습니다: ${errorMessage}. 직접 내용을 복사하여 붙여넣어 주세요.`,
               url: data.originalUrl || '',
             });
             setShowGlobalAlert(true);
-            return;
           }
-
-          // 알림만 표시하고 처리 중인 메모에는 추가하지 않음
           return;
         }
 
@@ -251,7 +334,7 @@ const MemoPage: React.FC = () => {
           return;
         }
 
-        // 분석 단계일 때만 처리 중인 메모에 추가
+        // 분석 단계일 때 처리 중인 메모에 추가
         const pendingId = addPendingMemo(data.text || data.content || '');
 
         // 상태 및 추출 데이터 업데이트
@@ -583,82 +666,96 @@ const MemoPage: React.FC = () => {
         />
       )}
 
-      {/* 대기 중인 메모 목록 - 분석 단계 메모만 표시 */}
+      {/* 대기 중인 메모 목록 - 모든 단계 메모 표시 */}
       {pendingMemos.length > 0 && (
         <div className="p-2 bg-gray-50">
           <h3
             className="text-sm font-medium text-gray-700 mb-2 px-2 flex justify-between items-center"
-            onClick={handlePendingHeaderClick} // 더블 탭으로 모든 메모 정리
+            onClick={handlePendingHeaderClick}
           >
             <span>처리 중인 메모</span>
             <span className="text-xs text-gray-400">({pendingMemos.length})</span>
           </h3>
           <div className="space-y-2">
-            {/* 추출 단계를 제외한 메모만 표시 */}
-            {pendingMemos
-              .filter((memo) => memo.status !== 'extracting')
-              .map((pendingMemo) => (
-                <div
-                  key={pendingMemo.id}
-                  className="p-3 bg-white rounded-lg shadow-sm border border-gray-100"
-                >
-                  <div className="flex items-center">
-                    {/* 상태에 따른 아이콘 */}
-                    <div className="mr-3">
-                      {pendingMemo.status === 'analyzing' && (
-                        <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
-                          <span className="animate-pulse">🧠</span>
-                        </div>
-                      )}
-                      {pendingMemo.status === 'completed' && (
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                          <span>✅</span>
-                        </div>
-                      )}
-                      {pendingMemo.status === 'error' && (
-                        <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                          <span>❌</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">
-                        {pendingMemo.extractedData?.title || '처리 중인 메모'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {pendingMemo.status === 'analyzing' && 'AI 분석 중...'}
-                        {pendingMemo.status === 'completed' && (
-                          <span className="text-green-500">처리 완료!</span>
-                        )}
-                        {pendingMemo.status === 'error' && (
-                          <span className="text-red-500">{pendingMemo.error || '오류 발생'}</span>
-                        )}
-                      </p>
-                    </div>
-
-                    {/* 이미지 미리보기 (있는 경우) */}
-                    {pendingMemo.extractedData?.imageUrl && (
-                      <div className="ml-2 w-12 h-12">
-                        <img
-                          src={pendingMemo.extractedData.imageUrl}
-                          alt="미리보기"
-                          className="w-full h-full object-cover rounded"
-                          referrerPolicy="no-referrer"
-                        />
+            {/* filter 제거하고 모든 상태 표시 */}
+            {pendingMemos.map((pendingMemo) => (
+              <div
+                key={pendingMemo.id}
+                className="p-3 bg-white rounded-lg shadow-sm border border-gray-100"
+              >
+                <div className="flex items-center">
+                  {/* 상태에 따른 아이콘 */}
+                  <div className="mr-3">
+                    {pendingMemo.status === 'extracting' && (
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        {/* 추출 아이콘 */}
+                        <span className="animate-pulse">⬇️</span>
                       </div>
                     )}
-
-                    {/* 개별 메모 제거 버튼 */}
-                    <button
-                      className="ml-2 p-1 text-gray-400 hover:text-red-500"
-                      onClick={() => removePendingMemo(pendingMemo.id)}
-                    >
-                      <X size={16} />
-                    </button>
+                    {pendingMemo.status === 'analyzing' && (
+                      <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
+                        <span className="animate-pulse">🧠</span>
+                      </div>
+                    )}
+                    {pendingMemo.status === 'completed' && (
+                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                        <span>✅</span>
+                      </div>
+                    )}
+                    {pendingMemo.status === 'error' && (
+                      <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                        <span>❌</span>
+                      </div>
+                    )}
                   </div>
+
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">
+                      {pendingMemo.status === 'extracting'
+                        ? '내용 추출 중...'
+                        : pendingMemo.extractedData?.title || '처리 중인 메모'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {pendingMemo.status === 'extracting' && 'URL에서 콘텐츠를 추출하는 중...'}
+                      {pendingMemo.status === 'analyzing' && 'AI 분석 중...'}
+                      {pendingMemo.status === 'completed' && (
+                        <span className="text-green-500">처리 완료!</span>
+                      )}
+                      {pendingMemo.status === 'error' && (
+                        <span className="text-red-500">{pendingMemo.error || '오류 발생'}</span>
+                      )}
+                    </p>
+
+                    {/* 추출 중일 때 입력 텍스트 표시 */}
+                    {pendingMemo.status === 'extracting' && (
+                      <p className="text-xs text-gray-400 mt-1 line-clamp-1 italic">
+                        {pendingMemo.inputText}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 이미지 미리보기 (있는 경우) */}
+                  {pendingMemo.extractedData?.imageUrl && (
+                    <div className="ml-2 w-12 h-12">
+                      <img
+                        src={pendingMemo.extractedData.imageUrl}
+                        alt="미리보기"
+                        className="w-full h-full object-cover rounded"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  )}
+
+                  {/* 개별 메모 제거 버튼 */}
+                  <button
+                    className="ml-2 p-1 text-gray-400 hover:text-red-500"
+                    onClick={() => removePendingMemo(pendingMemo.id)}
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
-              ))}
+              </div>
+            ))}
           </div>
         </div>
       )}
