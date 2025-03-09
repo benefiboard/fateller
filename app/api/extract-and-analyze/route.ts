@@ -231,9 +231,29 @@ function isYoutubeUrl(url: string): boolean {
 
 // 유튜브 비디오 ID 추출 함수
 function extractYoutubeId(url: string): string | null {
-  const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-  const match = url.match(regExp);
-  return match && match[7]?.length === 11 ? match[7] : null;
+  // 단축 URL 형식 (youtu.be)
+  let shortMatch = url.match(/^https?:\/\/youtu\.be\/([a-zA-Z0-9_-]{11})(?:\?|$)/);
+  if (shortMatch) {
+    return shortMatch[1];
+  }
+
+  // 일반 YouTube URL 형식
+  let longMatch = url.match(
+    /^https?:\/\/(?:www\.)?youtube\.com\/watch\?(?:.*&)?v=([a-zA-Z0-9_-]{11})(?:&|$)/
+  );
+  if (longMatch) {
+    return longMatch[1];
+  }
+
+  // 임베드 URL 형식
+  let embedMatch = url.match(
+    /^https?:\/\/(?:www\.)?youtube\.com\/embed\/([a-zA-Z0-9_-]{11})(?:\?|$)/
+  );
+  if (embedMatch) {
+    return embedMatch[1];
+  }
+
+  return null;
 }
 
 // youtubei.js를 사용한 자막 추출 함수
