@@ -346,6 +346,7 @@ const MemoPageContent: React.FC = () => {
                           sourceUrl: data.sourceUrl || null,
                           originalTitle: data.originalTitle || '',
                           originalImage: data.originalImage || '',
+                          purpose: data.purpose || '일반',
                         });
                       } else {
                         await createMemo(data.text, {
@@ -353,6 +354,7 @@ const MemoPageContent: React.FC = () => {
                           sourceUrl: data.sourceUrl || null,
                           originalTitle: data.originalTitle || '',
                           originalImage: data.originalImage || '',
+                          purpose: data.purpose || '일반',
                         });
                       }
 
@@ -497,6 +499,7 @@ const MemoPageContent: React.FC = () => {
             sourceUrl: data.sourceUrl || null,
             originalTitle: data.originalTitle || '',
             originalImage: data.originalImage || '',
+            purpose: data.purpose || '일반',
           });
         } else {
           await createMemo(data.text, {
@@ -504,6 +507,7 @@ const MemoPageContent: React.FC = () => {
             sourceUrl: data.sourceUrl || null,
             originalTitle: data.originalTitle || '',
             originalImage: data.originalImage || '',
+            purpose: data.purpose || '일반',
           });
         }
 
@@ -596,6 +600,7 @@ const MemoPageContent: React.FC = () => {
             sourceUrl: data.sourceUrl,
             originalTitle: data.originalTitle || '',
             originalImage: data.originalImage || '',
+            purpose: data.purpose || '일반',
           });
           showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
         } else {
@@ -604,6 +609,7 @@ const MemoPageContent: React.FC = () => {
             sourceUrl: data.sourceUrl,
             originalTitle: data.originalTitle || '',
             originalImage: data.originalImage || '',
+            purpose: data.purpose || '일반',
           });
           showNotification('새 메모가 성공적으로 생성되었습니다.', 'success');
         }
@@ -615,6 +621,7 @@ const MemoPageContent: React.FC = () => {
           category: data.category,
           keywords: data.keywords,
           key_sentence: data.key_sentence,
+          purpose: data.purpose || '일반',
         });
         showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
       }
@@ -627,6 +634,8 @@ const MemoPageContent: React.FC = () => {
 
   // 메모 편집 핸들러
   const handleEdit = (memo: any) => {
+    //console.log('편집하려는 메모:', memo); // 메모 객체 전체 로깅
+    //console.log('메모의 purpose:', memo.purpose); // purpose 필드 확인
     handleOpenComposer('direct', memo.id);
   };
 

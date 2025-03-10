@@ -135,6 +135,7 @@ export const useMemos = (options: SearchOptions = {}) => {
         likes: memo.likes || 0,
         retweets: memo.retweets || 0,
         replies: memo.replies || 0,
+        purpose: memo.purpose || '일반',
       }));
 
       // 기존 메모에 새로 불러온 메모 추가 (첫 페이지면 교체)
@@ -254,6 +255,7 @@ export const useMemos = (options: SearchOptions = {}) => {
         likes: memo.likes || 0,
         retweets: memo.retweets || 0,
         replies: memo.replies || 0,
+        purpose: memo.purpose || '일반',
       }));
 
       // 완전히 새 배열로 교체
@@ -520,6 +522,7 @@ export const useMemos = (options: SearchOptions = {}) => {
           category: aiResponse.labeling?.category || '미분류',
           keywords: aiResponse.labeling?.keywords || [],
           key_sentence: aiResponse.labeling?.key_sentence || '',
+          purpose: options.purpose || '일반',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           likes: 0,
@@ -636,6 +639,7 @@ export const useMemos = (options: SearchOptions = {}) => {
           category: aiResponse.labeling?.category || '미분류',
           keywords: aiResponse.labeling?.keywords || [],
           key_sentence: aiResponse.labeling?.key_sentence || '',
+          purpose: options.purpose || '일반',
           updated_at: new Date().toISOString(),
           has_embedding: false, // 업데이트 시 임베딩도 갱신 필요하므로 false로 설정
         })
@@ -712,6 +716,7 @@ export const useMemos = (options: SearchOptions = {}) => {
       category: string;
       keywords: string[];
       key_sentence: string;
+      purpose: string;
     }
   ) => {
     if (!user_id) {
@@ -732,6 +737,7 @@ export const useMemos = (options: SearchOptions = {}) => {
           category: updateData.category,
           keywords: updateData.keywords,
           key_sentence: updateData.key_sentence,
+          purpose: updateData.purpose || '일반',
           updated_at: new Date().toISOString(),
         })
         .eq('id', memoId)

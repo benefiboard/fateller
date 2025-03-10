@@ -56,6 +56,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     category: string;
     keywords: string[];
     key_sentence: string;
+    purpose: string; // purpose 필드 추가
   }>({
     title: '',
     tweet_main: '',
@@ -63,6 +64,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     category: '',
     keywords: [],
     key_sentence: '',
+    purpose: '일반', // 기본값 설정
   });
 
   // 키워드 입력을 위한 별도의 상태
@@ -76,6 +78,13 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
   // 목적 선택 핸들러 추가
   const handlePurposeSelect = (purpose: string) => {
     setSelectedPurpose(purpose);
+
+    if (mode === 'direct') {
+      setEditFormData((prev) => ({
+        ...prev,
+        purpose: purpose,
+      }));
+    }
   };
 
   // 모달이 열릴 때 초기 데이터 설정
@@ -90,10 +99,13 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
           category: editingMemo.labeling.category,
           keywords: [...editingMemo.labeling.keywords],
           key_sentence: editingMemo.labeling.key_sentence,
+          purpose: editingMemo.purpose || '일반', // purpose 추가
         });
+        setSelectedPurpose(editingMemo.purpose || '일반');
         setKeywordsInput(editingMemo.labeling.keywords.join(', '));
       } else {
         // AI 분석 모드일 때
+        setSelectedPurpose(editingMemo.purpose || '일반');
         setInputText(editingMemo.original_text || editingMemo.thread.join('\n\n'));
         setCharacterCount((editingMemo.original_text || editingMemo.thread.join('\n\n')).length);
       }
@@ -118,6 +130,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
       category: '',
       keywords: [],
       key_sentence: '',
+      purpose: '일반',
     });
     setKeywordsInput('');
     setProcessingStep('idle');
@@ -592,6 +605,26 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                     value={editFormData.key_sentence}
                     onChange={(e) => handleEditFormChange('key_sentence', e.target.value)}
                   ></textarea>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">목적</label>
+                  <div className="flex flex-wrap gap-2">
+                    {['일반', '업무', '개인', '할일', '필기'].map((purpose) => (
+                      <button
+                        key={purpose}
+                        type="button"
+                        className={`px-3 py-1 text-sm rounded-md ${
+                          editFormData.purpose === purpose
+                            ? 'bg-teal-500 text-white'
+                            : 'bg-gray-100 text-teal-500'
+                        }`}
+                        onClick={() => handleEditFormChange('purpose', purpose)}
+                      >
+                        {purpose}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* 트윗 내용 수정 */}

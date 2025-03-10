@@ -61,6 +61,7 @@ export interface Memo {
   original_title?: string;
   original_image?: string;
   has_embedding?: boolean;
+  purpose?: string;
 }
 
 export interface NotificationType {
