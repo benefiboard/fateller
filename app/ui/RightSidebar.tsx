@@ -2,243 +2,278 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Lightbulb, BookOpen, Link2, Gauge, Brain, Clock, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
+import {
+  Lightbulb,
+  BookOpen,
+  Clock,
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
+  Network,
+  Loader2,
+} from 'lucide-react';
 
-// 최근 저장된 메모 샘플 데이터
-const recentMemos = [
-  { id: '1', title: '딥러닝 입문 가이드', category: '인공지능', time: '3시간 전' },
-  { id: '2', title: '효과적인 시간 관리 방법', category: '생산성', time: '어제' },
-  { id: '3', title: '비트코인 장기 전망 분석', category: '금융', time: '2일 전' },
+// 커스텀 훅 import
+import useRightSidebarData from '../hooks/useRightSidebarData';
+
+// 서비스에서 제공할 카테고리 목록
+const CATEGORIES = [
+  '인문/철학',
+  '경영/경제',
+  '언어',
+  '정치',
+  '사회',
+  '국제',
+  '과학/IT',
+  '수학',
+  '기술/공학',
+  '의학/건강',
+  '예술/문화',
+  '문학/창작',
 ];
 
-// 관련 콘텐츠 추천 샘플
-const recommendedContent = [
-  {
-    id: '1',
-    title: '지식 관리의 효율적인 방법',
-    source: 'YouTube',
-    sourceUrl: 'https://youtube.com/watch?v=example1',
-  },
-  {
-    id: '2',
-    title: '정보 체계화를 위한 온톨로지 이해하기',
-    source: '블로그',
-    sourceUrl: 'https://blog.example.com/ontology',
-  },
-  {
-    id: '3',
-    title: '인사이트 발견을 위한 지식 연결 방법',
-    source: '아티클',
-    sourceUrl: 'https://medium.com/example-article',
-  },
-];
-
-// 자동 생성된 인사이트 샘플
-const generatedInsights = [
-  {
-    id: '1',
-    content: '인공지능 관련 콘텐츠와 생산성 메모에서 공통적으로 나타나는 자동화 주제',
-    relatedMemoCount: 5,
-  },
-  {
-    id: '2',
-    content: '최근 저장한 금융 관련 자료들이 거시경제 지표와 연관성이 높습니다',
-    relatedMemoCount: 3,
-  },
-];
+// 섹션 키 타입 정의
+type SectionKey = 'stats' | 'recentMemos' | 'categories' | 'futureFeatures';
 
 const RightSidebar = () => {
-  const [activeTab, setActiveTab] = useState<'recent' | 'related' | 'insights'>('recent');
+  // 사이드바 섹션 확장/축소 상태 관리
+  // 첫 번째 섹션만 열어두고 나머지는 접어둠
+  const [expandedSections, setExpandedSections] = useState({
+    stats: true,
+    recentMemos: false,
+    categories: false,
+    futureFeatures: false,
+  });
 
-  // 활성 탭에 따라 콘텐츠 표시
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'recent':
-        return (
-          <div className="space-y-3">
-            {recentMemos.map((memo) => (
-              <div key={memo.id} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
-                <h3 className="font-medium text-sm">{memo.title}</h3>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                    {memo.category}
-                  </span>
-                  <span className="text-xs text-gray-500">{memo.time}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        );
+  // 실제 데이터 로딩
+  const {
+    totalMemos,
+    recentWeekMemos,
+    categoryStats,
+    recentMemos,
+    usedCategories,
+    isLoading,
+    error,
+  } = useRightSidebarData();
 
-      case 'related':
-        return (
-          <div className="space-y-3">
-            {recommendedContent.map((item) => (
-              <div key={item.id} className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
-                <h3 className="font-medium text-sm">{item.title}</h3>
-                <div className="flex items-center text-xs text-gray-500 mt-1">
-                  <span className="flex items-center">
-                    {item.source === 'YouTube' ? (
-                      <BookOpen size={12} className="mr-1 text-red-500" />
-                    ) : item.source === '블로그' ? (
-                      <BookOpen size={12} className="mr-1 text-blue-500" />
-                    ) : (
-                      <BookOpen size={12} className="mr-1 text-gray-500" />
-                    )}
-                    {item.source}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-
-      case 'insights':
-        return (
-          <div className="space-y-3">
-            {generatedInsights.map((insight) => (
-              <div
-                key={insight.id}
-                className="p-3 rounded-lg cursor-pointer border border-emerald-100 bg-emerald-50"
-              >
-                <div className="flex items-start">
-                  <Lightbulb size={16} className="text-emerald-500 mt-1 mr-2 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm text-gray-800">{insight.content}</p>
-                    <div className="mt-1 text-xs text-emerald-600">
-                      {insight.relatedMemoCount}개의 메모 연결됨
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <button className="w-full text-center text-sm text-emerald-500 font-medium hover:underline">
-              더 많은 인사이트 생성하기
-            </button>
-          </div>
-        );
-
-      default:
-        return null;
-    }
+  // 섹션 토글 함수 - 타입 명시적 지정
+  const toggleSection = (section: SectionKey) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
   };
 
   return (
-    <div className="w-full pt-2 px-4 space-y-4">
-      {/* 검색창 */}
-      <div className="relative">
-        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-          <Search size={18} className="text-gray-500" />
-        </div>
-        <input
-          type="text"
-          placeholder="의미 기반 검색..."
-          className="bg-gray-100 w-full rounded-full py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white border border-gray-200"
-        />
-      </div>
-
-      {/* 지식 통계 카드 */}
-      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-4 text-white">
-        <h2 className="font-bold text-lg mb-2">내 지식 현황</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-center">
-            <BookOpen size={16} className="mr-2" />
-            <div>
-              <p className="text-xs opacity-80">저장된 메모</p>
-              <p className="font-bold">42</p>
-            </div>
-          </div>
-          <div className="flex items-center">
-            <Link2 size={16} className="mr-2" />
-            <div>
-              <p className="text-xs opacity-80">지식 연결</p>
-              <p className="font-bold">128</p>
-            </div>
-          </div>
-          <div className="flex items-center">
-            <Brain size={16} className="mr-2" />
-            <div>
-              <p className="text-xs opacity-80">생성된 인사이트</p>
-              <p className="font-bold">7</p>
-            </div>
-          </div>
-          <div className="flex items-center">
-            <Gauge size={16} className="mr-2" />
-            <div>
-              <p className="text-xs opacity-80">지식 활용도</p>
-              <p className="font-bold">68%</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 지식 탐색 탭 */}
+    <div className="w-full pt-2 px-4 space-y-4 h-screen overflow-y-auto pb-20">
+      {/* 1. 지식 통계 카드 */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex border-b border-gray-200">
+        <div className="flex justify-between items-center p-3 border-b border-gray-200">
+          <h2 className="font-bold text-lg text-gray-800">내 지식 현황</h2>
           <button
-            className={`flex-1 py-2 text-sm font-medium text-center ${
-              activeTab === 'recent'
-                ? 'text-emerald-500 border-b-2 border-emerald-500'
-                : 'text-gray-500'
-            }`}
-            onClick={() => setActiveTab('recent')}
+            onClick={() => toggleSection('stats')}
+            className="text-gray-500 hover:text-gray-700"
           >
-            <div className="flex items-center justify-center">
-              <Clock size={14} className="mr-1" />
-              최근 메모
-            </div>
-          </button>
-          <button
-            className={`flex-1 py-2 text-sm font-medium text-center ${
-              activeTab === 'related'
-                ? 'text-emerald-500 border-b-2 border-emerald-500'
-                : 'text-gray-500'
-            }`}
-            onClick={() => setActiveTab('related')}
-          >
-            <div className="flex items-center justify-center">
-              <TrendingUp size={14} className="mr-1" />
-              추천 콘텐츠
-            </div>
-          </button>
-          <button
-            className={`flex-1 py-2 text-sm font-medium text-center ${
-              activeTab === 'insights'
-                ? 'text-emerald-500 border-b-2 border-emerald-500'
-                : 'text-gray-500'
-            }`}
-            onClick={() => setActiveTab('insights')}
-          >
-            <div className="flex items-center justify-center">
-              <Lightbulb size={14} className="mr-1" />
-              인사이트
-            </div>
+            {expandedSections.stats ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
         </div>
-        <div className="p-3">{renderTabContent()}</div>
+
+        {expandedSections.stats && (
+          <div className="p-4 border bg-gradient-to-r from-emerald-600 to-emerald-500 border-gray-100 shadow-md text-gray-100">
+            {isLoading ? (
+              <div className="flex justify-center items-center py-4">
+                <Loader2 className="animate-spin h-6 w-6 text-white mr-2" />
+                <span>데이터 로딩 중...</span>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center">
+                    <BookOpen size={16} className="mr-2" />
+                    <div>
+                      <p className="text-xs opacity-80">저장된 메모</p>
+                      <p className="font-bold">{totalMemos}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <Clock size={16} className="mr-2" />
+                    <div>
+                      <p className="text-xs opacity-80">최근 7일</p>
+                      <p className="font-bold">{recentWeekMemos}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 카테고리별 분포 미니 차트 */}
+                <div className="mt-4">
+                  <p className="text-xs opacity-80 mb-2">주요 카테고리 분포</p>
+                  <div className="space-y-2">
+                    {categoryStats.length > 0 ? (
+                      categoryStats.slice(0, 3).map((stat, index) => (
+                        <div key={index} className="w-full">
+                          <div className="flex justify-between text-xs mb-1">
+                            <span>{stat.category}</span>
+                            <span>{stat.count}개</span>
+                          </div>
+                          <div className="w-full bg-white/20 rounded-full h-2">
+                            <div
+                              className="bg-white rounded-full h-2"
+                              style={{
+                                width: `${(stat.count / categoryStats[0].count) * 100}%`,
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-center py-2">아직 메모가 없습니다</p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 추천 링크 카드 */}
-      <div className="bg-gray-50 rounded-xl p-4">
-        <h2 className="font-bold text-lg mb-2">빠른 접근</h2>
-        <div className="space-y-2">
-          <button className="w-full py-2 px-3 text-left text-sm font-medium rounded-lg hover:bg-gray-100 flex items-center">
-            <Brain size={16} className="mr-2 text-emerald-500" />
-            지식맵 보기
-          </button>
-          <button className="w-full py-2 px-3 text-left text-sm font-medium rounded-lg hover:bg-gray-100 flex items-center">
-            <TrendingUp size={16} className="mr-2 text-emerald-500" />
-            인사이트 대시보드
-          </button>
-          <button className="w-full py-2 px-3 text-left text-sm font-medium rounded-lg hover:bg-gray-100 flex items-center">
-            <BookOpen size={16} className="mr-2 text-emerald-500" />
-            모든 메모 보기
+      {/* 2. 최근 메모 */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="flex justify-between items-center p-3 border-b border-gray-200">
+          <h2 className="font-bold text-lg text-gray-800">최근 메모</h2>
+          <button
+            onClick={() => toggleSection('recentMemos')}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            {expandedSections.recentMemos ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
         </div>
+
+        {expandedSections.recentMemos && (
+          <div className="p-3 space-y-2">
+            {isLoading ? (
+              <div className="space-y-3">
+                <div className="animate-pulse h-12 bg-gray-100 rounded"></div>
+                <div className="animate-pulse h-12 bg-gray-100 rounded"></div>
+                <div className="animate-pulse h-12 bg-gray-100 rounded"></div>
+              </div>
+            ) : recentMemos.length > 0 ? (
+              recentMemos.map((memo) => (
+                <div
+                  key={memo.id}
+                  className="p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                >
+                  <h3 className="font-medium text-sm text-gray-800">{memo.title}</h3>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      {memo.category}
+                    </span>
+                    <span className="text-xs text-gray-500">{memo.time}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-2">저장된 메모가 없습니다</p>
+            )}
+            <button className="w-full text-center text-sm text-emerald-600 py-1 hover:underline">
+              모든 메모 보기
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* 3. 카테고리 탐색 */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="flex justify-between items-center p-3 border-b border-gray-200">
+          <h2 className="font-bold text-lg text-gray-800">카테고리 탐색</h2>
+          <button
+            onClick={() => toggleSection('categories')}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            {expandedSections.categories ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </button>
+        </div>
+
+        {expandedSections.categories && (
+          <div className="p-3">
+            {isLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="animate-spin h-5 w-5 text-emerald-500 mr-2" />
+                <span className="text-sm text-gray-500">카테고리 로딩 중...</span>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map((category) => {
+                  // 사용 중인 카테고리는 강조 표시
+                  const isInUse = usedCategories.includes(category);
+                  return (
+                    <Link
+                      key={category}
+                      href={`/?category=${category}`}
+                      className={`px-3 py-1 rounded-full text-sm transition-colors border ${
+                        isInUse
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                          : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      {category}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 4. 향후 기능 표시 공간 */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="flex justify-between items-center p-3 border-b border-gray-200">
+          <h2 className="font-bold text-lg text-gray-800">추가 예정</h2>
+          <button
+            onClick={() => toggleSection('futureFeatures')}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            {expandedSections.futureFeatures ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </button>
+        </div>
+
+        {expandedSections.futureFeatures && (
+          <div className="p-4 space-y-4">
+            {/* 관련 메모 표시 공간 */}
+            <div className="border border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+              <div className="flex items-center text-gray-500 mb-2">
+                <Network size={18} className="mr-2" />
+                <h3 className="font-medium">관련 메모</h3>
+              </div>
+              <p className="text-sm text-gray-500">
+                곧 추가될 기능입니다. 자동으로 관련된 메모를 찾아서 표시합니다.
+              </p>
+            </div>
+
+            {/* 인사이트 공간 */}
+            <div className="border border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+              <div className="flex items-center text-gray-500 mb-2">
+                <Lightbulb size={18} className="mr-2" />
+                <h3 className="font-medium">AI 인사이트</h3>
+              </div>
+              <p className="text-sm text-gray-500">
+                곧 추가될 기능입니다. AI가 메모 간의 패턴을 분석하여 새로운 인사이트를 제공합니다.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 에러 메시지 표시 */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
+          데이터 로딩 중 오류가 발생했습니다: {error}
+        </div>
+      )}
 
       {/* 푸터 정보 */}
-      <div className="text-xs text-gray-500 flex flex-wrap gap-2">
+      <div className="text-xs text-gray-500 flex flex-wrap gap-2 mt-6">
         <a href="#" className="hover:underline">
           이용약관
         </a>

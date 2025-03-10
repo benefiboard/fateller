@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+// MemoContent.tsx 수정 - ref 활용
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Memo } from '../utils/types';
-import { Sparkle, ChevronDown, ChevronUp, ExternalLink, Quote } from 'lucide-react';
+import { Sparkle, ChevronDown, ChevronUp, ExternalLink, Quote, Share } from 'lucide-react';
 import Link from 'next/link';
+import ShareButton from './ShareButton';
 
 // 탭 인덱스 타입 정의
 type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 주요 내용, 2: 핵심 문장, 3: 원문
@@ -31,6 +33,56 @@ const MemoContent: React.FC<MemoContentProps> = ({
   const [direction, setDirection] = useState(0); // 슬라이드 방향 (-1: 왼쪽, 1: 오른쪽)
   // 원문 내용 표시 여부를 관리하는 상태 추가
   const [showOriginalText, setShowOriginalText] = useState(false);
+
+  // 각 탭에 대한 ref 추가
+  const tabRefs = {
+    idea: useRef<HTMLDivElement>(null),
+    main: useRef<HTMLDivElement>(null),
+    key: useRef<HTMLDivElement>(null),
+    original: useRef<HTMLDivElement>(null),
+  };
+
+  // 현재 활성 탭에 대한 ref 가져오기
+  const getActiveTabRef = () => {
+    switch (activeTab) {
+      case 0:
+        return tabRefs.idea;
+      case 1:
+        return tabRefs.main;
+      case 2:
+        return tabRefs.key;
+      case 3:
+        return tabRefs.original;
+      default:
+        return tabRefs.idea;
+    }
+  };
+
+  // 현재 탭에 따른 타입 가져오기
+  const getCurrentTabType = (): 'idea' | 'main' | 'key' | 'original' => {
+    switch (activeTab) {
+      case 0:
+        return 'idea';
+      case 1:
+        return 'main';
+      case 2:
+        return 'key';
+      case 3:
+        return 'original';
+      default:
+        return 'idea';
+    }
+  };
+
+  // 공유 성공 핸들러
+  const handleShareSuccess = (type: 'image' | 'text' | 'link') => {
+    console.log(`${getCurrentTabType()} 탭 ${type} 공유 성공`);
+  };
+
+  // 공유 실패 핸들러
+  const handleShareError = (type: 'image' | 'text' | 'link', error: string) => {
+    console.error(`${getCurrentTabType()} 탭 ${type} 공유 실패:`, error);
+  };
 
   // 탭 변경 함수 - 수정된 버전
   const changeTab = (newTab: TabIndex) => {
@@ -136,39 +188,34 @@ const MemoContent: React.FC<MemoContentProps> = ({
     switch (tabIndex) {
       case 0:
         return (
-          <div className="pt-4">
+          <div className="pt-4" ref={tabRefs.idea}>
             {/* 미니멀한 명함 스타일의 디자인 */}
-            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3">
+            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">
                 {memo.title}
               </h2>
+              <ShareButton
+                memo={memo}
+                tabType="idea"
+                contentRef={tabRefs.idea}
+                onShareSuccess={handleShareSuccess}
+                onShareError={handleShareError}
+              />
             </div>
 
             {/* 핵심 문장을 강조 - 심플한 디자인 */}
             <div className=" p-4 my-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md">
-              {/* <div className=" p-4 my-4 rounded-lg border bg-gradient-to-br from-emerald-600 to-lime-600 border-gray-100 shadow-md"> */}
               <div className="relative px-2">
-                {/* 장식적인 구분선 */}
-                {/* <div className="absolute -top-2 left-0">
-                  <Quote size={24} class
-                  Name="text-gray-400" />
-                </div> */}
-
                 <p className="text-lg font-medium text-gray-100 leading-tight py-4">
                   {renderHTML(memo.labeling.key_sentence)}
                 </p>
-
-                {/* 장식적인 구분선 */}
-                {/* <div className="absolute -bottom-2 right-0  rounded-full">
-                  <Quote size={24} className="text-gray-400" />
-                </div> */}
               </div>
             </div>
 
             {/* 키워드 - 심플한 디자인 */}
-            <div className="flex flex-wrap items-center  mt-3">
+            <div className="flex flex-wrap items-center mt-3">
               {memo.labeling.keywords.map((keyword, keywordIndex) => (
-                <span key={keywordIndex} className="text-sm text-emerald-800  px-1 rounded-full ">
+                <span key={keywordIndex} className="text-sm text-emerald-800 px-1 rounded-full">
                   #{keyword}
                 </span>
               ))}
@@ -183,7 +230,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                   <p className="text-xs text-gray-400">원문 내용</p>
                   <hr className="w-1/3" />
                 </div>
-                <div className="grid grid-cols-8 items-center gap-2 w-full   bg-gray-50">
+                <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50">
                   <div className="h-16 col-span-3 relative">
                     <img
                       src={memo.original_image}
@@ -207,10 +254,17 @@ const MemoContent: React.FC<MemoContentProps> = ({
         );
       case 1: // 주요 내용 (이전의 2번 탭)
         return (
-          <div className="pt-4">
-            {/* 미니멀한 명함 스타일의 디자인 */}
-            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3">
+          <div className="pt-4" ref={tabRefs.main}>
+            {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
+            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">주요 내용</h2>
+              <ShareButton
+                memo={memo}
+                tabType="main"
+                contentRef={tabRefs.main}
+                onShareSuccess={handleShareSuccess}
+                onShareError={handleShareError}
+              />
             </div>
 
             {/* 주요 내용 - 아이디어 탭 스타일 적용 */}
@@ -228,10 +282,17 @@ const MemoContent: React.FC<MemoContentProps> = ({
         );
       case 2: // 핵심 문장 (이전의 1번 탭)
         return (
-          <div className="pt-4">
-            {/* 미니멀한 명함 스타일의 디자인 */}
-            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3">
+          <div className="pt-4" ref={tabRefs.key}>
+            {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
+            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">핵심 문장</h2>
+              <ShareButton
+                memo={memo}
+                tabType="key"
+                contentRef={tabRefs.key}
+                onShareSuccess={handleShareSuccess}
+                onShareError={handleShareError}
+              />
             </div>
 
             {/* 안전하게 내용 렌더링 */}
@@ -359,10 +420,17 @@ const MemoContent: React.FC<MemoContentProps> = ({
         );
       case 3:
         return (
-          <div className="pt-4">
-            {/* 미니멀한 명함 스타일의 디자인 */}
-            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3">
+          <div className="pt-4" ref={tabRefs.original}>
+            {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
+            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">원문</h2>
+              <ShareButton
+                memo={memo}
+                tabType="original"
+                contentRef={tabRefs.original}
+                onShareSuccess={handleShareSuccess}
+                onShareError={handleShareError}
+              />
             </div>
 
             {memo.original_url ? (
@@ -417,7 +485,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                       <p className="text-xs text-gray-400">원문 내용</p>
                       <hr className="w-1/3" />
                     </div>
-                    <div className="grid grid-cols-8 items-center gap-2 w-full   bg-gray-50">
+                    <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50">
                       <div className="h-16 col-span-3 relative">
                         <img
                           src={memo.original_image}

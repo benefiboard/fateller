@@ -33,18 +33,18 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   return (
     <Link href={href} className="group">
       <div
-        className={`flex items-center p-3 rounded-full text-xl transition-colors hover:bg-emerald-50 ${
+        className={`flex items-center justify-center lg:justify-normal p-3 rounded-full transition-colors hover:bg-emerald-50 ${
           active ? 'font-bold' : 'font-normal'
         }`}
       >
         <div
-          className={`${
+          className={`text-xl ${
             active ? 'text-emerald-500' : 'text-gray-800 group-hover:text-emerald-500'
           }`}
         >
           {icon}
         </div>
-        {!minimized && <span className="ml-4 text-gray-900 text-xl">{label}</span>}
+        {!minimized && <span className="ml-4 text-gray-900 text-lg  hidden lg:block">{label}</span>}
       </div>
     </Link>
   );
@@ -69,7 +69,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ minimized = false }) => {
       </div>
 
       {/* 네비게이션 링크 */}
-      <nav className="mt-2 flex-1">
+      <nav className="mt-2 flex-1 ">
         <SidebarLink
           href="/"
           icon={<Home size={26} />}
@@ -115,14 +115,14 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ minimized = false }) => {
       </nav>
 
       {/* 메모 작성 버튼 */}
-      <div className="mt-4 px-3">
+      {/* <div className="mt-4 px-3">
         <button className="bg-emerald-400 hover:bg-emerald-500 transition-colors text-white rounded-full p-3 w-full flex items-center justify-center font-bold text-lg">
           {minimized ? <MessageCircle size={24} /> : <span>새 메모</span>}
         </button>
-      </div>
+      </div> */}
 
       {/* 프로필 정보 */}
-      <div className="mt-auto p-3">
+      {/* <div className="mt-auto p-3">
         <div className="flex items-center">
           <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
             <img
@@ -141,7 +141,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ minimized = false }) => {
             </>
           )}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
