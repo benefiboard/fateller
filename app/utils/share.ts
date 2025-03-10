@@ -293,6 +293,12 @@ export const formatMemoAsMarkdown = (memo: any, tabType: string): string => {
 /**
  * 모바일 기기에서 네이티브 공유 다이얼로그를 사용합니다.
  */
+// utils/share.ts의 useNativeShare 함수 수정
+
+/**
+ * 모바일 기기에서 네이티브 공유 다이얼로그를 사용합니다.
+ * PC 환경 및 URL이 없는 경우에도 적절히 처리합니다.
+ */
 export const useNativeShare = async (
   title: string,
   text: string,
@@ -303,11 +309,20 @@ export const useNativeShare = async (
   }
 
   try {
-    await navigator.share({
-      title,
-      text,
-      url,
-    });
+    // URL이 있는 경우에만 포함, 없으면 텍스트만 공유
+    if (url) {
+      await navigator.share({
+        title,
+        text,
+        url,
+      });
+    } else {
+      // URL 없이 텍스트만 공유
+      await navigator.share({
+        title,
+        text,
+      });
+    }
     return true;
   } catch (error) {
     console.error('공유 중 오류 발생:', error);

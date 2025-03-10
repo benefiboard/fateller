@@ -181,22 +181,27 @@ const ShareButton: React.FC<ShareButtonProps> = ({
     const formattedText = formatMemoAsMarkdown(memo, tabType);
 
     try {
+      // 원문 URL이 없는 경우 URL 매개변수 없이 호출
+      const shareUrl = memo.original_url || undefined;
+
       const success = await useNativeShare(
         memo.title || 'BrainLabel 공유',
         formattedText,
-        memo.original_url
+        shareUrl
       );
 
       if (success) {
         showResult(true, '공유 성공!');
         onShareSuccess?.('text');
       } else {
-        // 네이티브 공유가 지원되지 않는 경우 텍스트 복사로 대체
+        // 네이티브 공유가 지원되지 않는 경우(PC) 텍스트 복사로 대체
         handleCopyText();
       }
     } catch (error) {
       showResult(false, '공유 중 오류가 발생했습니다.');
       onShareError?.('text', '예기치 않은 오류');
+      // 오류 발생 시 텍스트 복사 시도
+      handleCopyText();
     }
 
     setIsOpen(false);
