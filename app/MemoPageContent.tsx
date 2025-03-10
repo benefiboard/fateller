@@ -47,6 +47,7 @@ const MemoPageContent: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<'latest' | 'oldest' | 'today'>('latest');
+  const [selectedPurpose, setSelectedPurpose] = useState<string | null>(null);
 
   // 상단 알림 상태
   const [topAlert, setTopAlert] = useState<TopAlert>({
@@ -76,6 +77,7 @@ const MemoPageContent: React.FC = () => {
   } = useMemos({
     searchTerm,
     category: selectedCategory,
+    purpose: selectedPurpose,
     sortOption,
   });
 
@@ -688,6 +690,11 @@ const MemoPageContent: React.FC = () => {
     }
   };
 
+  const handlePurposeSelect = (purpose: string | null) => {
+    console.log('목적 선택:', purpose);
+    setSelectedPurpose(purpose);
+  };
+
   return (
     <div className="max-w-md mx-auto bg-white overflow-hidden shadow-md min-h-screen tracking-tighter leading-snug">
       {/* 상단 알림 */}
@@ -733,8 +740,10 @@ const MemoPageContent: React.FC = () => {
       <SearchAndFilterBar
         onSearch={handleSearch}
         onCategorySelect={handleCategorySelect}
+        onPurposeSelect={handlePurposeSelect} // 추가
         onSortChange={handleSortChange}
         selectedCategory={selectedCategory}
+        selectedPurpose={selectedPurpose} // 추가
         searchTerm={searchTerm}
         selectedSort={sortOption}
       />

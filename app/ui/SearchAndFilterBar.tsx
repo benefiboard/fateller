@@ -20,11 +20,16 @@ const CATEGORIES = [
   '문학/창작',
 ];
 
+// 목적 목록 정의 추가
+const PURPOSES = ['전체', '일반', '업무', '개인', '할일', '필기'];
+
 interface SearchAndFilterBarProps {
   onSearch: (searchTerm: string) => void;
   onCategorySelect: (category: string | null) => void;
+  onPurposeSelect: (purpose: string | null) => void; // 목적 선택 추가
   onSortChange: (sortOption: 'latest' | 'oldest' | 'today') => void;
   selectedCategory: string | null;
+  selectedPurpose: string | null; // 선택된 목적 추가
   searchTerm: string;
   selectedSort: 'latest' | 'oldest' | 'today';
 }
@@ -32,13 +37,16 @@ interface SearchAndFilterBarProps {
 const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
   onSearch,
   onCategorySelect,
+  onPurposeSelect, // 목적 선택 추가
   onSortChange,
   selectedCategory,
+  selectedPurpose, // 선택된 목적 추가
   searchTerm,
   selectedSort,
 }) => {
   const [inputValue, setInputValue] = useState(searchTerm);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [showPurposeFilter, setShowPurposeFilter] = useState(false); // 목적 필터 표시 상태 추가
 
   useEffect(() => {
     setInputValue(searchTerm);
@@ -47,21 +55,28 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
   // 검색 제출 처리
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('검색 실행:', inputValue); // 디버깅용
     onSearch(inputValue.trim());
   };
 
-  // 카테고리 선택 처리 (수정됨)
+  // 카테고리 선택 처리
   const handleCategorySelect = (category: string) => {
-    console.log('카테고리 선택:', category); // 디버깅용
-
     if (category === '전체') {
       onCategorySelect(null);
     } else if (category === selectedCategory) {
-      // 이미 선택된 카테고리 다시 클릭하면 해제
       onCategorySelect(null);
     } else {
       onCategorySelect(category);
+    }
+  };
+
+  // 목적 선택 처리 추가
+  const handlePurposeSelect = (purpose: string) => {
+    if (purpose === '전체') {
+      onPurposeSelect(null);
+    } else if (purpose === selectedPurpose) {
+      onPurposeSelect(null);
+    } else {
+      onPurposeSelect(purpose);
     }
   };
 
@@ -70,6 +85,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
     setInputValue('');
     onSearch('');
     onCategorySelect(null);
+    onPurposeSelect(null); // 목적 필터 초기화 추가
     onSortChange('latest');
   };
 
@@ -90,7 +106,6 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
             size={18}
           />
 
-          {/* 검색 버튼 (엔터 아이콘) */}
           <button
             type="submit"
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-emerald-500 hover:text-emerald-700"
@@ -102,9 +117,32 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
 
       {/* 필터 버튼 영역 */}
       <div className="flex px-2 py-2 overflow-x-auto hide-scrollbar space-x-2 border-t border-gray-100">
+        {/* 목적 버튼 추가 */}
+        <button
+          onClick={() => {
+            setShowPurposeFilter(!showPurposeFilter);
+            if (showCategoryFilter) setShowCategoryFilter(false); // 카테고리 필터가 열려있으면 닫기
+          }}
+          className={`px-3 py-1 rounded-full text-sm flex items-center whitespace-nowrap ${
+            selectedPurpose
+              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+              : 'bg-gray-100 text-gray-700 border border-gray-200'
+          }`}
+        >
+          <span>목적{selectedPurpose ? `: ${selectedPurpose}` : ''}</span>
+          {showPurposeFilter ? (
+            <ChevronUp size={16} className="ml-1" />
+          ) : (
+            <ChevronDown size={16} className="ml-1" />
+          )}
+        </button>
+
         {/* 카테고리 버튼 */}
         <button
-          onClick={() => setShowCategoryFilter(!showCategoryFilter)}
+          onClick={() => {
+            setShowCategoryFilter(!showCategoryFilter);
+            if (showPurposeFilter) setShowPurposeFilter(false); // 목적 필터가 열려있으면 닫기
+          }}
           className={`px-3 py-1 rounded-full text-sm flex items-center whitespace-nowrap ${
             selectedCategory
               ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
@@ -154,6 +192,35 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
         </button>
       </div>
 
+      {/* 목적 필터 패널 추가 */}
+      {showPurposeFilter && (
+        <div className="border-t border-gray-100 bg-gray-50 shadow-inner p-2 transform transition-all duration-300 max-h-60 overflow-y-auto">
+          <div className="flex flex-wrap gap-2">
+            {PURPOSES.map((purpose) => (
+              <button
+                key={purpose}
+                onClick={() => handlePurposeSelect(purpose)}
+                className={`px-3 py-1 rounded-full text-sm ${
+                  (purpose === '전체' && !selectedPurpose) || purpose === selectedPurpose
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {purpose}
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-center mt-2">
+            <button
+              onClick={() => setShowPurposeFilter(false)}
+              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1"
+            >
+              접기 <ChevronUp size={14} className="inline" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 카테고리 필터 패널 */}
       {showCategoryFilter && (
         <div className="border-t border-gray-100 bg-gray-50 shadow-inner p-2 transform transition-all duration-300 max-h-60 overflow-y-auto">
@@ -183,23 +250,27 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
         </div>
       )}
 
-      {/* 현재 필터링/검색 상태 표시 */}
-      {(searchTerm ||
-        (selectedCategory && selectedCategory !== '전체') ||
-        selectedSort !== 'latest') && (
+      {/* 현재 필터링/검색 상태 표시 (목적 포함) */}
+      {(searchTerm || selectedPurpose || selectedCategory || selectedSort !== 'latest') && (
         <div className="p-2 bg-gray-50 border-t border-b border-gray-200">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
               {searchTerm && <span>"{searchTerm}" 검색 결과</span>}
-              {selectedCategory && (
+              {selectedPurpose && (
                 <span>
                   {searchTerm ? ' · ' : ''}
+                  {selectedPurpose} 목적
+                </span>
+              )}
+              {selectedCategory && (
+                <span>
+                  {searchTerm || selectedPurpose ? ' · ' : ''}
                   {selectedCategory} 카테고리
                 </span>
               )}
               {selectedSort !== 'latest' && (
                 <span>
-                  {searchTerm || selectedCategory ? ' · ' : ''}
+                  {searchTerm || selectedCategory || selectedPurpose ? ' · ' : ''}
                   {selectedSort === 'oldest' ? '오래된순' : '오늘'}
                 </span>
               )}

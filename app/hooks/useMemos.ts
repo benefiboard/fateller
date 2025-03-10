@@ -11,6 +11,7 @@ import { formatTimeAgo } from '../utils/formatters';
 interface SearchOptions {
   searchTerm?: string;
   category?: string | null;
+  purpose?: string | null;
   sortOption?: 'latest' | 'oldest' | 'today';
 }
 
@@ -182,6 +183,11 @@ export const useMemos = (options: SearchOptions = {}) => {
       // 카테고리 필터링
       if (options.category) {
         query = query.eq('category', options.category);
+      }
+
+      // 목적 필터링 추가
+      if (options.purpose) {
+        query = query.eq('purpose', options.purpose);
       }
 
       // 검색어 적용 (단순화된 방식)
@@ -934,7 +940,7 @@ export const useMemos = (options: SearchOptions = {}) => {
     } else {
       setMemos([]);
     }
-  }, [user_id, options.searchTerm, options.category, options.sortOption]);
+  }, [user_id, options.searchTerm, options.category, options.purpose, options.sortOption]);
 
   return {
     memos,
