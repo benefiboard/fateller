@@ -119,6 +119,16 @@ const DirectEditForm: React.FC<DirectEditFormProps> = ({ memo, isSubmitting, err
         />
       </div>
 
+      {/* 핵심 문장 수정 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">핵심 문장</label>
+        <textarea
+          className="w-full p-2 border border-gray-300 rounded-md min-h-12"
+          value={formData.key_sentence}
+          onChange={(e) => handleFormChange('key_sentence', e.target.value)}
+        ></textarea>
+      </div>
+
       {/* 트윗 내용 수정 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">트윗 내용</label>
@@ -195,16 +205,6 @@ const DirectEditForm: React.FC<DirectEditFormProps> = ({ memo, isSubmitting, err
           onChange={handleKeywordsInputChange}
           placeholder="키워드1, 키워드2, 키워드3"
         />
-      </div>
-
-      {/* 핵심 문장 수정 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">핵심 문장</label>
-        <textarea
-          className="w-full p-2 border border-gray-300 rounded-md min-h-12"
-          value={formData.key_sentence}
-          onChange={(e) => handleFormChange('key_sentence', e.target.value)}
-        ></textarea>
       </div>
 
       {error && (

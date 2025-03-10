@@ -1,5 +1,3 @@
-//app/memo/ui/ComposerModal.tsx
-
 import React, { useState, useEffect } from 'react';
 import { X, Image, Video, Loader, AlertCircle } from 'lucide-react';
 import { Memo } from '../utils/types';
@@ -47,6 +45,8 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     sourceUrl?: string;
   } | null>(null);
   const [isCancelled, setIsCancelled] = useState(false);
+  // 목적 선택 상태 추가
+  const [selectedPurpose, setSelectedPurpose] = useState<string>('일반');
 
   // 직접 수정 폼 데이터
   const [editFormData, setEditFormData] = useState<{
@@ -72,6 +72,11 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
   const [showExtractionAlert, setShowExtractionAlert] = useState(false);
   const [extractionAlertMessage, setExtractionAlertMessage] = useState('');
   const [isUrlExtracting, setIsUrlExtracting] = useState(false);
+
+  // 목적 선택 핸들러 추가
+  const handlePurposeSelect = (purpose: string) => {
+    setSelectedPurpose(purpose);
+  };
 
   // 모달이 열릴 때 초기 데이터 설정
   useEffect(() => {
@@ -117,6 +122,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     setKeywordsInput('');
     setProcessingStep('idle');
     setExtractedData(null);
+    setSelectedPurpose('일반'); // 선택된 목적 리셋
   };
 
   // 입력 텍스트 변경 처리
@@ -185,6 +191,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
       originalImage: extractedData?.imageUrl || '',
       currentStep: processingStep, // 현재 진행 단계 전달
       isOngoing: true, // 백그라운드 처리 플래그
+      purpose: selectedPurpose, // 선택된 목적 추가
     };
 
     // 알림 메시지 생성
@@ -314,6 +321,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
               originalImage: extractData.imageUrl || extractData.thumbnailUrl || '',
               currentStep: 'analyzing' as ProcessingStep,
               isOngoing: false, // 새로운 요청임을 표시
+              purpose: selectedPurpose, // 선택된 목적 추가
             };
 
             // 백그라운드 처리 시작 (여기서 onSubmit 대신 onBackgroundProcess 사용)
@@ -355,6 +363,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
             isUrl: false,
             currentStep: 'analyzing' as ProcessingStep,
             isOngoing: false,
+            purpose: selectedPurpose, // 선택된 목적 추가
           };
 
           // 백그라운드 처리
@@ -484,11 +493,46 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                   <div className="border-t pt-3">
                     <div className="flex items-center justify-between">
                       <div className="flex space-x-2 text-teal-500">
-                        <button className="p-1">
-                          <Image size={18} />
+                        {/* 버튼 스타일 수정 - 선택된 항목에 bg-teal-500 및 text-gray-100 적용 */}
+                        <button
+                          className={`px-2 py-1 text-sm rounded ${
+                            selectedPurpose === '일반' ? 'bg-teal-500 text-gray-100' : ''
+                          }`}
+                          onClick={() => handlePurposeSelect('일반')}
+                        >
+                          일반
                         </button>
-                        <button className="p-1">
-                          <Video size={18} />
+                        <button
+                          className={`px-2 py-1 text-sm rounded ${
+                            selectedPurpose === '업무' ? 'bg-teal-500 text-gray-100' : ''
+                          }`}
+                          onClick={() => handlePurposeSelect('업무')}
+                        >
+                          업무
+                        </button>
+                        <button
+                          className={`px-2 py-1 text-sm rounded ${
+                            selectedPurpose === '개인' ? 'bg-teal-500 text-gray-100' : ''
+                          }`}
+                          onClick={() => handlePurposeSelect('개인')}
+                        >
+                          개인
+                        </button>
+                        <button
+                          className={`px-2 py-1 text-sm rounded ${
+                            selectedPurpose === '할일' ? 'bg-teal-500 text-gray-100' : ''
+                          }`}
+                          onClick={() => handlePurposeSelect('할일')}
+                        >
+                          할일
+                        </button>
+                        <button
+                          className={`px-2 py-1 text-sm rounded ${
+                            selectedPurpose === '필기' ? 'bg-teal-500 text-gray-100' : ''
+                          }`}
+                          onClick={() => handlePurposeSelect('필기')}
+                        >
+                          필기
                         </button>
                       </div>
 
@@ -538,11 +582,21 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                   />
                 </div>
 
+                {/* 핵심 문장 수정 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">핵심 문장</label>
+                  <textarea
+                    className="w-full p-2 border border-gray-300 rounded-md min-h-12"
+                    value={editFormData.key_sentence}
+                    onChange={(e) => handleEditFormChange('key_sentence', e.target.value)}
+                  ></textarea>
+                </div>
+
                 {/* 트윗 내용 수정 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">트윗 내용</label>
                   <textarea
-                    className="w-full p-2 border border-gray-300 rounded-md min-h-12"
+                    className="w-full p-2 border border-gray-300 rounded-md min-h-24"
                     value={editFormData.tweet_main}
                     onChange={(e) => handleEditFormChange('tweet_main', e.target.value)}
                   ></textarea>
@@ -616,16 +670,6 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                     onChange={handleKeywordsInputChange}
                     placeholder="키워드1, 키워드2, 키워드3"
                   />
-                </div>
-
-                {/* 핵심 문장 수정 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">핵심 문장</label>
-                  <textarea
-                    className="w-full p-2 border border-gray-300 rounded-md min-h-12"
-                    value={editFormData.key_sentence}
-                    onChange={(e) => handleEditFormChange('key_sentence', e.target.value)}
-                  ></textarea>
                 </div>
 
                 {error && (
