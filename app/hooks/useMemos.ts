@@ -8,7 +8,13 @@ import createSupabaseBrowserClient from '@/lib/supabse/client';
 import { Memo } from '../utils/types';
 import { formatTimeAgo } from '../utils/formatters';
 
-export const useMemos = () => {
+interface SearchOptions {
+  searchTerm?: string;
+  category?: string | null;
+  sortOption?: 'latest' | 'oldest' | 'today';
+}
+
+export const useMemos = (options: SearchOptions = {}) => {
   const [memos, setMemos] = useState<Memo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,17 +49,71 @@ export const useMemos = () => {
       const start = page * PAGE_SIZE;
       const end = start + PAGE_SIZE - 1;
 
-      const { data, error, count } = await supabase
-        .from('memos')
-        .select('*', { count: 'exact' }) // 전체 개수도 가져옴
-        .eq('user_id', user_id)
-        .order('created_at', { ascending: false })
-        .range(start, end);
+      // 기본 쿼리 생성
+      let query = supabase.from('memos').select('*', { count: 'exact' });
+
+      // 사용자 ID로 필터링 (항상 적용)
+      query = query.eq('user_id', user_id);
+
+      // 카테고리 필터링
+      if (options.category) {
+        query = query.eq('category', options.category);
+      }
+
+      // 날짜 필터링 ("오늘" 옵션)
+      if (options.sortOption === 'today') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        query = query.gte('created_at', today.toISOString());
+      }
+
+      // 검색어 적용 (title, tweet_main, key_sentence, original_text 필드에서 검색)
+      if (options.searchTerm && options.searchTerm.trim() !== '') {
+        const searchTerm = options.searchTerm.trim();
+
+        // 단일 필드 검색으로 단순화 (테스트용)
+        query = query.ilike('title', `%${searchTerm}%`);
+
+        // 성공적으로 작동하면 아래 코드를 사용하여 다중 필드 검색 적용
+        /*
+        query = query.or(
+          `title.ilike.%${searchTerm}%,` + 
+          `tweet_main.ilike.%${searchTerm}%,` +
+          `key_sentence.ilike.%${searchTerm}%,` +
+          `original_text.ilike.%${searchTerm}%`
+        );
+        */
+
+        console.log(`검색어 "${searchTerm}" 적용, 수정된 쿼리 방식 사용`);
+      }
+
+      // 정렬 적용
+      if (options.sortOption === 'oldest') {
+        query = query.order('created_at', { ascending: true });
+      } else {
+        // 기본값과 'today' 옵션 모두 최신순 정렬
+        query = query.order('created_at', { ascending: false });
+      }
+
+      // 페이지네이션 적용
+      query = query.range(start, end);
+
+      // 디버깅용 로그
+      console.log('쿼리 실행:', {
+        searchTerm: options.searchTerm,
+        category: options.category,
+        sortOption: options.sortOption,
+      });
+
+      // 최종 쿼리 실행
+      const { data, error, count } = await query;
 
       if (error) {
         console.error('메모 불러오기 오류:', error);
         throw error;
       }
+
+      console.log(`쿼리 결과: ${data?.length}개 항목 반환`);
 
       // Supabase에서 가져온 데이터를 애플리케이션 형식으로 변환
       const formattedMemos: Memo[] = data.map((memo: any) => ({
@@ -89,6 +149,123 @@ export const useMemos = () => {
       }
     } catch (error: any) {
       console.error('메모 불러오기 중 오류가 발생했습니다:', error);
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // loadMemosWithFixedRange 함수 전체 수정
+  const loadMemosWithFixedRange = async () => {
+    if (!user_id) {
+      console.warn('로그인된 사용자가 없습니다.');
+      setMemos([]);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // 항상 첫 번째 범위(0-9)로 고정
+      const fixedStart = 0;
+      const fixedEnd = PAGE_SIZE - 1;
+      console.log(`고정 범위로 쿼리 실행: ${fixedStart}-${fixedEnd}`);
+
+      // 기본 쿼리 생성
+      let query = supabase.from('memos').select('*', { count: 'exact' });
+
+      // 사용자 ID로 필터링 (항상 적용)
+      query = query.eq('user_id', user_id);
+
+      // 카테고리 필터링
+      if (options.category) {
+        query = query.eq('category', options.category);
+      }
+
+      // 검색어 적용 (단순화된 방식)
+      if (options.searchTerm && options.searchTerm.trim() !== '') {
+        const searchTerm = options.searchTerm.trim();
+
+        // 단일 필드 검색으로 단순화 (테스트용)
+        // query = query.ilike('title', `%${searchTerm}%`);
+
+        //검색이 잘 되면 다중 필드 검색으로 확장할 수 있습니다
+        query = query.or(
+          `title.ilike.%${searchTerm}%,` +
+            `tweet_main.ilike.%${searchTerm}%,` +
+            `key_sentence.ilike.%${searchTerm}%,` +
+            `keywords.cs.{${searchTerm}}` // 배열을 텍스트로 변환하여 검색
+        );
+      }
+
+      // 날짜 필터링 ("오늘" 옵션)
+      if (options.sortOption === 'today') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        query = query.gte('created_at', today.toISOString());
+      }
+
+      // 정렬 적용
+      if (options.sortOption === 'oldest') {
+        query = query.order('created_at', { ascending: true });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      // 고정 범위 페이지네이션 적용
+      query = query.range(fixedStart, fixedEnd);
+
+      console.log('고정 쿼리 실행:', {
+        searchTerm: options.searchTerm,
+        category: options.category,
+        sortOption: options.sortOption,
+        range: `${fixedStart}-${fixedEnd}`,
+      });
+
+      // 쿼리 실행
+      const { data, error, count } = await query;
+
+      // 디버깅용 로그 추가
+      console.log(`쿼리 결과: ${data?.length}개 항목, 총 ${count || 0}개 중`);
+
+      if (error) {
+        console.error('메모 불러오기 오류:', error);
+        throw error;
+      }
+
+      // 여기가 중요: 데이터 변환 코드를 완전히 구현
+      const formattedMemos: Memo[] = data.map((memo: any) => ({
+        id: memo.id,
+        title: memo.title,
+        tweet_main: memo.tweet_main,
+        hashtags: memo.hashtags || [],
+        thread: memo.thread || [],
+        original_text: memo.original_text || '',
+        original_url: memo.original_url || '',
+        original_title: memo.original_title || '',
+        original_image: memo.original_image || '',
+        labeling: {
+          category: memo.category || '미분류',
+          keywords: memo.keywords || [],
+          key_sentence: memo.key_sentence || '',
+        },
+        time: formatTimeAgo(new Date(memo.created_at)),
+        likes: memo.likes || 0,
+        retweets: memo.retweets || 0,
+        replies: memo.replies || 0,
+      }));
+
+      // 완전히 새 배열로 교체
+      setMemos(formattedMemos);
+
+      // 페이지 상태 업데이트 (항상 1로 설정)
+      setPage(1);
+
+      // 더 불러올 메모가 있는지 확인
+      setHasMore((count || 0) > PAGE_SIZE);
+    } catch (error: any) {
+      console.error('메모 불러오기 중 오류:', error);
       setError(error.message);
     } finally {
       setIsLoading(false);
@@ -737,18 +914,28 @@ export const useMemos = () => {
   // 초기 로딩
   useEffect(() => {
     if (user_id) {
-      loadMemos(true); // 리셋하고 첫 페이지부터 로드
+      console.log('검색 옵션 변경 감지 - 메모 다시 로드');
+
+      // 1. 상태 직접 초기화 (중요)
+      setPage(0); // 페이지 강제 초기화
+      setMemos([]); // 메모 배열 비우기
+      setHasMore(true); // hasMore 초기화
+
+      // 2. 초기화 후 지연시켜 로드 (상태 업데이트가 완료되도록)
+      setTimeout(() => {
+        loadMemosWithFixedRange(); // 새 함수 호출 (아래 정의)
+      }, 50);
     } else {
       setMemos([]);
     }
-  }, [user_id]);
+  }, [user_id, options.searchTerm, options.category, options.sortOption]);
 
   return {
     memos,
     isLoading,
     error,
     loadMemos,
-    loadMoreMemos, // 새로운 함수 추가
+    loadMoreMemos,
     hasMore,
     createMemo,
     updateMemoWithAI,

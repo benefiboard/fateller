@@ -3,7 +3,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, CheckCircle2, X } from 'lucide-react';
+import { MessageCircle, CheckCircle2, X, Search } from 'lucide-react';
 
 // UI 컴포넌트 임포트
 import Header from './ui/Header';
@@ -11,6 +11,7 @@ import MemoItem from './ui/MemoItem';
 import Notification from './ui/Notification';
 import BottomNavigation from './ui/BottomNavigation';
 import ComposerModal, { ProcessingStep } from './ui/ComposerModal';
+import SearchAndFilterBar from './ui/SearchAndFilterBar';
 
 // 훅 임포트
 import useMemos from './hooks/useMemos';
@@ -42,6 +43,11 @@ const MemoPageContent: React.FC = () => {
   const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState<'direct' | 'analyze'>('direct');
 
+  // 검색 및 필터링 관련 상태 추가
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState<'latest' | 'oldest' | 'today'>('latest');
+
   // 상단 알림 상태
   const [topAlert, setTopAlert] = useState<TopAlert>({
     show: false,
@@ -53,7 +59,7 @@ const MemoPageContent: React.FC = () => {
   const [showGlobalAlert, setShowGlobalAlert] = useState(false);
   const [alertData, setAlertData] = useState({ title: '', message: '', url: '' });
 
-  // 메모 관련 훅
+  // 메모 관련 훅 - 검색 옵션 추가
   const {
     memos,
     isLoading,
@@ -67,7 +73,11 @@ const MemoPageContent: React.FC = () => {
     replyToMemo,
     loadMoreMemos,
     hasMore,
-  } = useMemos();
+  } = useMemos({
+    searchTerm,
+    category: selectedCategory,
+    sortOption,
+  });
 
   // 대기 중인 메모 관리 훅
   const {
@@ -77,6 +87,24 @@ const MemoPageContent: React.FC = () => {
     removePendingMemo,
     removeAllPendingMemos,
   } = usePendingMemos();
+
+  // 검색어 변경 핸들러
+  const handleSearch = (term: string) => {
+    console.log('검색어 변경:', term);
+    setSearchTerm(term);
+  };
+
+  // 카테고리 선택 핸들러
+  const handleCategorySelect = (category: string | null) => {
+    console.log('카테고리 선택:', category);
+    setSelectedCategory(category);
+  };
+
+  // 정렬 옵션 변경 핸들러
+  const handleSortChange = (option: 'latest' | 'oldest' | 'today') => {
+    console.log('정렬 옵션 변경:', option);
+    setSortOption(option);
+  };
 
   // 상단 알림 표시 함수
   const showTopAlert = (
@@ -692,6 +720,16 @@ const MemoPageContent: React.FC = () => {
       {/* 헤더 */}
       <Header />
 
+      {/* 검색 및 필터 바 (새로 추가) */}
+      <SearchAndFilterBar
+        onSearch={handleSearch}
+        onCategorySelect={handleCategorySelect}
+        onSortChange={handleSortChange}
+        selectedCategory={selectedCategory}
+        searchTerm={searchTerm}
+        selectedSort={sortOption}
+      />
+
       {/* 알림 메시지 */}
       {notification && <Notification message={notification.message} type={notification.type} />}
 
@@ -829,8 +867,18 @@ const MemoPageContent: React.FC = () => {
       <div className="divide-y divide-gray-200">
         {memos.length === 0 && !isLoading ? (
           <div className="p-10 text-center text-gray-500">
-            <MessageCircle size={48} className="mx-auto mb-4 opacity-30" />
-            <p>아직 메모가 없습니다. 첫 번째 메모를 작성해보세요!</p>
+            {searchTerm || selectedCategory ? (
+              <>
+                <Search size={48} className="mx-auto mb-4 opacity-30" />
+                <p>검색 결과가 없습니다</p>
+                <p className="text-sm text-gray-400 mt-2">다른 검색어나 필터를 시도해보세요</p>
+              </>
+            ) : (
+              <>
+                <MessageCircle size={48} className="mx-auto mb-4 opacity-30" />
+                <p>아직 메모가 없습니다. 첫 번째 메모를 작성해보세요!</p>
+              </>
+            )}
           </div>
         ) : (
           <>
