@@ -491,12 +491,13 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                   )}
 
                   <div className="border-t pt-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex space-x-2 text-teal-500">
-                        {/* 버튼 스타일 수정 - 선택된 항목에 bg-teal-500 및 text-gray-100 적용 */}
+                    {/* 모바일 및 작은 화면에 대응하는 수직 레이아웃으로 변경 */}
+                    <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:justify-between">
+                      {/* 목적 버튼 그룹 - 작은 화면에서도 잘 보이도록 수정 */}
+                      <div className="flex flex-wrap gap-2 text-teal-500">
                         <button
                           className={`px-2 py-1 text-sm rounded ${
-                            selectedPurpose === '일반' ? 'bg-teal-500 text-gray-100' : ''
+                            selectedPurpose === '일반' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
                           onClick={() => handlePurposeSelect('일반')}
                         >
@@ -504,7 +505,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                         </button>
                         <button
                           className={`px-2 py-1 text-sm rounded ${
-                            selectedPurpose === '업무' ? 'bg-teal-500 text-gray-100' : ''
+                            selectedPurpose === '업무' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
                           onClick={() => handlePurposeSelect('업무')}
                         >
@@ -512,7 +513,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                         </button>
                         <button
                           className={`px-2 py-1 text-sm rounded ${
-                            selectedPurpose === '개인' ? 'bg-teal-500 text-gray-100' : ''
+                            selectedPurpose === '개인' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
                           onClick={() => handlePurposeSelect('개인')}
                         >
@@ -520,7 +521,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                         </button>
                         <button
                           className={`px-2 py-1 text-sm rounded ${
-                            selectedPurpose === '할일' ? 'bg-teal-500 text-gray-100' : ''
+                            selectedPurpose === '할일' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
                           onClick={() => handlePurposeSelect('할일')}
                         >
@@ -528,7 +529,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                         </button>
                         <button
                           className={`px-2 py-1 text-sm rounded ${
-                            selectedPurpose === '필기' ? 'bg-teal-500 text-gray-100' : ''
+                            selectedPurpose === '필기' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
                           onClick={() => handlePurposeSelect('필기')}
                         >
@@ -536,9 +537,10 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                         </button>
                       </div>
 
-                      <div className="flex items-center">
+                      {/* 카운터와 제출 버튼 - 작은 화면에서는 아래에 배치 */}
+                      <div className="flex items-center justify-between sm:justify-end">
                         <div
-                          className={`text-sm mr-2 ${
+                          className={`text-sm mr-3 ${
                             characterCount > 10000 ? 'text-red-500' : 'text-gray-500'
                           }`}
                         >
