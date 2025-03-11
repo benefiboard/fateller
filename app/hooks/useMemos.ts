@@ -319,6 +319,7 @@ export const useMemos = (options: SearchOptions = {}) => {
           text,
           originalTitle: metadata.originalTitle || '',
           originalImage: metadata.originalImage || '',
+          purpose: metadata.purpose || '일반',
         }),
       });
 
@@ -473,6 +474,7 @@ export const useMemos = (options: SearchOptions = {}) => {
         aiResponse = await analyzeWithAI(text, {
           originalTitle: options.originalTitle,
           originalImage: options.originalImage,
+          purpose: options.purpose || '일반',
         });
 
         // API 응답 확인

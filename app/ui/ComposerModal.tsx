@@ -532,14 +532,14 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                         >
                           개인
                         </button>
-                        <button
+                        {/* <button
                           className={`px-2 py-1 text-sm rounded ${
                             selectedPurpose === '할일' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
                           onClick={() => handlePurposeSelect('할일')}
                         >
                           할일
-                        </button>
+                        </button> */}
                         <button
                           className={`px-2 py-1 text-sm rounded ${
                             selectedPurpose === '필기' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
