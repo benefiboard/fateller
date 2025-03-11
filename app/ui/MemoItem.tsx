@@ -26,7 +26,11 @@ import {
   PenTool,
   Languages,
   Globe,
-  SquareRadical, // 문학/창작
+  SquareRadical,
+  User,
+  GraduationCap,
+  Briefcase,
+  Hourglass, // 문학/창작
 } from 'lucide-react';
 import { Memo, Profile } from '../utils/types';
 import MemoContent from './MemoContent';
@@ -126,6 +130,8 @@ const MemoItem: React.FC<MemoItemProps> = ({
     switch (category) {
       case '인문/철학':
         return <BookOpen size={24} />;
+      case '역사':
+        return <Hourglass size={24} />;
       case '경영/경제':
         return <BarChart3 size={24} />;
       case '언어':
@@ -148,6 +154,12 @@ const MemoItem: React.FC<MemoItemProps> = ({
         return <Palette size={24} />;
       case '문학/창작':
         return <PenTool size={24} />;
+      case '개인':
+        return <User size={24} />;
+      case '학습':
+        return <GraduationCap size={24} />;
+      case '업무':
+        return <Briefcase size={24} />;
       default:
         return <Tag size={24} />;
     }

@@ -191,7 +191,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
           <div className="pt-4" ref={tabRefs.idea}>
             {/* 미니멀한 명함 스타일의 디자인 */}
             <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between">
-              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">
+              <h2 className="flex-1 tracking-tighter font-semibold text-sm text-emerald-800">
                 {memo.title}
               </h2>
               <ShareButton

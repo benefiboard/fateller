@@ -542,11 +542,11 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                         </button> */}
                         <button
                           className={`px-2 py-1 text-sm rounded ${
-                            selectedPurpose === '필기' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
+                            selectedPurpose === '학습' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
-                          onClick={() => handlePurposeSelect('필기')}
+                          onClick={() => handlePurposeSelect('학습')}
                         >
-                          필기
+                          학습
                         </button>
                       </div>
 
@@ -610,7 +610,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">목적</label>
                   <div className="flex flex-wrap gap-2">
-                    {['일반', '업무', '개인', '할일', '필기'].map((purpose) => (
+                    {['일반', '업무', '개인', '할일', '학습'].map((purpose) => (
                       <button
                         key={purpose}
                         type="button"
@@ -680,16 +680,21 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                   >
                     <option value="">카테고리 선택</option>
                     <option value="인문/철학">인문/철학</option>
+                    <option value="역사">역사</option>
                     <option value="경영/경제">경영/경제</option>
-                    <option value="사회과학">사회과학</option>
-                    <option value="자연과학">자연과학</option>
+                    <option value="언어">언어</option>
+                    <option value="정치">정치</option>
+                    <option value="사회">사회</option>
+                    <option value="국제">국제</option>
+                    <option value="과학/IT">과학/IT</option>
+                    <option value="수학">수학</option>
                     <option value="기술/공학">기술/공학</option>
                     <option value="의학/건강">의학/건강</option>
                     <option value="예술/문화">예술/문화</option>
                     <option value="문학/창작">문학/창작</option>
-                    <option value="자기계발">자기계발</option>
-                    <option value="할 일/액션">할 일/액션</option>
-                    <option value="일기/성찰">일기/성찰</option>
+                    <option value="개인">개인</option>
+                    <option value="학습">학습</option>
+                    <option value="업무">업무</option>
                   </select>
                 </div>
 

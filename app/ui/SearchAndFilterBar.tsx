@@ -21,7 +21,7 @@ const CATEGORIES = [
 ];
 
 // 목적 목록 정의 추가
-const PURPOSES = ['전체', '일반', '업무', '개인', '할일', '필기'];
+const PURPOSES = ['전체', '일반', '업무', '개인', '할일', '학습'];
 
 interface SearchAndFilterBarProps {
   onSearch: (searchTerm: string) => void;
