@@ -221,11 +221,11 @@ const ShareButton: React.FC<ShareButtonProps> = ({
       {/* 공유 버튼 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`share-button flex flex-col items-center gap-[2px] p-1 rounded-full hover:bg-gray-100 transition-colors ${buttonClassName}`}
+        className={`share-button flex flex-col items-center  p-1 rounded-full hover:bg-gray-100 transition-colors ${buttonClassName}`}
         aria-label="공유 옵션"
       >
         <Share size={20} />
-        <p className="text-xs  tracking-tighter">공유하기</p>
+        <p className="text-xs  tracking-tighter">공유</p>
       </button>
 
       {/* 드롭다운 메뉴 */}

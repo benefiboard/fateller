@@ -7,7 +7,7 @@ import Link from 'next/link';
 import ShareButton from './ShareButton';
 
 // 탭 인덱스 타입 정의
-type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 주요 내용, 2: 핵심 문장, 3: 원문
+type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 아이디어 맵(이전 핵심 문장), 2: 주요 내용(이전 1), 3: 원문
 
 interface MemoContentProps {
   memo: Memo;
@@ -48,9 +48,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
       case 0:
         return tabRefs.idea;
       case 1:
-        return tabRefs.main;
+        return tabRefs.key; // 순서 변경: 아이디어 맵(이전 핵심 문장)
       case 2:
-        return tabRefs.key;
+        return tabRefs.main; // 순서 변경: 주요 내용
       case 3:
         return tabRefs.original;
       default:
@@ -64,9 +64,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
       case 0:
         return 'idea';
       case 1:
-        return 'main';
+        return 'key'; // 순서 변경: 아이디어 맵(이전 핵심 문장)
       case 2:
-        return 'key';
+        return 'main'; // 순서 변경: 주요 내용
       case 3:
         return 'original';
       default:
@@ -252,40 +252,14 @@ const MemoContent: React.FC<MemoContentProps> = ({
             )}
           </div>
         );
-      case 1: // 주요 내용 (이전의 2번 탭)
-        return (
-          <div className="pt-4" ref={tabRefs.main}>
-            {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
-            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between">
-              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">주요 내용</h2>
-              <ShareButton
-                memo={memo}
-                tabType="main"
-                contentRef={tabRefs.main}
-                onShareSuccess={handleShareSuccess}
-                onShareError={handleShareError}
-              />
-            </div>
-
-            {/* 주요 내용 - 아이디어 탭 스타일 적용 */}
-            <div className="space-y-2">
-              {memo.thread.map((tweet, tweetIndex) => (
-                <div
-                  key={tweetIndex}
-                  className="p-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-sm"
-                >
-                  <p className="text-sm text-gray-100 leading-relaxed">{renderHTML(tweet)}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      case 2: // 핵심 문장 (이전의 1번 탭)
+      case 1: // 아이디어 맵 (이전의 핵심 문장, 이전의 2번 탭)
         return (
           <div className="pt-4" ref={tabRefs.key}>
             {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
             <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between">
-              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">핵심 문장</h2>
+              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">
+                아이디어 맵
+              </h2>
               <ShareButton
                 memo={memo}
                 tabType="key"
@@ -416,6 +390,34 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 </div>
               );
             })()}
+          </div>
+        );
+      case 2: // 주요 내용 (이전의 1번 탭)
+        return (
+          <div className="pt-4" ref={tabRefs.main}>
+            {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
+            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between">
+              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">주요 내용</h2>
+              <ShareButton
+                memo={memo}
+                tabType="main"
+                contentRef={tabRefs.main}
+                onShareSuccess={handleShareSuccess}
+                onShareError={handleShareError}
+              />
+            </div>
+
+            {/* 주요 내용 - 아이디어 탭 스타일 적용 */}
+            <div className="space-y-2">
+              {memo.thread.map((tweet, tweetIndex) => (
+                <div
+                  key={tweetIndex}
+                  className="p-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-sm"
+                >
+                  <p className="text-sm text-gray-100 leading-relaxed">{renderHTML(tweet)}</p>
+                </div>
+              ))}
+            </div>
           </div>
         );
       case 3:
@@ -551,7 +553,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {activeTab === 1 && (
               <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
             )}
-            주요 내용
+            아이디어 맵
           </button>
 
           <button
@@ -565,7 +567,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {activeTab === 2 && (
               <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
             )}
-            핵심 문장
+            주요 내용
           </button>
 
           <button

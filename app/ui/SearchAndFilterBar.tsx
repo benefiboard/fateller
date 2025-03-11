@@ -123,7 +123,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
             setShowPurposeFilter(!showPurposeFilter);
             if (showCategoryFilter) setShowCategoryFilter(false); // 카테고리 필터가 열려있으면 닫기
           }}
-          className={`px-3 py-1 rounded-full text-sm flex items-center whitespace-nowrap ${
+          className={`px-2 py-1 rounded-full text-sm flex items-center whitespace-nowrap ${
             selectedPurpose
               ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
               : 'bg-gray-100 text-gray-700 border border-gray-200'
@@ -143,7 +143,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
             setShowCategoryFilter(!showCategoryFilter);
             if (showPurposeFilter) setShowPurposeFilter(false); // 목적 필터가 열려있으면 닫기
           }}
-          className={`px-3 py-1 rounded-full text-sm flex items-center whitespace-nowrap ${
+          className={`px-2 py-1 rounded-full text-sm flex items-center whitespace-nowrap ${
             selectedCategory
               ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
               : 'bg-gray-100 text-gray-700 border border-gray-200'
@@ -160,7 +160,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
         {/* 정렬 버튼들 */}
         <button
           onClick={() => onSortChange('latest')}
-          className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
+          className={`px-2 py-1 rounded-full text-sm whitespace-nowrap ${
             selectedSort === 'latest'
               ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
               : 'bg-gray-100 text-gray-700 border border-gray-200'
@@ -171,7 +171,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
 
         <button
           onClick={() => onSortChange('oldest')}
-          className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
+          className={`px-2 py-1 rounded-full text-sm whitespace-nowrap ${
             selectedSort === 'oldest'
               ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
               : 'bg-gray-100 text-gray-700 border border-gray-200'
@@ -182,7 +182,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
 
         <button
           onClick={() => onSortChange('today')}
-          className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
+          className={`px-2 py-1 rounded-full text-sm whitespace-nowrap ${
             selectedSort === 'today'
               ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
               : 'bg-gray-100 text-gray-700 border border-gray-200'
