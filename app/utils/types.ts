@@ -11,7 +11,7 @@ export interface Profile {
   name: string;
   username: string;
   avatar: string;
-  verified: boolean;
+  verified?: boolean;
 }
 
 export type UserInformation = {

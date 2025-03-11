@@ -4,7 +4,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Settings, Sparkles } from 'lucide-react';
+import { Settings, Sparkles, UserCircle } from 'lucide-react';
+import { useUserStore } from '../store/userStore';
 
 interface TabProps {
   label: string;
@@ -30,6 +31,18 @@ const Header = () => {
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState('for-you');
 
+  const currentUser = useUserStore((state) => state.currentUser);
+
+  const profile = {
+    name: currentUser?.email ? currentUser.email.split('@')[0] : 'BrainLabel',
+    username: currentUser?.username
+      ? `@${currentUser.username}`
+      : currentUser?.email
+      ? `@${currentUser.email.split('@')[0]}`
+      : '@brainlabel_ai',
+    avatar: currentUser?.avatar_url || '/avatar_base.svg',
+  };
+
   // 현재 페이지 제목 결정
   const getPageTitle = () => {
     if (pathname === '/') return '홈';
@@ -51,12 +64,12 @@ const Header = () => {
         {/* 프로필 이미지 (모바일에서만 표시) */}
         <div className="flex items-center">
           <Link href="/profile">
-            <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
-              <img
-                src="https://placehold.co/40x40"
-                alt="프로필"
-                className="w-full h-full object-cover"
-              />
+            <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+              {profile.avatar ? (
+                <img src={profile.avatar} alt="프로필" className="w-full h-full object-cover" />
+              ) : (
+                <UserCircle size={24} className="text-gray-500" /> // UserPen 대신 UserCircle 사용
+              )}
             </div>
           </Link>
         </div>

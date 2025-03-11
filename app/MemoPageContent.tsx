@@ -28,14 +28,15 @@ import usePendingMemos, { PendingMemoStatus } from './hooks/usePendingMemos';
 import AlertModal from './ui/AlertModal';
 import { RequestTracker } from './utils/requestTracker';
 import { extractAndAnalyze } from './utils/apiClient';
+import { useUserStore } from './store/userStore';
 
 // 프로필 정보
-const profile = {
-  name: 'BrainLabel',
-  username: '@brainlabel_ai',
-  avatar: 'https://placehold.co/40x40',
-  verified: true,
-};
+// const profile = {
+//   name: 'BrainLabel',
+//   username: '@brainlabel_ai',
+//   avatar: 'https://placehold.co/40x40',
+//   verified: true,
+// };
 
 // 상단 알림 인터페이스
 interface TopAlert {
@@ -62,6 +63,21 @@ const MemoPageContent: React.FC = () => {
     message: '',
     type: 'info',
   });
+
+  // 유저 정보
+  const currentUser = useUserStore((state) => state.currentUser);
+  // console.log('mainPage-user', currentUser);
+
+  // profile 객체 동적 생성
+  const profile = {
+    name: currentUser?.email ? currentUser.email.split('@')[0] : 'BrainLabel',
+    username: currentUser?.username
+      ? `@${currentUser.username}`
+      : currentUser?.email
+      ? `@${currentUser.email.split('@')[0]}`
+      : '@brainlabel_ai',
+    avatar: currentUser?.avatar_url || '/avatar_base.svg',
+  };
 
   // 에러 관련 상태
   const [showGlobalAlert, setShowGlobalAlert] = useState(false);
