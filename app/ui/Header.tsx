@@ -76,14 +76,14 @@ const Header = () => {
       {pathname === '/' && (
         <div className="flex border-b border-gray-200">
           <Tab
-            label="회원님을 위한 메모"
+            label="회원님의 아이디어"
             isActive={activeTab === 'for-you'}
             onClick={() => handleTabChange('for-you')}
           />
           <Tab
-            label="팔로우"
-            isActive={activeTab === 'following'}
-            onClick={() => handleTabChange('following')}
+            label="추천 아이디어"
+            isActive={activeTab === 'suggest'}
+            onClick={() => handleTabChange('suggest')}
           />
         </div>
       )}

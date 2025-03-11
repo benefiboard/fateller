@@ -3,7 +3,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, CheckCircle2, X, Search } from 'lucide-react';
+import {
+  MessageCircle,
+  CheckCircle2,
+  X,
+  Search,
+  MessageCirclePlus,
+  ChevronsUp,
+} from 'lucide-react';
 
 // UI 컴포넌트 임포트
 import Header from './ui/Header';
@@ -568,6 +575,11 @@ const MemoPageContent: React.FC = () => {
     [isLoading, hasMore, loadMoreMemos]
   );
 
+  // 최상단으로 스크롤하는 함수 추가 (기존 함수들 사이에 추가)
+  const handleScrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // 메모 상태 훅
   const { memoStates, toggleThread, toggleLabeling, toggleOriginal } = useMemosState(memos);
 
@@ -753,12 +765,20 @@ const MemoPageContent: React.FC = () => {
 
       {/* 메모 작성 버튼 */}
       {!showComposer && (
-        <div className="fixed bottom-20 right-4 z-10">
+        <div className="fixed flex flex-col gap-2 bottom-20 right-4 z-10">
+          <button
+            onClick={handleScrollToTop}
+            className="w-12 h-12 rounded-full bg-emerald-400 text-white flex items-center justify-center shadow-lg lg:w-14 lg:h-14"
+          >
+            <ChevronsUp size={24} className="lg:hidden" />
+            <ChevronsUp size={32} className="hidden lg:block" />
+          </button>
           <button
             onClick={() => handleOpenComposer('analyze')}
-            className="w-12 h-12 rounded-full bg-teal-500 text-white flex items-center justify-center shadow-lg"
+            className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg lg:w-14 lg:h-14"
           >
-            <MessageCircle size={24} />
+            <MessageCirclePlus size={24} className="lg:hidden" />
+            <MessageCirclePlus size={32} className="hidden lg:block" />
           </button>
         </div>
       )}

@@ -206,7 +206,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {/* 핵심 문장을 강조 - 심플한 디자인 */}
             <div className=" p-4 my-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md">
               <div className="relative px-2">
-                <p className="text-lg font-medium text-gray-100 leading-tight py-4">
+                <p className="text-lg font-medium text-gray-100  py-4">
                   {renderHTML(memo.labeling.key_sentence)}
                 </p>
               </div>

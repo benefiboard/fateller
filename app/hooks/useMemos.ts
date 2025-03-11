@@ -61,6 +61,11 @@ export const useMemos = (options: SearchOptions = {}) => {
         query = query.eq('category', options.category);
       }
 
+      // 목적 필터링 추가
+      if (options.purpose) {
+        query = query.eq('purpose', options.purpose);
+      }
+
       // 날짜 필터링 ("오늘" 옵션)
       if (options.sortOption === 'today') {
         const today = new Date();
@@ -142,7 +147,7 @@ export const useMemos = (options: SearchOptions = {}) => {
       // 기존 메모에 새로 불러온 메모 추가 (첫 페이지면 교체)
       setMemos((prevMemos) => (resetPage ? formattedMemos : [...prevMemos, ...formattedMemos]));
 
-      // 더 불러올 메모가 있는지 확인
+      // 더 불러올 메모가 있는지 확인 - 개선된 로직
       setHasMore(data.length === PAGE_SIZE);
 
       // 다음 페이지로 설정
