@@ -176,9 +176,9 @@ const RightSidebar = () => {
             ) : (
               <p className="text-sm text-gray-500 text-center py-2">저장된 메모가 없습니다</p>
             )}
-            <button className="w-full text-center text-sm text-emerald-600 py-1 hover:underline">
+            {/* <button className="w-full text-center text-sm text-emerald-600 py-1 hover:underline">
               모든 메모 보기
-            </button>
+            </button> */}
           </div>
         )}
       </div>

@@ -386,7 +386,7 @@ export const formatMemoAsMarkdown = (memo: any, tabType: string): string => {
               section.sub_sections.forEach((sub: any) => {
                 // 하위 섹션 헤더를 들여쓰기와 함께 표시
                 const subTitle = processHtmlTags(sub.sub_heading || '하위 섹션');
-                text += ` >> ${subTitle}\n`;
+                text += `  > ${subTitle}\n`;
 
                 if (sub.sub_points && Array.isArray(sub.sub_points)) {
                   sub.sub_points.forEach((point: string) => {
