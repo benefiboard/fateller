@@ -1,7 +1,104 @@
 // utils/share.ts
 import { toPng } from 'html-to-image';
 
-// utils/share.ts - DOM 요소 캡처 함수 수정
+/**
+ * HTML 태그를 처리하는 함수 - <hi> 태그 등 특수 태그 처리
+ */
+const processHtmlTags = (text: string): string => {
+  if (!text) return '';
+
+  // <hi> 태그 처리 (하이라이팅을 위한 특수 태그)
+  let processedText = text.replace(/<hi>(.*?)<\/hi>/g, '$1');
+
+  // 일반 HTML 태그 제거
+  return processedText.replace(/<[^>]*>/g, '');
+};
+
+/**
+ * 리스트 기호 타입을 확인하고 반환
+ */
+const analyzeListPrefix = (text: string) => {
+  if (!text) {
+    return {
+      hasPrefix: false,
+      type: 'none',
+      originalText: text,
+      contentText: text,
+      indentLevel: 0,
+    };
+  }
+
+  // 앞쪽 공백 제거한 텍스트
+  const trimmedText = text.trim();
+
+  // 공백이 얼마나 있었는지 계산 (들여쓰기 레벨 판단에 도움)
+  const leadingSpaces = text.length - text.trimStart().length;
+
+  // 숫자 패턴 (예: "1. ", "2. ")
+  const numberMatch = trimmedText.match(/^(\d+\.\s+)(.*)$/);
+  if (numberMatch) {
+    return {
+      hasPrefix: true,
+      type: 'number',
+      originalText: text,
+      contentText: numberMatch[2],
+      indentLevel: Math.floor(leadingSpaces / 2),
+    };
+  }
+
+  // 검은 원형 기호 (•)
+  if (trimmedText.startsWith('• ')) {
+    return {
+      hasPrefix: true,
+      type: 'bullet',
+      originalText: text,
+      contentText: trimmedText.substring(2),
+      indentLevel: Math.floor(leadingSpaces / 2),
+    };
+  }
+
+  // 빈 원형 기호 (◦)
+  if (trimmedText.startsWith('◦ ')) {
+    return {
+      hasPrefix: true,
+      type: 'circle',
+      originalText: text,
+      contentText: trimmedText.substring(2),
+      indentLevel: Math.floor(leadingSpaces / 2) + 1,
+    };
+  }
+
+  // 대시 기호 (-)
+  if (trimmedText.startsWith('- ')) {
+    return {
+      hasPrefix: true,
+      type: 'dash',
+      originalText: text,
+      contentText: trimmedText.substring(2),
+      indentLevel: Math.floor(leadingSpaces / 2),
+    };
+  }
+
+  // 별표 기호 (*)
+  if (trimmedText.startsWith('* ')) {
+    return {
+      hasPrefix: true,
+      type: 'asterisk',
+      originalText: text,
+      contentText: trimmedText.substring(2),
+      indentLevel: Math.floor(leadingSpaces / 2),
+    };
+  }
+
+  // 기호 없음
+  return {
+    hasPrefix: false,
+    type: 'none',
+    originalText: text,
+    contentText: text,
+    indentLevel: Math.floor(leadingSpaces / 2),
+  };
+};
 
 /**
  * DOM 요소를 이미지로 캡처하여 다운로드합니다.
@@ -173,6 +270,7 @@ export const copyElementAsImage = async (element: HTMLElement | null): Promise<b
     return false;
   }
 };
+
 /**
  * 텍스트를 클립보드에 복사합니다.
  */
@@ -199,101 +297,192 @@ export const copyTextToClipboard = async (text: string): Promise<boolean> => {
 };
 
 /**
- * 메모 콘텐츠를 마크다운 형식으로 포맷팅합니다.
+ * 메모 콘텐츠를 일반 텍스트 형식으로 포맷팅합니다.
+ * 섹션 헤더 없이 콘텐츠만 출력하고, 섹션 타이틀에는 넘버링을 추가합니다.
  */
 export const formatMemoAsMarkdown = (memo: any, tabType: string): string => {
-  let markdown = '';
+  let text = '';
 
-  // 공통 헤더
-  markdown += `# ${memo.title || '제목 없음'}\n\n`;
+  // 공통 헤더 - 제목만 유지
+  text += `${memo.title || '제목 없음'}\n\n`;
 
   // 탭 유형에 따라 다른 포맷팅 적용
   switch (tabType) {
     case 'idea': // 아이디어(case 0)
-      markdown += `## 핵심 문장\n\n${memo.labeling?.key_sentence || ''}\n\n`;
+      // 핵심 문장 - 섹션 제목 없이 내용만 추가
+      text += `${processHtmlTags(memo.labeling?.key_sentence || '')}\n\n`;
 
       if (memo.labeling?.keywords && memo.labeling.keywords.length > 0) {
-        markdown += `## 키워드\n\n${memo.labeling.keywords
-          .map((keyword: string) => `#${keyword}`)
-          .join(' ')}\n\n`;
+        // 키워드 - 섹션 제목 없이 내용만 추가
+        text += `${memo.labeling.keywords.map((keyword: string) => `#${keyword}`).join(' ')}\n\n`;
       }
       break;
 
     case 'main': // 주요 내용(case 1)
       if (memo.thread && memo.thread.length > 0) {
-        markdown += `## 주요 내용\n\n`;
+        // 섹션 제목 없이 내용만 추가
         memo.thread.forEach((item: string, index: number) => {
-          markdown += `${index + 1}. ${item.replace(/<[^>]*>/g, '')}\n`;
+          const cleanText = processHtmlTags(item);
+          const prefixInfo = analyzeListPrefix(cleanText);
+
+          if (prefixInfo.hasPrefix) {
+            // 이미 기호가 있으면 들여쓰기 레벨에 맞게 처리
+            const indentation = '  '.repeat(prefixInfo.indentLevel);
+            text += `${indentation}${prefixInfo.originalText}\n`;
+          } else {
+            // 없으면 번호 추가
+            text += `${index + 1}. ${cleanText}\n`;
+          }
         });
-        markdown += '\n';
+        text += '\n';
       }
       break;
 
     case 'key': // 핵심 문장(case 2)
-      // JSON 형식인 경우
       try {
-        if (typeof memo.tweet_main === 'string' && memo.tweet_main.trim().startsWith('{')) {
-          const parsed = JSON.parse(memo.tweet_main);
-          if (parsed.sections && Array.isArray(parsed.sections)) {
-            parsed.sections.forEach((section: any) => {
-              markdown += `## ${section.heading || '섹션'}\n\n`;
+        let content = memo.tweet_main;
+        let parsed = null;
 
-              if (section.points && Array.isArray(section.points)) {
-                section.points.forEach((point: string) => {
-                  markdown += `- ${point.replace(/<[^>]*>/g, '')}\n`;
-                });
-                markdown += '\n';
-              }
+        // JSON 파싱 시도
+        if (typeof content === 'string' && content.trim().startsWith('{')) {
+          try {
+            parsed = JSON.parse(content);
+          } catch (e) {
+            parsed = null;
+          }
+        } else if (typeof content === 'object' && content !== null) {
+          parsed = content;
+        }
 
-              if (section.sub_sections && Array.isArray(section.sub_sections)) {
-                section.sub_sections.forEach((sub: any) => {
-                  markdown += `### ${sub.sub_heading || '하위 섹션'}\n\n`;
+        if (parsed && parsed.sections && Array.isArray(parsed.sections)) {
+          // 섹션 제목 없이 내용만 추가
 
-                  if (sub.sub_points && Array.isArray(sub.sub_points)) {
-                    sub.sub_points.forEach((point: string) => {
-                      markdown += `  - ${point.replace(/<[^>]*>/g, '')}\n`;
-                    });
-                    markdown += '\n';
+          parsed.sections.forEach((section: any, sectionIndex: number) => {
+            // 섹션 헤더를 넘버링과 함께 표시 (예: "1. 현황 및 배경")
+            const sectionTitle = processHtmlTags(section.heading || '섹션');
+            text += `${sectionIndex + 1}. ${sectionTitle.toUpperCase()}\n`;
+
+            if (section.points && Array.isArray(section.points)) {
+              section.points.forEach((point: string) => {
+                const cleanPoint = processHtmlTags(point || '');
+                const prefixInfo = analyzeListPrefix(cleanPoint);
+
+                if (prefixInfo.hasPrefix) {
+                  if (prefixInfo.type === 'circle') {
+                    // '◦' 기호는 들여쓰기하여 계층 구조 표현
+                    text += `    ${prefixInfo.originalText}\n`;
+                  } else {
+                    // 다른 기호는 그대로 표시
+                    text += `${prefixInfo.originalText}\n`;
                   }
-                });
+                } else {
+                  // 기호가 없으면 '•' 추가
+                  text += `• ${cleanPoint}\n`;
+                }
+              });
+            }
+
+            if (section.sub_sections && Array.isArray(section.sub_sections)) {
+              section.sub_sections.forEach((sub: any) => {
+                // 하위 섹션 헤더를 들여쓰기와 함께 표시
+                const subTitle = processHtmlTags(sub.sub_heading || '하위 섹션');
+                text += ` >> ${subTitle}\n`;
+
+                if (sub.sub_points && Array.isArray(sub.sub_points)) {
+                  sub.sub_points.forEach((point: string) => {
+                    const cleanPoint = processHtmlTags(point || '');
+                    const prefixInfo = analyzeListPrefix(cleanPoint);
+
+                    if (prefixInfo.hasPrefix) {
+                      if (prefixInfo.type === 'circle') {
+                        // '◦' 기호는 들여쓰기하여 계층 구조 표현
+                        text += `    ${prefixInfo.originalText}\n`;
+                      } else {
+                        // 다른 기호는 들여쓰기 레벨에 맞게 처리
+                        const indentation = '  '.repeat(prefixInfo.indentLevel + 1);
+                        text += `${indentation}${prefixInfo.originalText}\n`;
+                      }
+                    } else {
+                      // 기호가 없고 하위 섹션이므로 '◦' 추가하고 들여쓰기
+                      text += `    ◦ ${cleanPoint}\n`;
+                    }
+                  });
+                }
+              });
+            }
+
+            text += '\n';
+          });
+        } else {
+          // 일반 문자열인 경우 또는 구조화된 데이터가 아닌 경우
+          if (typeof content === 'string') {
+            // 여러 줄로 분리하여 각 줄마다 분석
+            const lines = content.split('\n');
+
+            // 섹션 제목 없이 내용만 추가
+            let sectionIndex = 0;
+            lines.forEach((line) => {
+              const cleanLine = processHtmlTags(line.trim());
+              if (!cleanLine) return; // 빈 줄 무시
+
+              const prefixInfo = analyzeListPrefix(cleanLine);
+
+              if (prefixInfo.hasPrefix) {
+                if (prefixInfo.type === 'bullet') {
+                  // '•' 기호는 그대로 유지
+                  text += `${prefixInfo.originalText}\n`;
+                } else if (prefixInfo.type === 'circle') {
+                  // '◦' 기호는 들여쓰기하여 계층 구조 표현
+                  text += `    ${prefixInfo.originalText}\n`;
+                } else {
+                  // 다른 기호는 들여쓰기 레벨에 맞게 처리
+                  const indentation = '  '.repeat(prefixInfo.indentLevel);
+                  text += `${indentation}${prefixInfo.originalText}\n`;
+                }
+              } else {
+                // 기호 없는 텍스트 - 섹션 타이틀로 간주하고 넘버링 추가
+                sectionIndex++;
+                text += `${sectionIndex}. ${cleanLine.toUpperCase()}\n`;
               }
             });
+
+            text += '\n';
+          } else {
+            // 객체인 경우 JSON 문자열로 변환 (섹션 제목 없이)
+            text += `${JSON.stringify(content, null, 2)}\n\n`;
           }
-        } else {
-          // 일반 문자열인 경우
-          markdown += `## 핵심 문장\n\n${memo.tweet_main.replace(/<[^>]*>/g, '')}\n\n`;
         }
       } catch (e) {
-        // JSON 파싱 실패 시 일반 텍스트로 처리
-        markdown += `## 핵심 문장\n\n${memo.tweet_main.replace(/<[^>]*>/g, '')}\n\n`;
+        // JSON 파싱 실패 시 단순 텍스트로 처리 (섹션 제목 없이)
+        let content = memo.tweet_main;
+        text += `${
+          typeof content === 'string' ? processHtmlTags(content) : JSON.stringify(content)
+        }\n\n`;
       }
       break;
 
     case 'original': // 원문(case 3)
       if (memo.original_url) {
-        markdown += `## 원본 링크\n\n${memo.original_url}\n\n`;
+        // '원본 링크' 제목 없이 URL만 추가
+        text += `${memo.original_url}\n\n`;
       }
 
       if (memo.original_text) {
-        markdown += `## 원문 내용\n\n${memo.original_text}\n\n`;
+        // '원문 내용' 제목 없이 텍스트만 추가
+        text += `${memo.original_text}\n\n`;
       }
       break;
 
     default:
-      markdown += `${memo.title || '제목 없음'}\n\n`;
+      text += `${memo.title || '제목 없음'}\n\n`;
       break;
   }
 
   // 공통 푸터
-  markdown += `---\nBrainLabel에서 공유됨 | ${new Date().toLocaleDateString()}`;
+  text += `---\nBrainLabel에서 공유됨 | ${new Date().toLocaleDateString('ko-KR')}`;
 
-  return markdown;
+  return text;
 };
-
-/**
- * 모바일 기기에서 네이티브 공유 다이얼로그를 사용합니다.
- */
-// utils/share.ts의 useNativeShare 함수 수정
 
 /**
  * 모바일 기기에서 네이티브 공유 다이얼로그를 사용합니다.
