@@ -5,6 +5,28 @@ import chromium from '@sparticuz/chromium-min';
 import { Readability } from '@mozilla/readability';
 import { JSDOM } from 'jsdom';
 import { Innertube } from 'youtubei.js';
+import { createSupabaseServerClient } from '@/lib/supabse/server';
+
+// 콘텐츠 소스 인터페이스 정의
+interface ContentSource {
+  id: string;
+  canonical_url: string;
+  source_type: string;
+  content: string;
+  title: string | null;
+  image_url: string | null;
+  access_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// 소스 조회 결과 인터페이스 정의
+interface SourceResult {
+  existingSource: boolean;
+  source?: ContentSource;
+  canonicalUrl?: string;
+  urlType?: 'youtube' | 'naver_blog' | 'website';
+}
 
 // 크롬 실행 경로 (로컬 개발용)
 const CHROME_PATH =
@@ -20,7 +42,68 @@ const isVercelProduction = () => {
   return process.env.VERCEL === '1' || process.env.VERCEL_ENV === 'production';
 };
 
-// 웹페이지 컨텐츠 정제 함수 - 불필요한 빈 공백/빈 줄 제거
+// URL 정규화 함수 - 다양한 URL 형식을 표준화
+function normalizeUrl(url: string): string {
+  try {
+    // 1. 기본 정규화
+    url = url.trim();
+
+    // 2. 프로토콜 정규화 (http → https)
+    url = url.replace(/^http:\/\//i, 'https://');
+
+    // 3. 유튜브 URL 정규화
+    if (isYoutubeUrl(url)) {
+      const videoId = extractYoutubeId(url);
+      if (videoId) {
+        return `https://www.youtube.com/watch?v=${videoId}`;
+      }
+    }
+
+    // 4. 네이버 블로그 정규화 (모바일 ↔ PC)
+    const naverBlogMatch = url.match(/^https?:\/\/(m\.)?(blog\.naver\.com)\/([^\/]+)\/(\d+)/i);
+    if (naverBlogMatch) {
+      const username = naverBlogMatch[3];
+      const postId = naverBlogMatch[4];
+      return `https://blog.naver.com/${username}/${postId}`;
+    }
+
+    // 5. 추적 파라미터 제거
+    try {
+      const urlObj = new URL(url);
+
+      // 제거할 파라미터 목록
+      const paramsToRemove = [
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_term',
+        'utm_content',
+        'fbclid',
+        'gclid',
+        'ocid',
+        'ref',
+        'source',
+        'mc_cid',
+        'mc_eid',
+      ];
+
+      // 파라미터 제거
+      paramsToRemove.forEach((param) => {
+        urlObj.searchParams.delete(param);
+      });
+
+      return urlObj.toString();
+    } catch (e) {
+      // URL 파싱 실패 시 원래 URL 반환
+      return url;
+    }
+  } catch (e) {
+    console.error('URL 정규화 오류:', e);
+    return url; // 오류 발생 시 원래 URL 반환
+  }
+}
+
+// 웹페이지 컨텐츠 정제 함수
 function cleanWebContent(text: string): string {
   if (!text) return '';
 
@@ -880,6 +963,102 @@ async function extractNaverBlogContent(
   }
 }
 
+// URL 타입 감지 함수
+function detectUrlType(url: string): 'youtube' | 'naver_blog' | 'website' {
+  if (isYoutubeUrl(url)) {
+    return 'youtube';
+  } else if (url.includes('blog.naver.com') || url.includes('m.blog.naver.com')) {
+    return 'naver_blog';
+  } else {
+    return 'website';
+  }
+}
+
+// 콘텐츠 소스 조회 또는 생성 함수
+async function getOrCreateContentSource(url: string): Promise<SourceResult> {
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    // URL 정규화
+    const canonicalUrl = normalizeUrl(url);
+    console.log(`URL 정규화: ${url} → ${canonicalUrl}`);
+
+    // 정규화된 URL을 사용하여 기존 소스 조회
+    const { data: existingSource, error: sourceError } = await supabase
+      .from('content_sources')
+      .select('*')
+      .eq('canonical_url', canonicalUrl)
+      .single();
+
+    // 기존 소스가 있으면 접근 카운트 증가 후 반환
+    if (existingSource && !sourceError) {
+      console.log(`기존 소스 발견 (ID: ${existingSource.id}), 접근 카운트 증가`);
+
+      // 접근 카운트 증가
+      await supabase
+        .from('content_sources')
+        .update({
+          access_count: existingSource.access_count + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingSource.id);
+
+      return {
+        existingSource: true,
+        source: existingSource as ContentSource,
+      };
+    }
+
+    // 기존 소스가 없으면 새로 생성 준비
+    return {
+      existingSource: false,
+      canonicalUrl,
+      urlType: detectUrlType(canonicalUrl),
+    };
+  } catch (error) {
+    console.error('콘텐츠 소스 조회 오류:', error);
+    throw new Error('콘텐츠 소스 조회 중 오류가 발생했습니다');
+  }
+}
+
+// 콘텐츠 소스 저장 함수
+async function saveContentSource(sourceData: {
+  canonicalUrl: string;
+  sourceType: string;
+  content: string;
+  title: string;
+  imageUrl: string;
+}): Promise<ContentSource> {
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    const { data: newSource, error } = await supabase
+      .from('content_sources')
+      .insert({
+        canonical_url: sourceData.canonicalUrl,
+        source_type: sourceData.sourceType,
+        content: sourceData.content,
+        title: sourceData.title || null,
+        image_url: sourceData.imageUrl || null,
+        access_count: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error || !newSource) {
+      console.error('콘텐츠 소스 저장 오류:', error);
+      throw new Error(`콘텐츠 소스 저장 실패: ${error?.message || '알 수 없는 오류'}`);
+    }
+
+    return newSource as ContentSource;
+  } catch (error) {
+    console.error('콘텐츠 소스 저장 오류:', error);
+    throw error;
+  }
+}
+
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
@@ -908,269 +1087,219 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 네이버 블로그 체크 및 처리
-    if (isUrl && /blog\.naver\.com/i.test(text)) {
-      try {
-        console.log(`[${new Date().toISOString()}] 네이버 블로그 URL 감지: ${text}`);
-        const { content, title, imageUrl } = await extractNaverBlogContent(text);
+    // 1. 콘텐츠 소스 조회 (캐싱 활용)
+    const sourceResult = await getOrCreateContentSource(text);
 
-        return NextResponse.json({
-          content,
-          sourceUrl: text,
-          title,
-          imageUrl,
-          isExtracted: true,
-          type: 'naverblog',
-        });
-      } catch (error: any) {
-        console.error(`[${new Date().toISOString()}] 네이버 블로그 처리 실패:`, error);
-        return NextResponse.json(
-          {
-            error: `네이버 블로그 처리 중 오류: ${error.message || '알 수 없는 오류'}`,
-          },
-          { status: 400 }
-        );
-      }
+    // 2. 기존 소스가 있으면 바로 반환
+    if (sourceResult.existingSource && sourceResult.source) {
+      const existingSource = sourceResult.source;
+      console.log(`캐시된 콘텐츠 사용: ${existingSource.id}`);
+
+      return NextResponse.json({
+        content: existingSource.content,
+        sourceUrl: text,
+        title: existingSource.title || '',
+        imageUrl: existingSource.image_url || '',
+        isExtracted: true,
+        type: existingSource.source_type,
+        sourceId: existingSource.id, // 중요: 소스 ID 클라이언트에 전달
+      });
     }
 
-    // 유튜브 URL 확인
-    if (isYoutubeUrl(text)) {
-      const videoId = extractYoutubeId(text);
+    // 3. 소스가 없으면 URL 타입에 따라 콘텐츠 추출 진행
+    if (!sourceResult.canonicalUrl || !sourceResult.urlType) {
+      throw new Error('URL 정규화 또는 타입 감지에 실패했습니다');
+    }
+
+    const canonicalUrl = sourceResult.canonicalUrl;
+    const urlType = sourceResult.urlType;
+
+    let extractedContent = '';
+    let extractedTitle = '';
+    let extractedImageUrl = '';
+
+    // 4. URL 타입별 처리
+    if (urlType === 'youtube') {
+      console.log('유튜브 콘텐츠 추출 시작');
+
+      // 유튜브 자막 추출
+      const videoId = extractYoutubeId(canonicalUrl);
       if (!videoId) {
         return NextResponse.json({ error: '유효한 유튜브 URL이 아닙니다' }, { status: 400 });
       }
 
+      // 병렬로 자막과 메타데이터 가져오기
+      const [transcriptText, metadata] = await Promise.all([
+        fetchYoutubeTranscriptWithInnertube(videoId),
+        getYoutubeMetadata(videoId),
+      ]);
+
+      // 정제 함수 적용
+      extractedContent = cleanWebContent(transcriptText);
+      extractedTitle = metadata.title;
+      extractedImageUrl = metadata.thumbnailUrl;
+    } else if (urlType === 'naver_blog') {
+      console.log('네이버 블로그 콘텐츠 추출 시작');
+
+      // 네이버 블로그 콘텐츠 추출
+      const { content, title, imageUrl } = await extractNaverBlogContent(canonicalUrl);
+      extractedContent = content;
+      extractedTitle = title;
+      extractedImageUrl = imageUrl;
+    } else {
+      console.log('일반 웹페이지 콘텐츠 추출 시작');
+
+      // 일반 웹페이지 콘텐츠 추출 (기존 로직 사용)
+      let browser = null;
+      let html = '';
+
       try {
-        console.log(`[${new Date().toISOString()}] 유튜브 처리 시작: ${videoId}`);
-        const totalStartTime = Date.now();
+        // 환경에 따른 브라우저 시작
+        if (isVercelProduction()) {
+          console.log('Vercel 환경에서 실행 중...');
+          const executablePath = await chromium.executablePath(
+            'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+          );
 
-        // 병렬 요청 시작 시간 기록
-        console.log(`[${new Date().toISOString()}] 자막 및 메타데이터 병렬 요청 시작`);
-        const parallelStartTime = Date.now();
-
-        // 병렬로 자막과 메타데이터 가져오기
-        const [transcriptText, metadata] = await Promise.all([
-          fetchYoutubeTranscriptWithInnertube(videoId),
-          getYoutubeMetadata(videoId),
-        ]);
-
-        console.log(
-          `[${new Date().toISOString()}] 병렬 요청 완료 (${Date.now() - parallelStartTime}ms)`
-        );
-        console.log(`[${new Date().toISOString()}] 총 처리 시간: ${Date.now() - totalStartTime}ms`);
-
-        // 결과 요약 더 자세히 기록
-        console.log('유튜브 처리 결과 요약:');
-        console.log('----------------------------');
-        console.log('비디오 ID:', videoId);
-        console.log('제목 (길이):', metadata.title, `(${metadata.title.length}자)`);
-        console.log('썸네일 URL:', metadata.thumbnailUrl);
-        console.log('썸네일 기본 URL 여부:', metadata.thumbnailUrl.indexOf('?') === -1);
-        console.log('자막 길이:', transcriptText.length, '자');
-        console.log('자막 일부:', transcriptText.substring(0, 100) + '...');
-        console.log('----------------------------');
-
-        // 정제 함수 적용
-        const cleanedText = cleanWebContent(transcriptText);
-
-        // 자막 추출 성공 시 반환
-        return NextResponse.json({
-          content: cleanedText,
-          sourceUrl: text,
-          isExtracted: true,
-          type: 'youtube',
-          title: metadata.title,
-          imageUrl: metadata.thumbnailUrl,
-          thumbnailUrl: metadata.thumbnailUrl,
-        });
-      } catch (error: any) {
-        // 자막 추출 실패 시 오류 반환
-        return NextResponse.json(
-          {
-            error: `이 영상에서 자막을 가져올 수 없습니다: ${error.message || '알 수 없는 오류'}`,
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // 일반 웹페이지 콘텐츠 추출 (최적화: HTML 추출 후 즉시 브라우저 종료)
-    let browser = null;
-    let html = '';
-    let mainImageUrl = '';
-
-    try {
-      // 환경에 따른 브라우저 시작
-      if (isVercelProduction()) {
-        console.log('Vercel 환경에서 실행 중...');
-        const executablePath = await chromium.executablePath(
-          'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
-        );
-
-        browser = await puppeteerCore.launch({
-          executablePath,
-          args: chromium.args,
-          headless: chromium.headless,
-          defaultViewport: chromium.defaultViewport,
-        });
-      } else {
-        console.log('로컬 환경에서 실행 중...', CHROME_PATH);
-        browser = await puppeteerCore.launch({
-          executablePath: CHROME_PATH,
-          headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        });
-      }
-
-      const page = await browser.newPage();
-
-      // 이미지는 가져올 수 있도록 리소스 요청 선택적 차단
-      await page.setRequestInterception(true);
-      page.on('request', (req) => {
-        const resourceType = req.resourceType();
-        if (['font', 'media', 'stylesheet'].includes(resourceType)) {
-          req.abort();
+          browser = await puppeteerCore.launch({
+            executablePath,
+            args: chromium.args,
+            headless: chromium.headless,
+            defaultViewport: chromium.defaultViewport,
+          });
         } else {
-          req.continue();
+          console.log('로컬 환경에서 실행 중...', CHROME_PATH);
+          browser = await puppeteerCore.launch({
+            executablePath: CHROME_PATH,
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+          });
         }
-      });
 
-      // 페이지 로드
-      await page.goto(text, { waitUntil: 'domcontentloaded', timeout: 25000 });
+        const page = await browser.newPage();
 
-      // 페이지 제목 가져오기
-      const pageTitle = await page.title();
-      console.log('웹페이지 제목(브라우저):', pageTitle);
+        // 이미지는 가져올 수 있도록 리소스 요청 선택적 차단
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+          const resourceType = req.resourceType();
+          if (['font', 'media', 'stylesheet'].includes(resourceType)) {
+            req.abort();
+          } else {
+            req.continue();
+          }
+        });
 
-      // 메인 이미지 추출
-      mainImageUrl = await extractMainImage(page);
+        // 페이지 로드
+        await page.goto(canonicalUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
 
-      // 상대 경로 URL을 절대 경로로 변환
-      if (mainImageUrl && !mainImageUrl.startsWith('http')) {
-        const pageUrl = new URL(text);
-        if (mainImageUrl.startsWith('/')) {
-          mainImageUrl = `${pageUrl.protocol}//${pageUrl.host}${mainImageUrl}`;
-        } else {
-          mainImageUrl = `${pageUrl.protocol}//${pageUrl.host}/${mainImageUrl}`;
+        // 페이지 제목 가져오기
+        extractedTitle = await page.title();
+        console.log('웹페이지 제목:', extractedTitle);
+
+        // 메인 이미지 추출
+        extractedImageUrl = await extractMainImage(page);
+
+        // 상대 경로 URL을 절대 경로로 변환
+        if (extractedImageUrl && !extractedImageUrl.startsWith('http')) {
+          const pageUrl = new URL(canonicalUrl);
+          if (extractedImageUrl.startsWith('/')) {
+            extractedImageUrl = `${pageUrl.protocol}//${pageUrl.host}${extractedImageUrl}`;
+          } else {
+            extractedImageUrl = `${pageUrl.protocol}//${pageUrl.host}/${extractedImageUrl}`;
+          }
+          console.log('변환된 이미지 URL:', extractedImageUrl);
         }
-        console.log('변환된 이미지 URL:', mainImageUrl);
-      }
 
-      // HTML 콘텐츠 가져오기
-      html = await page.content();
+        // HTML 콘텐츠 가져오기
+        html = await page.content();
 
-      // 중요: HTML을 얻은 즉시 브라우저 종료
-      await browser.close();
-      browser = null;
-    } catch (error: any) {
-      // 브라우저 관련 오류 처리
-      if (browser) {
+        // 중요: HTML을 얻은 즉시 브라우저 종료
         await browser.close();
         browser = null;
-      }
 
-      console.error('웹페이지 로딩 오류:', error);
-      return NextResponse.json(
-        { error: error.message || '웹페이지를 로드할 수 없습니다' },
-        { status: 500 }
-      );
-    }
+        // Readability로 콘텐츠 추출
+        const dom = new JSDOM(html, { url: canonicalUrl });
+        const reader = new Readability(dom.window.document);
+        const article = reader.parse();
 
-    // 브라우저 없이 Readability로 콘텐츠 추출
-    try {
-      const dom = new JSDOM(html, { url: text });
-      const reader = new Readability(dom.window.document);
-      const article = reader.parse();
-
-      // 여기에 접근 거부 감지 로직 추가
-      if (!article || !article.textContent || article.textContent.length < 100) {
-        throw new Error('콘텐츠를 충분히 추출할 수 없습니다. 직접 내용을 입력해주세요.');
-      }
-
-      // 페이지 제목과 콘텐츠에서 접근 제한 관련 키워드 체크
-      const accessDeniedKeywords = [
-        'access denied',
-        'permission denied',
-        'forbidden',
-        '접근 금지',
-        '권한 없음',
-      ];
-      const pageTitle = article.title?.toLowerCase() || '';
-      const pageContent = article.textContent.toLowerCase();
-
-      // 접근 제한 메시지 감지
-      for (const keyword of accessDeniedKeywords) {
-        if (pageTitle.includes(keyword) || pageContent.includes(keyword)) {
-          console.error(`웹사이트 접근 거부 감지: ${article.title}`);
-          return NextResponse.json(
-            {
-              error: `웹사이트에 접근이 거부되었습니다 (${article.title}). 직접 내용을 입력해주세요.`,
-            },
-            { status: 400 } // 500이 아닌 400으로 변경
-          );
+        if (!article || !article.textContent || article.textContent.length < 100) {
+          throw new Error('콘텐츠를 충분히 추출할 수 없습니다.');
         }
-      }
 
-      // 내용의 품질 체크 - 단순 오류 메시지만 있는 경우 필터링
-      if (
-        article.textContent.length < 500 &&
-        (pageTitle.includes('error') ||
-          pageTitle.includes('denied') ||
-          pageTitle.includes('forbidden'))
-      ) {
-        throw new Error(
-          `웹페이지에서 유효한 콘텐츠를 찾을 수 없습니다 (${article.title}). 직접 내용을 입력해주세요.`
-        );
-      }
+        // 접근 제한 체크
+        const accessDeniedKeywords = [
+          'access denied',
+          'permission denied',
+          'forbidden',
+          '접근 금지',
+          '권한 없음',
+        ];
 
-      // 정제된 콘텐츠 생성
-      const extractedContent = cleanWebContent(article.textContent);
+        const pageTitle = article.title?.toLowerCase() || '';
+        const pageContent = article.textContent.toLowerCase();
 
-      // 이미지 URL이 없는 경우 HTML에서 추가로 검색
-      if (!mainImageUrl) {
-        // og:image 메타 태그에서 이미지 URL 추출 시도
-        const ogImageMatch = html.match(
-          /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i
-        );
-        if (ogImageMatch && ogImageMatch[1]) {
-          mainImageUrl = ogImageMatch[1];
-          console.log('HTML에서 추출한 OG 이미지:', mainImageUrl);
-        } else {
-          // twitter:image 메타 태그에서 이미지 URL 추출 시도
-          const twitterImageMatch = html.match(
-            /<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i
-          );
-          if (twitterImageMatch && twitterImageMatch[1]) {
-            mainImageUrl = twitterImageMatch[1];
-            console.log('HTML에서 추출한 Twitter 이미지:', mainImageUrl);
+        for (const keyword of accessDeniedKeywords) {
+          if (pageTitle.includes(keyword) || pageContent.includes(keyword)) {
+            throw new Error(`웹사이트에 접근이 거부되었습니다 (${article.title}).`);
           }
         }
+
+        // 정제된 콘텐츠 생성
+        extractedContent = cleanWebContent(article.textContent);
+
+        // 제목이 추출되지 않았으면 article에서 가져오기
+        if (!extractedTitle && article.title) {
+          extractedTitle = article.title;
+        }
+
+        // 이미지가 추출되지 않았으면 HTML에서 추가 검색
+        if (!extractedImageUrl) {
+          // og:image 메타 태그 확인
+          const ogImageMatch = html.match(
+            /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i
+          );
+          if (ogImageMatch && ogImageMatch[1]) {
+            extractedImageUrl = ogImageMatch[1];
+          } else {
+            // twitter:image 메타 태그 확인
+            const twitterImageMatch = html.match(
+              /<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i
+            );
+            if (twitterImageMatch && twitterImageMatch[1]) {
+              extractedImageUrl = twitterImageMatch[1];
+            }
+          }
+        }
+      } catch (browserError) {
+        // 브라우저 관련 오류 처리
+        if (browser) {
+          await browser.close();
+        }
+        throw browserError;
       }
-
-      console.log('웹페이지 처리 결과 요약:');
-      console.log('----------------------------');
-      console.log('URL:', text);
-      console.log('제목:', article.title || '제목 없음');
-      console.log('이미지 URL:', mainImageUrl || '이미지 없음');
-      console.log('콘텐츠 길이:', extractedContent.length, '자');
-      console.log('----------------------------');
-
-      // 추출 성공 응답
-      return NextResponse.json({
-        content: extractedContent,
-        sourceUrl: text,
-        title: article.title || '',
-        imageUrl: mainImageUrl || '',
-        isExtracted: true,
-        type: 'webpage',
-      });
-    } catch (error: any) {
-      console.error('콘텐츠 추출 오류:', error);
-      return NextResponse.json(
-        { error: error.message || '웹페이지 처리 중 오류가 발생했습니다' },
-        { status: 500 }
-      );
     }
+
+    // 5. 추출 성공 시 content_sources 테이블에 저장
+    const newSource = await saveContentSource({
+      canonicalUrl: canonicalUrl,
+      sourceType: urlType,
+      content: extractedContent,
+      title: extractedTitle,
+      imageUrl: extractedImageUrl,
+    });
+
+    console.log(`새 콘텐츠 소스 저장 완료 (ID: ${newSource.id})`);
+
+    // 6. 결과 반환 (sourceId 포함)
+    return NextResponse.json({
+      content: extractedContent,
+      sourceUrl: text,
+      title: extractedTitle || '',
+      imageUrl: extractedImageUrl || '',
+      isExtracted: true,
+      type: urlType,
+      sourceId: newSource.id, // 중요: 소스 ID 클라이언트에 전달
+    });
   } catch (error: any) {
     console.error('처리 오류:', error);
     return NextResponse.json(

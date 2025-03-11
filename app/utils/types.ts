@@ -62,6 +62,7 @@ export interface Memo {
   original_image?: string;
   has_embedding?: boolean;
   purpose?: string;
+  source_id?: string; // 추가: 소스 ID 연결
 }
 
 export interface NotificationType {

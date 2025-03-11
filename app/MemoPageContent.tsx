@@ -279,7 +279,25 @@ const MemoPageContent: React.FC = () => {
               console.log('백그라운드에서 URL 추출 시도:', data.originalUrl);
 
               // 중복 요청 방지 기능이 내장된 API 클라이언트 사용
-              const extractData = await extractAndAnalyze(data.originalUrl);
+              const extractResponse = await fetch('/api/extract-and-analyze', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  text: data.originalUrl,
+                }),
+              });
+
+              if (!extractResponse.ok) {
+                throw new Error(`API 오류: ${extractResponse.status}`);
+              }
+
+              const extractData = await extractResponse.json();
+
+              // sourceId 확인 및 저장 (추가된 부분)
+              const sourceId = extractData.sourceId;
+              console.log('소스 ID 포함 여부:', sourceId ? true : false, sourceId);
 
               // 페이월 콘텐츠 검사 추가
               const lowerContent = (extractData.content || '').toLowerCase();
@@ -355,6 +373,7 @@ const MemoPageContent: React.FC = () => {
                   });
 
                   // 데이터 준비
+                  data.sourceId = sourceId;
                   data.text = extractData.content;
                   data.isUrl = true;
                   data.sourceUrl = extractData.sourceUrl || data.originalUrl;
@@ -372,6 +391,7 @@ const MemoPageContent: React.FC = () => {
                           originalTitle: data.originalTitle || '',
                           originalImage: data.originalImage || '',
                           purpose: data.purpose || '일반',
+                          sourceId: sourceId,
                         });
                       } else {
                         await createMemo(data.text, {
@@ -380,6 +400,7 @@ const MemoPageContent: React.FC = () => {
                           originalTitle: data.originalTitle || '',
                           originalImage: data.originalImage || '',
                           purpose: data.purpose || '일반',
+                          sourceId: sourceId,
                         });
                       }
 
@@ -467,6 +488,8 @@ const MemoPageContent: React.FC = () => {
               sourceUrl: data.sourceUrl || null,
               originalTitle: data.originalTitle || '',
               originalImage: data.originalImage || '',
+              purpose: data.purpose || '일반',
+              sourceId: data.sourceId || null,
             });
           } else {
             await createMemo(data.text || data.content, {
@@ -474,6 +497,8 @@ const MemoPageContent: React.FC = () => {
               sourceUrl: data.sourceUrl || null,
               originalTitle: data.originalTitle || '',
               originalImage: data.originalImage || '',
+              purpose: data.purpose || '일반',
+              sourceId: data.sourceId || null,
             });
           }
 
@@ -525,6 +550,7 @@ const MemoPageContent: React.FC = () => {
             originalTitle: data.originalTitle || '',
             originalImage: data.originalImage || '',
             purpose: data.purpose || '일반',
+            sourceId: data.sourceId || null,
           });
         } else {
           await createMemo(data.text, {
@@ -533,6 +559,7 @@ const MemoPageContent: React.FC = () => {
             originalTitle: data.originalTitle || '',
             originalImage: data.originalImage || '',
             purpose: data.purpose || '일반',
+            sourceId: data.sourceId || null,
           });
         }
 

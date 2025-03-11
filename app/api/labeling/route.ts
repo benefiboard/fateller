@@ -1,4 +1,6 @@
 // app/api/labeling/route.ts
+import { getContentSummary } from '@/app/utils/summary-manager';
+import { createSupabaseServerClient } from '@/lib/supabse/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 type Purpose = '일반' | '업무' | '학습' | '개인';
@@ -443,10 +445,43 @@ export async function POST(req: NextRequest) {
   try {
     // 요청에서 텍스트 추출
     const body = await req.json();
-    const { text, originalTitle, originalImage, purpose = '일반' } = body;
+    const { text, originalTitle, originalImage, purpose = '일반', sourceId = null } = body;
 
     const validPurpose = (Object.keys(PROMPTS).includes(purpose) ? purpose : '일반') as Purpose;
     let selectedPrompt = PROMPTS[validPurpose];
+
+    if (sourceId) {
+      try {
+        // 기존 요약 조회
+        const summaryResult = await getContentSummary(sourceId, purpose);
+
+        // 2. 기존 요약이 있으면 바로 반환
+        if (summaryResult.existingSummary) {
+          const cachedSummary = summaryResult.summary;
+          console.log(`캐싱된 요약 사용: sourceId=${sourceId}, purpose=${purpose}`);
+
+          return NextResponse.json({
+            title: cachedSummary.title,
+            tweet_main: cachedSummary.tweet_main,
+            hashtags: cachedSummary.hashtags,
+            thread: cachedSummary.thread,
+            labeling: {
+              category: cachedSummary.category,
+              keywords: cachedSummary.keywords,
+              key_sentence: cachedSummary.key_sentence,
+            },
+            originalTitle: originalTitle || '',
+            originalImage: originalImage || '',
+            // 추가 정보
+            sourceId: sourceId,
+            embeddingId: cachedSummary.embedding_id,
+          });
+        }
+      } catch (cacheError) {
+        console.error('캐싱된 요약 조회 오류:', cacheError);
+        // 오류 발생 시 계속 진행 (OpenAI로 새로 생성)
+      }
+    }
 
     // 오리지널 타이틀이 있을 경우 프롬프트에 타이틀 강조 지시사항 추가
     if (originalTitle && originalTitle.trim() !== '') {
@@ -571,6 +606,31 @@ export async function POST(req: NextRequest) {
 
         const parsedContent = JSON.parse(content);
 
+        if (sourceId) {
+          try {
+            const supabase = await createSupabaseServerClient();
+
+            // 요약 결과 저장
+            await supabase.from('content_summaries').insert({
+              source_id: sourceId,
+              purpose: purpose,
+              title: parsedContent.title,
+              tweet_main: parsedContent.tweet_main,
+              hashtags: parsedContent.hashtags || [],
+              thread: parsedContent.thread || [],
+              category: parsedContent.labeling?.category || '미분류',
+              keywords: parsedContent.labeling?.keywords || [],
+              key_sentence: parsedContent.labeling?.key_sentence || '',
+              created_at: new Date().toISOString(),
+            });
+
+            console.log(`요약 결과 저장 완료: sourceId=${sourceId}, purpose=${purpose}`);
+          } catch (saveError) {
+            // 저장 실패해도 결과는 반환 (로그만 기록)
+            console.error('요약 결과 저장 실패:', saveError);
+          }
+        }
+
         // 파싱된 JSON 내용 로깅
         console.log('====== 파싱된 응답 정보 ======');
         console.log('제목:', parsedContent.title);
@@ -590,6 +650,7 @@ export async function POST(req: NextRequest) {
           ...parsedContent,
           originalTitle: originalTitle || '',
           originalImage: originalImage || '',
+          sourceId: sourceId,
         });
       } catch (error) {
         // parseError를 Error 타입으로 처리하여 타입 오류 해결

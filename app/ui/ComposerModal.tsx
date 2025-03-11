@@ -43,6 +43,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     imageUrl?: string;
     content?: string;
     sourceUrl?: string;
+    sourceId?: string;
   } | null>(null);
   const [isCancelled, setIsCancelled] = useState(false);
   // 목적 선택 상태 추가
@@ -205,6 +206,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
       currentStep: processingStep, // 현재 진행 단계 전달
       isOngoing: true, // 백그라운드 처리 플래그
       purpose: selectedPurpose, // 선택된 목적 추가
+      sourceId: extractedData?.sourceId, // 추가: 소스 ID 전달
     };
 
     // 알림 메시지 생성
@@ -266,7 +268,25 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
           try {
             // 중복 요청 방지 기능이 내장된 API 클라이언트 사용
-            const extractData = await extractAndAnalyze(url);
+            const extractResponse = await fetch('/api/extract-and-analyze', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                text: url,
+              }),
+            });
+
+            if (!extractResponse.ok) {
+              throw new Error(`API 오류: ${extractResponse.status}`);
+            }
+
+            const extractData = await extractResponse.json();
+
+            // 소스 ID 확인 (추가된 부분)
+            const sourceId = extractData.sourceId;
+            console.log('추출된 소스 ID:', sourceId);
 
             // 페이월 콘텐츠 검사 추가
             const lowerContent = (extractData.content || '').toLowerCase();
@@ -317,6 +337,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
               imageUrl: extractData.imageUrl || extractData.thumbnailUrl || '',
               content: extractData.content,
               sourceUrl: extractData.isExtracted ? extractData.sourceUrl : null,
+              sourceId: extractData.sourceId, // 추가: 소스 ID 저장
             });
 
             // 분석 단계로 변경
@@ -335,6 +356,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
               currentStep: 'analyzing' as ProcessingStep,
               isOngoing: false, // 새로운 요청임을 표시
               purpose: selectedPurpose, // 선택된 목적 추가
+              sourceId: extractData.sourceId, // 추가: 소스 ID 전달
             };
 
             // 백그라운드 처리 시작 (여기서 onSubmit 대신 onBackgroundProcess 사용)
@@ -377,6 +399,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
             currentStep: 'analyzing' as ProcessingStep,
             isOngoing: false,
             purpose: selectedPurpose, // 선택된 목적 추가
+            sourceId: null,
           };
 
           // 백그라운드 처리
