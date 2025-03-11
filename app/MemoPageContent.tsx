@@ -1,4 +1,4 @@
-//app/page.tsx
+//app/MemoPageContent.tsx
 
 'use client';
 
