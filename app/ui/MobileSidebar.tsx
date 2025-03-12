@@ -63,13 +63,13 @@ const MobileSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
             <span className="ml-4 text-gray-900">알림</span>
           </Link>
 
-          <Link href="/messages" className="block py-3 flex items-center">
+          {/* <Link href="/messages" className="block py-3 flex items-center">
             <Mail
               size={24}
               className={pathname === '/messages' ? 'text-emerald-500' : 'text-gray-800'}
             />
             <span className="ml-4 text-gray-900">메시지</span>
-          </Link>
+          </Link> */}
 
           <Link href="/user-info" className="block py-3 flex items-center">
             <User

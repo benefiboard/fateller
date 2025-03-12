@@ -100,13 +100,13 @@ const LeftSidebar: React.FC<{ minimized?: boolean }> = ({ minimized = false }) =
           active={pathname === '/notifications'}
           minimized={minimized}
         />
-        <SidebarLink
+        {/* <SidebarLink
           href="/messages"
           icon={<Mail size={26} />}
           label="메시지"
           active={pathname === '/messages'}
           minimized={minimized}
-        />
+        /> */}
         {/* <SidebarLink
           href="/bookmarks"
           icon={<BookmarkIcon size={26} />}
