@@ -1,7 +1,7 @@
 // app/ui/LoadingModal.tsx
 'use client';
 import { Brain } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 interface LoadingModalProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ interface LoadingModalProps {
     imageUrl?: string;
   };
   onContinueInBackground?: () => void; // 백그라운드 처리 옵션 추가
+  autoBackgroundDelay?: number; // 자동 백그라운드 처리 지연 시간 (ms) - 기본값 3000ms
 }
 
 const LoadingModal: React.FC<LoadingModalProps> = ({
@@ -18,8 +19,10 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
   step,
   extractedData,
   onContinueInBackground,
+  autoBackgroundDelay = 3000, // 기본값 3초
 }) => {
   const [showExtendedMessage, setShowExtendedMessage] = useState(false);
+  const backgroundTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 단계별 메시지 정의
   const steps: Record<string, { title: string; description: string }[]> = {
@@ -39,6 +42,31 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const currentStepList = steps[step] || [];
+
+  // 자동 백그라운드 처리 타이머 설정
+  useEffect(() => {
+    // 모달이 열려있고, 백그라운드 처리 함수가 있으며, 진행 중인 단계일 때만 타이머 설정
+    if (isOpen && onContinueInBackground && (step === 'extracting' || step === 'analyzing')) {
+      // 이전 타이머가 있다면 정리
+      if (backgroundTimerRef.current) {
+        clearTimeout(backgroundTimerRef.current);
+      }
+
+      // 새 타이머 설정
+      backgroundTimerRef.current = setTimeout(() => {
+        console.log('자동 백그라운드 처리 시작');
+        onContinueInBackground();
+      }, autoBackgroundDelay);
+    }
+
+    // 컴포넌트 언마운트 또는 의존성 변경 시 타이머 정리
+    return () => {
+      if (backgroundTimerRef.current) {
+        clearTimeout(backgroundTimerRef.current);
+        backgroundTimerRef.current = null;
+      }
+    };
+  }, [isOpen, step, onContinueInBackground, autoBackgroundDelay]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -66,6 +94,20 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
   }, [isOpen, step, currentStepList.length]);
 
   if (!isOpen) return null;
+
+  // 백그라운드 처리 버튼 클릭 핸들러
+  const handleBackgroundClick = () => {
+    // 타이머 취소
+    if (backgroundTimerRef.current) {
+      clearTimeout(backgroundTimerRef.current);
+      backgroundTimerRef.current = null;
+    }
+
+    // 백그라운드 처리 함수 호출
+    if (onContinueInBackground) {
+      onContinueInBackground();
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -136,8 +178,8 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
         {/* 배경에서 계속 버튼 - 분석 단계에서만 표시 */}
         {(step === 'analyzing' || step === 'extracting') && onContinueInBackground && (
           <button
-            onClick={onContinueInBackground}
-            className=" p-4  rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md text-gray-100"
+            onClick={handleBackgroundClick}
+            className="p-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md text-gray-100"
           >
             백그라운드에서 처리하기
           </button>

@@ -452,6 +452,10 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
   if (!isOpen) return null;
 
+  const placeholderText = `분석할 텍스트,
+웹페이지 URL 또는
+YouTube 링크를 입력하세요...`;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       {/* 로딩 모달 추가 */}
@@ -483,9 +487,8 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
       {!isSubmitting && (
         <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
           <div className="p-3 border-b flex justify-between items-center">
-            <button onClick={onClose} className="text-teal-500">
-              <X size={20} />
-            </button>
+            <div className="w-5"></div>
+
             <span className="font-semibold">
               {editingMemo
                 ? mode === 'direct'
@@ -493,7 +496,9 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                   : '메모 재분석'
                 : '새 메모 작성'}
             </span>
-            <div className="w-5"></div>
+            <button onClick={onClose} className="text-emerald-600 ">
+              <X size={20} />
+            </button>
           </div>
 
           <div className="p-4">
@@ -512,7 +517,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                 <div className="flex-1">
                   <textarea
                     className="w-full border-0 focus:ring-0 focus:outline-none resize-none p-2 min-h-24"
-                    placeholder="분석할 내용을 입력하세요..."
+                    placeholder={placeholderText}
                     value={inputText}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
@@ -530,10 +535,12 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                     {/* 모바일 및 작은 화면에 대응하는 수직 레이아웃으로 변경 */}
                     <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:justify-between">
                       {/* 목적 버튼 그룹 - 작은 화면에서도 잘 보이도록 수정 */}
-                      <div className="flex flex-wrap gap-2 text-teal-500">
+                      <div className="flex flex-wrap gap-2 text-emerald-600">
                         <button
                           className={`px-2 py-1 text-sm rounded ${
-                            selectedPurpose === '일반' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
+                            selectedPurpose === '일반'
+                              ? 'bg-emerald-600 text-gray-100'
+                              : 'bg-gray-100'
                           }`}
                           onClick={() => handlePurposeSelect('일반')}
                         >
@@ -585,8 +592,8 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                         <button
                           className={`rounded-full px-4 py-1 text-white font-bold ${
                             !inputText.trim() || isSubmitting || characterCount > 10000
-                              ? 'bg-teal-300 cursor-not-allowed'
-                              : 'bg-teal-500 hover:bg-teal-600'
+                              ? 'bg-emerald-400 cursor-not-allowed'
+                              : 'bg-emerald-600 hover:bg-teal-600'
                           }`}
                           onClick={handleSubmit}
                           disabled={!inputText.trim() || isSubmitting || characterCount > 10000}
