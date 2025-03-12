@@ -4,8 +4,10 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Settings, Sparkles, UserCircle } from 'lucide-react';
+import { Menu, Search, Settings, Sparkles, UserCircle } from 'lucide-react';
 import { useUserStore } from '../store/userStore';
+import { useSearchStore } from '../store/searchStore';
+import MobileSidebar from './MobileSidebar';
 
 interface TabProps {
   label: string;
@@ -30,6 +32,8 @@ const Tab: React.FC<TabProps> = ({ label, isActive, onClick }) => {
 const Header = () => {
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState('for-you');
+  const toggleSearch = useSearchStore((state) => state.toggleSearch);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const currentUser = useUserStore((state) => state.currentUser);
 
@@ -59,48 +63,58 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 bg-white bg-opacity-95 backdrop-blur-sm z-10 border-b border-gray-200">
-      <div className="px-4 py-3 flex items-center justify-between">
-        {/* 프로필 이미지 (모바일에서만 표시) */}
-        <div className="flex items-center">
-          <Link href="/profile">
-            <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
-              {profile.avatar ? (
-                <img src={profile.avatar} alt="프로필" className="w-full h-full object-cover" />
-              ) : (
-                <UserCircle size={24} className="text-gray-500" /> // UserPen 대신 UserCircle 사용
-              )}
-            </div>
-          </Link>
+    <>
+      <MobileSidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+
+      <header className="sticky top-0 bg-white bg-opacity-95 backdrop-blur-sm z-10 border-b border-gray-200">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button onClick={() => setMobileMenuOpen(true)} className="md:hidden text-gray-500">
+              <Menu size={24} />
+            </button>
+            <Link href="/user-info">
+              <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt="프로필" className="w-full h-full object-cover" />
+                ) : (
+                  <UserCircle size={24} className="text-gray-500" /> // UserPen 대신 UserCircle 사용
+                )}
+              </div>
+            </Link>
+          </div>
+
+          {/* 페이지 제목 */}
+          <h1 className="text-xl font-bold">{getPageTitle()}</h1>
+
+          {/* 설정 버튼 */}
+          <div className="flex items-center gap-2">
+            <button
+              className="p-2 rounded-full hover:bg-gray-100"
+              aria-label="검색"
+              onClick={toggleSearch} // Zustand의 toggleSearch 함수 사용
+            >
+              <Search size={24} className="text-gray-600" />
+            </button>
+          </div>
         </div>
 
-        {/* 페이지 제목 */}
-        <h1 className="text-xl font-bold">{getPageTitle()}</h1>
-
-        {/* 설정 버튼 */}
-        <div className="flex items-center gap-2">
-          <button className="p-2 rounded-full hover:bg-gray-100" aria-label="설정">
-            <Settings size={20} className="text-gray-700" />
-          </button>
-        </div>
-      </div>
-
-      {/* 홈 페이지에서만 탭 표시 */}
-      {pathname === '/' && (
-        <div className="flex border-b border-gray-200">
-          <Tab
-            label="회원님의 아이디어"
-            isActive={activeTab === 'for-you'}
-            onClick={() => handleTabChange('for-you')}
-          />
-          <Tab
-            label="추천 아이디어"
-            isActive={activeTab === 'suggest'}
-            onClick={() => handleTabChange('suggest')}
-          />
-        </div>
-      )}
-    </header>
+        {/* 홈 페이지에서만 탭 표시 */}
+        {/* {pathname === '/' && (
+          <div className="flex border-b border-gray-200">
+            <Tab
+              label="회원님의 아이디어"
+              isActive={activeTab === 'for-you'}
+              onClick={() => handleTabChange('for-you')}
+            />
+            <Tab
+              label="추천 아이디어"
+              isActive={activeTab === 'suggest'}
+              onClick={() => handleTabChange('suggest')}
+            />
+          </div>
+        )} */}
+      </header>
+    </>
   );
 };
 

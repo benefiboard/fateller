@@ -29,6 +29,7 @@ import AlertModal from './ui/AlertModal';
 import { RequestTracker } from './utils/requestTracker';
 import { extractAndAnalyze } from './utils/apiClient';
 import { useUserStore } from './store/userStore';
+import { useSearchStore } from './store/searchStore';
 
 // 프로필 정보
 // const profile = {
@@ -750,6 +751,8 @@ const MemoPageContent: React.FC = () => {
     setSelectedPurpose(purpose);
   };
 
+  const searchVisible = useSearchStore((state) => state.searchVisible);
+
   return (
     <div className="max-w-md mx-auto bg-white overflow-hidden shadow-md min-h-screen tracking-tighter leading-snug">
       {/* 상단 알림 */}
@@ -792,16 +795,24 @@ const MemoPageContent: React.FC = () => {
       <Header />
 
       {/* 검색 및 필터 바 (새로 추가) */}
-      <SearchAndFilterBar
-        onSearch={handleSearch}
-        onCategorySelect={handleCategorySelect}
-        onPurposeSelect={handlePurposeSelect} // 추가
-        onSortChange={handleSortChange}
-        selectedCategory={selectedCategory}
-        selectedPurpose={selectedPurpose} // 추가
-        searchTerm={searchTerm}
-        selectedSort={sortOption}
-      />
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          searchVisible ? 'max-h-64' : 'max-h-0'
+        }`}
+      >
+        {searchVisible && (
+          <SearchAndFilterBar
+            onSearch={handleSearch}
+            onCategorySelect={handleCategorySelect}
+            onPurposeSelect={handlePurposeSelect}
+            onSortChange={handleSortChange}
+            selectedCategory={selectedCategory}
+            selectedPurpose={selectedPurpose}
+            searchTerm={searchTerm}
+            selectedSort={sortOption}
+          />
+        )}
+      </div>
 
       {/* 알림 메시지 */}
       {notification && <Notification message={notification.message} type={notification.type} />}

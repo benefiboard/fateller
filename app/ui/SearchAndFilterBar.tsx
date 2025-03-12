@@ -92,6 +92,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
   return (
     <div className="sticky top-0 z-30 bg-white shadow-sm border-b border-gray-200">
       {/* 검색 바 */}
+
       <form onSubmit={handleSubmit} className="p-2">
         <div className="relative">
           <input

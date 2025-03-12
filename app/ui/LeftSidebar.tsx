@@ -4,17 +4,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Home,
-  Search,
-  Bell,
-  Mail,
-  BookmarkIcon,
-  User,
-  MoreHorizontal,
-  MessageCircle,
-} from 'lucide-react';
+import { Home, Search, Bell, Mail, BookmarkIcon, User } from 'lucide-react';
+import { useSearchStore } from '../store/searchStore';
 
+// 일반 링크용 컴포넌트
 interface SidebarLinkProps {
   href: string;
   icon: React.ReactNode;
@@ -32,30 +25,43 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
 }) => {
   return (
     <Link href={href} className="group">
-      <div
-        className={`flex items-center justify-center lg:justify-normal p-3 rounded-full transition-colors hover:bg-emerald-50 ${
-          active ? 'font-bold' : 'font-normal'
-        }`}
-      >
-        <div
-          className={`text-xl ${
-            active ? 'text-emerald-500' : 'text-gray-800 group-hover:text-emerald-500'
-          }`}
-        >
-          {icon}
-        </div>
-        {!minimized && <span className="ml-4 text-gray-900 text-lg  hidden lg:block">{label}</span>}
+      <div className="flex items-center justify-center lg:justify-normal p-3 rounded-full transition-colors hover:bg-emerald-50">
+        <div className="text-xl text-gray-800 group-hover:text-emerald-500">{icon}</div>
+        {!minimized && <span className="ml-4 text-gray-900 text-lg hidden lg:block">{label}</span>}
       </div>
     </Link>
   );
 };
 
-interface LeftSidebarProps {
+// 버튼용 컴포넌트 (링크 대신 버튼으로 동작하는 항목)
+interface SidebarButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
   minimized?: boolean;
+  onClick: () => void;
 }
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ minimized = false }) => {
+const SidebarButton: React.FC<SidebarButtonProps> = ({
+  icon,
+  label,
+  active = false, // 이 속성은 더 이상 스타일에 영향을 주지 않지만 인터페이스 일관성을 위해 유지
+  minimized = false,
+  onClick,
+}) => {
+  return (
+    <button onClick={onClick} className="w-full group">
+      <div className="flex items-center justify-center lg:justify-normal p-3 rounded-full transition-colors hover:bg-emerald-50 font-normal">
+        <div className="text-xl text-gray-800 group-hover:text-emerald-500">{icon}</div>
+        {!minimized && <span className="ml-4 text-gray-900 text-lg hidden lg:block">{label}</span>}
+      </div>
+    </button>
+  );
+};
+
+const LeftSidebar: React.FC<{ minimized?: boolean }> = ({ minimized = false }) => {
   const pathname = usePathname();
+  const toggleSearch = useSearchStore((state) => state.toggleSearch);
 
   return (
     <div className="h-full py-2 flex flex-col justify-between">
@@ -77,13 +83,16 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ minimized = false }) => {
           active={pathname === '/'}
           minimized={minimized}
         />
-        <SidebarLink
-          href="/explore"
+
+        {/* 탐색하기는 버튼으로 변경 (링크 대신) */}
+        <SidebarButton
           icon={<Search size={26} />}
           label="탐색하기"
           active={pathname === '/explore'}
           minimized={minimized}
+          onClick={toggleSearch} // 클릭 시 검색 토글 함수만 실행
         />
+
         <SidebarLink
           href="/notifications"
           icon={<Bell size={26} />}
@@ -98,50 +107,21 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ minimized = false }) => {
           active={pathname === '/messages'}
           minimized={minimized}
         />
-        <SidebarLink
+        {/* <SidebarLink
           href="/bookmarks"
           icon={<BookmarkIcon size={26} />}
           label="북마크"
           active={pathname === '/bookmarks'}
           minimized={minimized}
-        />
+        /> */}
         <SidebarLink
-          href="/profile"
+          href="/user-info"
           icon={<User size={26} />}
           label="프로필"
           active={pathname === '/profile'}
           minimized={minimized}
         />
       </nav>
-
-      {/* 메모 작성 버튼 */}
-      {/* <div className="mt-4 px-3">
-        <button className="bg-emerald-400 hover:bg-emerald-500 transition-colors text-white rounded-full p-3 w-full flex items-center justify-center font-bold text-lg">
-          {minimized ? <MessageCircle size={24} /> : <span>새 메모</span>}
-        </button>
-      </div> */}
-
-      {/* 프로필 정보 */}
-      {/* <div className="mt-auto p-3">
-        <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-            <img
-              src="https://placehold.co/40x40"
-              alt="프로필"
-              className="w-full h-full object-cover"
-            />
-          </div>
-          {!minimized && (
-            <>
-              <div className="ml-3 flex-1 truncate">
-                <div className="font-bold text-sm">BrainLabel</div>
-                <div className="text-gray-500 text-xs">@brainlabel_ai</div>
-              </div>
-              <MoreHorizontal size={18} className="text-gray-500" />
-            </>
-          )}
-        </div>
-      </div> */}
     </div>
   );
 };
