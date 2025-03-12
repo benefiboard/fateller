@@ -90,7 +90,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
   };
 
   return (
-    <div className="sticky top-0 z-30 bg-white shadow-sm border-b border-gray-200">
+    <div className="sticky top-0 z-30 bg-gray-100 shadow-sm border-b border-gray-200">
       {/* 검색 바 */}
 
       <form onSubmit={handleSubmit} className="p-2">
@@ -126,7 +126,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
           }}
           className={`px-2 py-1 rounded-full text-sm flex items-center whitespace-nowrap ${
             selectedPurpose
-              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+              ? 'bg-emerald-600 text-gray-50'
               : 'bg-gray-100 text-gray-700 border border-gray-200'
           }`}
         >
@@ -146,7 +146,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
           }}
           className={`px-2 py-1 rounded-full text-sm flex items-center whitespace-nowrap ${
             selectedCategory
-              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+              ? 'bg-emerald-600 text-gray-50'
               : 'bg-gray-100 text-gray-700 border border-gray-200'
           }`}
         >
@@ -163,7 +163,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
           onClick={() => onSortChange('latest')}
           className={`px-2 py-1 rounded-full text-sm whitespace-nowrap ${
             selectedSort === 'latest'
-              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+              ? 'bg-emerald-600 text-gray-50'
               : 'bg-gray-100 text-gray-700 border border-gray-200'
           }`}
         >
@@ -174,7 +174,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
           onClick={() => onSortChange('oldest')}
           className={`px-2 py-1 rounded-full text-sm whitespace-nowrap ${
             selectedSort === 'oldest'
-              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+              ? 'bg-emerald-600 text-gray-50'
               : 'bg-gray-100 text-gray-700 border border-gray-200'
           }`}
         >
@@ -185,7 +185,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
           onClick={() => onSortChange('today')}
           className={`px-2 py-1 rounded-full text-sm whitespace-nowrap ${
             selectedSort === 'today'
-              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+              ? 'bg-emerald-600 text-gray-50'
               : 'bg-gray-100 text-gray-700 border border-gray-200'
           }`}
         >
@@ -203,7 +203,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
                 onClick={() => handlePurposeSelect(purpose)}
                 className={`px-3 py-1 rounded-full text-sm ${
                   (purpose === '전체' && !selectedPurpose) || purpose === selectedPurpose
-                    ? 'bg-emerald-500 text-white'
+                    ? 'bg-emerald-600 text-gray-50'
                     : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
                 }`}
               >
@@ -232,7 +232,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
                 onClick={() => handleCategorySelect(category)}
                 className={`px-3 py-1 rounded-full text-sm ${
                   (category === '전체' && !selectedCategory) || category === selectedCategory
-                    ? 'bg-emerald-500 text-white'
+                    ? 'bg-emerald-600 text-gray-50'
                     : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
                 }`}
               >
