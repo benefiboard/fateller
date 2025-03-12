@@ -819,7 +819,7 @@ const MemoPageContent: React.FC = () => {
 
       {/* 메모 작성 버튼 */}
       {!showComposer && (
-        <div className="fixed flex flex-col gap-2 bottom-20 right-4 z-10">
+        <div className="fixed flex flex-col gap-2 bottom-8 right-4 z-10">
           <button
             onClick={handleScrollToTop}
             className="w-12 h-12 rounded-full bg-emerald-400 text-white flex items-center justify-center shadow-lg lg:w-14 lg:h-14"
@@ -1013,7 +1013,7 @@ const MemoPageContent: React.FC = () => {
       </div>
 
       {/* 바텀 네비게이션 */}
-      <BottomNavigation />
+      {/* <BottomNavigation /> */}
 
       {/* 글로벌 알림 모달 */}
       <AlertModal
