@@ -190,10 +190,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
         return (
           <div className="pt-4" ref={tabRefs.idea}>
             {/* 미니멀한 명함 스타일의 디자인 */}
-            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
-              <h2 className="flex-1 tracking-tighter font-semibold text-sm text-emerald-800">
+            <div className="border-l-2 border-gray-800 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
+              <h2 className="flex-1 tracking-tighter  text-sm text-gray-800">{memo.title}</h2>
+              {/* <h2 className="flex-1 tracking-tighter font-semibold text-sm text-emerald-800">
                 {memo.title}
-              </h2>
+              </h2> */}
               <ShareButton
                 memo={memo}
                 tabType="idea"
@@ -204,6 +205,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             </div>
 
             {/* 핵심 문장을 강조 - 심플한 디자인 */}
+            {/* <div className=" p-4 my-4 rounded-lg border border-gray-200 shadow-md"> */}
             <div className=" p-4 my-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md">
               <div className="relative px-2">
                 <p className="text-lg font-medium text-gray-100  py-4">
@@ -215,7 +217,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {/* 키워드 - 심플한 디자인 */}
             <div className="flex flex-wrap items-center mt-3">
               {memo.labeling.keywords.map((keyword, keywordIndex) => (
-                <span key={keywordIndex} className="text-sm text-emerald-800 px-1 rounded-full">
+                <span key={keywordIndex} className="text-sm text-gray-800 px-1 rounded-full">
                   #{keyword}
                 </span>
               ))}
