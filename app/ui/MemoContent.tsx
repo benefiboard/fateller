@@ -532,7 +532,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
           </button>
 
           <button
-            onClick={() => changeTab(0)}
+            onClick={() => changeTab(1)}
             className={`relative p-2 text-sm transition-colors ${
               activeTab === 1
                 ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
@@ -546,7 +546,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
           </button>
 
           <button
-            onClick={() => changeTab(0)}
+            onClick={() => changeTab(2)}
             className={`relative p-2 text-sm transition-colors ${
               activeTab === 2
                 ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
@@ -560,7 +560,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
           </button>
 
           <button
-            onClick={() => changeTab(0)}
+            onClick={() => changeTab(3)}
             className={`relative p-2 text-sm transition-colors ${
               activeTab === 3
                 ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
