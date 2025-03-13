@@ -296,7 +296,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                 return (
                   // 하나의 통합된 박스로 변경
-                  <div className="p-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md">
+                  <div className="p-4 py-8 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md animate-gradient">
                     {sections.map((section: any, idx: number) => {
                       // 섹션 유효성 검사
                       if (!section || typeof section !== 'object') return null;
@@ -310,18 +310,18 @@ const MemoContent: React.FC<MemoContentProps> = ({
                       return (
                         <div
                           key={idx}
-                          className={`${idx > 0 ? 'mt-6 pt-4 border-t border-white/30' : ''}`}
+                          className={`${idx > 0 ? 'mt-8 pt-4 border-t border-white/30' : ''}`}
                         >
                           {/* 섹션 제목 */}
-                          <h3 className="text-lg font-bold text-white mb-3 pb-2">
-                            {renderHTML(heading)}
+                          <h3 className="text-lg font-bold text-white mb-3 pb-2 tracking-tighter">
+                            {idx + 1}. {renderHTML(heading)}
                           </h3>
 
                           {/* 섹션 포인트 */}
                           {points.length > 0 && (
                             <div className="space-y-2 mb-3">
                               {points.map((point: any, pidx: number) => (
-                                <p key={pidx} className=" text-gray-100 leading-relaxed">
+                                <p key={pidx} className=" text-gray-100 tracking-tighter">
                                   {renderHTML(point || '')}
                                 </p>
                               ))}
@@ -330,7 +330,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                           {/* 하위 섹션이 있는 경우 렌더링 */}
                           {subSections.length > 0 && (
-                            <div className="mt-3 pl-3 border-l-2 border-white/30">
+                            <div className="mt-6 pl-3 border-l-2 border-white/30">
                               {subSections.map((subSection: any, ssidx: number) => {
                                 // 하위 섹션 유효성 검사
                                 if (!subSection || typeof subSection !== 'object') return null;
@@ -344,7 +344,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                   <div key={ssidx} className="mb-2">
                                     {/* 하위 섹션 제목 */}
                                     <h4 className=" font-semibold text-gray-100 mb-1">
-                                      {renderHTML(subHeading)}
+                                      <span className="text-xs">▷</span> {renderHTML(subHeading)}
                                     </h4>
 
                                     {/* 하위 섹션 포인트 */}
@@ -405,9 +405,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
               {memo.thread.map((tweet, tweetIndex) => (
                 <div
                   key={tweetIndex}
-                  className="p-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-sm"
+                  className="p-4 py-6 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-sm"
                 >
-                  <p className="text-sm text-gray-100 leading-relaxed">{renderHTML(tweet)}</p>
+                  <p className=" text-gray-100 tracking-tighter">{renderHTML(tweet)}</p>
                 </div>
               ))}
             </div>
