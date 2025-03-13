@@ -197,27 +197,27 @@ const MemoItem: React.FC<MemoItemProps> = ({
   // };
 
   return (
-    <article className="p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors">
+    <article className="p-4 pl-2 border-b border-gray-200 hover:bg-gray-50 transition-colors">
       <div className="flex">
         {/* 카테고리 아이콘 (각 카테고리에 맞게 변경) */}
-        {/* <div className="mr-3 flex-shrink-0">
+        <div className="mr-1 flex-shrink-0">
           <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center border border-emerald-800 text-emerald-800`}
+            className={`w-8 h-8 rounded-full flex items-center justify-center border border-emerald-800 text-emerald-800`}
           >
             {getCategoryIcon()}
           </div>
-        </div> */}
+        </div>
 
         {/* 메모 내용 */}
         <div className="flex-1 min-w-0">
           {/* 헤더 - 카테고리, 시간 및 옵션 */}
           <div className="flex items-start justify-between">
             <div className="flex items-center">
-              <span
+              {/* <span
                 className={`w-8 h-8 rounded-full flex items-center justify-center border border-emerald-800 text-emerald-800`}
               >
                 {getCategoryIcon()}
-              </span>
+              </span> */}
               <span
                 className={` text-sm px-1 py-0.5 rounded-full  font-semibold b text-emerald-800`}
               >

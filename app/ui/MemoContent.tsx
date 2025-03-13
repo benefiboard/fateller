@@ -516,60 +516,60 @@ const MemoContent: React.FC<MemoContentProps> = ({
   return (
     <>
       {/* 개선된 탭 네비게이션 - 탭 순서 변경 */}
-      <div className="mt-2 border-b border-gray-200">
+      <div className="mt-2 border-y border-gray-200">
         <div className="flex items-center justify-between">
           <button
             onClick={() => changeTab(0)}
-            className={`relative py-2 px-2 text-sm transition-colors ${
+            className={`relative p-2 text-sm transition-colors ${
               activeTab === 0
                 ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             {activeTab === 0 && (
-              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
+              <Sparkle size={14} className="absolute top-0.5 -right-1 text-emerald-800" />
             )}
             아이디어
           </button>
 
           <button
-            onClick={() => changeTab(1)}
-            className={`relative py-2 px-2 text-sm transition-colors ${
+            onClick={() => changeTab(0)}
+            className={`relative p-2 text-sm transition-colors ${
               activeTab === 1
                 ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             {activeTab === 1 && (
-              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
+              <Sparkle size={14} className="absolute top-0.5 -right-1 text-emerald-800" />
             )}
             아이디어 맵
           </button>
 
           <button
-            onClick={() => changeTab(2)}
-            className={`relative py-2 px-2 text-sm transition-colors ${
+            onClick={() => changeTab(0)}
+            className={`relative p-2 text-sm transition-colors ${
               activeTab === 2
                 ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             {activeTab === 2 && (
-              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
+              <Sparkle size={14} className="absolute top-0.5 -right-1 text-emerald-800" />
             )}
             주요 내용
           </button>
 
           <button
-            onClick={() => changeTab(3)}
-            className={`relative py-2 px-2 text-sm transition-colors ${
+            onClick={() => changeTab(0)}
+            className={`relative p-2 text-sm transition-colors ${
               activeTab === 3
                 ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             {activeTab === 3 && (
-              <Sparkle size={14} className="absolute -top-1 -right-1 text-emerald-800" />
+              <Sparkle size={14} className="absolute top-0.5 -right-1 text-emerald-800" />
             )}
             원문
           </button>
