@@ -31,14 +31,6 @@ import { extractAndAnalyze } from './utils/apiClient';
 import { useUserStore } from './store/userStore';
 import { useSearchStore } from './store/searchStore';
 
-// 프로필 정보
-// const profile = {
-//   name: 'BrainLabel',
-//   username: '@brainlabel_ai',
-//   avatar: 'https://placehold.co/40x40',
-//   verified: true,
-// };
-
 // 상단 알림 인터페이스
 interface TopAlert {
   show: boolean;
@@ -67,7 +59,6 @@ const MemoPageContent: React.FC = () => {
 
   // 유저 정보
   const currentUser = useUserStore((state) => state.currentUser);
-  // console.log('mainPage-user', currentUser);
 
   // profile 객체 동적 생성
   const profile = {
@@ -215,6 +206,10 @@ const MemoPageContent: React.FC = () => {
           url: data.originalUrl || data.text || '',
         });
         setShowGlobalAlert(true);
+
+        // 수정됨: URL 추출 실패 알림 추가
+        showNotification('콘텐츠 추출에 실패했습니다.', 'error');
+
         return; // 더 이상 처리하지 않음
       }
 
@@ -291,10 +286,69 @@ const MemoPageContent: React.FC = () => {
               });
 
               if (!extractResponse.ok) {
-                throw new Error(`API 오류: ${extractResponse.status}`);
+                // HTTP 상태 코드를 통해 오류 감지
+                const errorText = await extractResponse.text();
+                let errorMessage = `URL에서 콘텐츠를 추출할 수 없습니다. (상태 코드: ${extractResponse.status})`;
+
+                try {
+                  // 응답 내용이 JSON인지 확인
+                  const errorJson = JSON.parse(errorText);
+                  if (errorJson.error) {
+                    errorMessage = errorJson.error;
+                  }
+                } catch (e) {
+                  // JSON 파싱 실패 시 원본 텍스트 사용
+                  if (errorText && errorText.length < 100) {
+                    errorMessage = errorText;
+                  }
+                }
+
+                // 오류 상태로 업데이트
+                updatePendingMemo(pendingId, {
+                  status: 'error',
+                  error: errorMessage,
+                });
+
+                // 알럿 모달 표시
+                setAlertData({
+                  title: '콘텐츠 추출 실패',
+                  message: errorMessage,
+                  url: data.originalUrl,
+                });
+                setShowGlobalAlert(true);
+
+                // 알림 표시 - 여기에 명시적으로 추가
+                showNotification('콘텐츠 추출에 실패했습니다.', 'error');
+                console.error('추출 API 오류:', errorMessage);
+
+                return;
               }
 
               const extractData = await extractResponse.json();
+
+              if (extractData.error) {
+                const errorMessage = extractData.error || '콘텐츠 추출 중 오류가 발생했습니다.';
+
+                // 오류 상태로 업데이트
+                updatePendingMemo(pendingId, {
+                  status: 'error',
+                  error: errorMessage,
+                });
+
+                // 알럿 모달 표시
+                setAlertData({
+                  title: '콘텐츠 추출 실패',
+                  message: errorMessage,
+                  url: data.originalUrl,
+                });
+                setShowGlobalAlert(true);
+
+                // 알림 표시
+                showNotification('콘텐츠 추출에 실패했습니다.', 'error');
+                console.error('추출 API 오류 응답:', errorMessage);
+
+                return;
+              }
 
               // sourceId 확인 및 저장 (추가된 부분)
               const sourceId = extractData.sourceId;
@@ -342,6 +396,10 @@ const MemoPageContent: React.FC = () => {
                   url: data.originalUrl,
                 });
                 setShowGlobalAlert(true);
+
+                // 수정됨: URL 추출 실패 알림 추가
+                showNotification('콘텐츠 추출에 실패했습니다.', 'error');
+
                 return;
               }
 
@@ -456,6 +514,9 @@ const MemoPageContent: React.FC = () => {
               url: data.originalUrl || '',
             });
             setShowGlobalAlert(true);
+
+            // 수정됨: URL 추출 실패 알림 추가
+            showNotification('콘텐츠 추출에 실패했습니다.', 'error');
           }
           return;
         }
@@ -692,8 +753,6 @@ const MemoPageContent: React.FC = () => {
 
   // 메모 편집 핸들러
   const handleEdit = (memo: any) => {
-    //console.log('편집하려는 메모:', memo); // 메모 객체 전체 로깅
-    //console.log('메모의 purpose:', memo.purpose); // purpose 필드 확인
     handleOpenComposer('direct', memo.id);
   };
 
@@ -994,9 +1053,6 @@ const MemoPageContent: React.FC = () => {
                   onEdit={handleEdit}
                   onAnalyze={handleAnalyze}
                   onDelete={handleDelete}
-                  //onLike={likeMemo}
-                  //onRetweet={retweetMemo}
-                  //onReply={replyToMemo}
                 />
               </div>
             ))}
@@ -1012,9 +1068,6 @@ const MemoPageContent: React.FC = () => {
         )}
       </div>
 
-      {/* 바텀 네비게이션 */}
-      {/* <BottomNavigation /> */}
-
       {/* 글로벌 알림 모달 */}
       <AlertModal
         isOpen={showGlobalAlert}
@@ -1022,14 +1075,18 @@ const MemoPageContent: React.FC = () => {
         message={
           <>
             <p>{alertData.message}</p>
-            {alertData.url && (
+            {/* {alertData.url && (
               <div className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
                 <code>{alertData.url}</code>
               </div>
-            )}
+            )} */}
           </>
         }
-        onConfirm={() => setShowGlobalAlert(false)}
+        onConfirm={() => {
+          setShowGlobalAlert(false);
+          // 수정됨: 모달이 닫힐 때 추가 안내 알림 표시
+          showNotification('콘텐츠 추출에 실패했습니다.', 'error');
+        }}
       />
 
       {/* CSS 애니메이션 정의 */}

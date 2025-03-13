@@ -215,7 +215,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
     console.log('알림 메시지:', alertMessage);
 
-    // 모달 닫기 및 백그라운드 처리 시작
+    // 모달은 닫지 않고 로딩 상태 유지 (사용자가 버튼 클릭 시에만 모달 닫힘)
     setIsSubmitting(false);
 
     // 알림과 함께 백그라운드 처리 요청
@@ -278,8 +278,55 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
               }),
             });
 
+            // 수정됨: 응답이 성공적이지 않은 경우의 처리 개선
             if (!extractResponse.ok) {
-              throw new Error(`API 오류: ${extractResponse.status}`);
+              // 응답 상태 및 텍스트 정보 가져오기 시도
+              let errorMessage = `API 오류: ${extractResponse.status}`;
+              let errorResponseText = '';
+
+              try {
+                errorResponseText = await extractResponse.text();
+                // JSON인지 확인하여 파싱 시도
+                try {
+                  const errorData = JSON.parse(errorResponseText);
+                  if (errorData.error) {
+                    errorMessage = errorData.error;
+                  }
+                } catch (jsonError) {
+                  // JSON 파싱 실패 - 텍스트 그대로 사용
+                  if (errorResponseText && errorResponseText.length < 100) {
+                    errorMessage = errorResponseText;
+                  }
+                }
+              } catch (textError) {
+                // 응답 텍스트 가져오기 실패 - 기본 메시지 사용
+                console.error('응답 텍스트 가져오기 실패:', textError);
+              }
+
+              console.error('URL 추출 API 오류:', errorMessage);
+
+              // 1. 알림 모달 표시
+              setShowExtractionAlert(true);
+              setExtractionAlertMessage(
+                `오류가 발생했습니다: ${errorMessage}. 직접 내용을 복사하여 붙여넣어 주세요.`
+              );
+
+              // 2. onBackgroundProcess 호출하여 MemoPageContent에 추출 실패 알림
+              if (onBackgroundProcess) {
+                onBackgroundProcess({
+                  extractionFailed: true, // 추출 실패 플래그
+                  errorMessage: `추출 불가, 내용 직접 입력해주세요}`,
+                  originalUrl: url,
+                  text: url,
+                  mode: 'analyze',
+                });
+              }
+
+              // 상태 리셋
+              setProcessingStep('idle');
+              setIsSubmitting(false);
+
+              throw new Error(errorMessage);
             }
 
             const extractData = await extractResponse.json();
@@ -323,6 +370,17 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
                 hasPaywall: hasPaywallIndicators,
                 preview: extractData.content?.substring(0, 100),
               });
+
+              // 수정됨: onBackgroundProcess 호출 추가
+              if (onBackgroundProcess) {
+                onBackgroundProcess({
+                  extractionFailed: true,
+                  errorMessage: errorMessage,
+                  originalUrl: url,
+                  text: url,
+                  mode: 'analyze',
+                });
+              }
 
               setShowExtractionAlert(true);
               setExtractionAlertMessage(errorMessage);
@@ -369,6 +427,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
               onClose();
             }
           } catch (error) {
+            // 수정됨: 추출 과정 예외 발생 시 처리 개선
             console.error('추출 과정 예외 발생:', error);
 
             // 에러 메시지 추출
@@ -379,10 +438,24 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
               errorMessage = error;
             }
 
+            // 1. 알림 모달 표시
             setShowExtractionAlert(true);
             setExtractionAlertMessage(
               `오류가 발생했습니다: ${errorMessage}. 직접 내용을 복사하여 붙여넣어 주세요.`
             );
+
+            // 2. onBackgroundProcess 호출하여 MemoPageContent에 추출 실패 알림
+            if (onBackgroundProcess) {
+              onBackgroundProcess({
+                extractionFailed: true, // 추출 실패 플래그
+                errorMessage: `추출 불가, 내용 직접 입력해주세요`,
+                originalUrl: inputText.trim(),
+                text: inputText.trim(),
+                mode: 'analyze',
+              });
+            }
+
+            // 상태 리셋
             setProcessingStep('idle');
             setIsSubmitting(false);
           }
@@ -466,21 +539,29 @@ YouTube 링크를 입력하세요...`;
         onContinueInBackground={handleContinueInBackground} // 단계에 관계없이 항상 전달
       />
 
-      {/* 오류 렌더링 부분 내에 추가 */}
+      {/* 수정됨: AlertModal onConfirm 핸들러 수정 */}
       <AlertModal
         isOpen={showExtractionAlert}
         title="콘텐츠 추출 실패"
         message={
           <>
             <p>{extractionAlertMessage}</p>
-            {inputText && inputText.startsWith('http') && (
-              <div className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
-                <code>{inputText}</code>
-              </div>
-            )}
           </>
         }
-        onConfirm={() => setShowExtractionAlert(false)}
+        onConfirm={() => {
+          setShowExtractionAlert(false);
+
+          // 모달 닫을 때 오류 알림 표시 (선택 사항)
+          if (onBackgroundProcess) {
+            onBackgroundProcess({
+              extractionFailed: true,
+              errorMessage: extractionAlertMessage,
+              originalUrl: inputText,
+              text: inputText,
+              mode: 'analyze',
+            });
+          }
+        }}
       />
 
       {/* 기존 모달 내용 - isSubmitting이 아닐 때만 표시 */}
