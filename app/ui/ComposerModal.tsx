@@ -5,6 +5,7 @@ import LoadingModal from './LoadingModal';
 import AlertModal from './AlertModal';
 import { RequestTracker } from '../utils/requestTracker';
 import { extractAndAnalyze } from '../utils/apiClient';
+import { Textarea } from '@/components/ui/textarea';
 
 // 처리 단계 타입 정의
 export type ProcessingStep = 'idle' | 'extracting' | 'analyzing';
@@ -530,7 +531,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 YouTube 링크를 입력하세요...`;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
       {/* 로딩 모달 추가 */}
       <LoadingModal
         isOpen={isSubmitting}
@@ -586,7 +587,7 @@ YouTube 링크를 입력하세요...`;
             {/* AI 분석 모드 UI */}
             {mode === 'analyze' && (
               <div className="flex">
-                <div className="mr-[6px]">
+                {/* <div className="mr-[6px]">
                   <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
                     <img
                       src={profile.avatar}
@@ -594,10 +595,10 @@ YouTube 링크를 입력하세요...`;
                       className="w-full h-full object-cover"
                     />
                   </div>
-                </div>
+                </div> */}
                 <div className="flex-1">
                   <textarea
-                    className="w-full border-0 focus:ring-0 focus:outline-none resize-none p-2 min-h-24"
+                    className="w-full border-0 focus:ring-0 focus:outline-none resize-none p-2 min-h-[68vh]"
                     placeholder={placeholderText}
                     value={inputText}
                     onChange={handleInputChange}
