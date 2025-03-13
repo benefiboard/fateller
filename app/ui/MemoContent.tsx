@@ -190,11 +190,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
         return (
           <div className="pt-4" ref={tabRefs.idea}>
             {/* 미니멀한 명함 스타일의 디자인 */}
-            <div className="border-l-2 border-gray-800 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
+            <div className="border-l-2 border-gray-400 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
               <h2 className="flex-1 tracking-tighter  text-sm text-gray-800">{memo.title}</h2>
-              {/* <h2 className="flex-1 tracking-tighter font-semibold text-sm text-emerald-800">
-                {memo.title}
-              </h2> */}
+
               <ShareButton
                 memo={memo}
                 tabType="idea"
@@ -207,8 +205,8 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {/* 핵심 문장을 강조 - 심플한 디자인 */}
             {/* <div className=" p-4 my-4 rounded-lg border border-gray-200 shadow-md"> */}
             <div className=" p-4 my-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md">
-              <div className="relative px-2">
-                <p className="text-lg font-medium text-gray-100  py-4">
+              <div className="relative p-2">
+                <p className="text-lg font-medium text-gray-100">
                   {renderHTML(memo.labeling.key_sentence)}
                 </p>
               </div>
@@ -224,15 +222,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
             </div>
 
             {/* 원본이미지와 제목 */}
-            {memo.original_image && (
+            {/* {memo.original_image && (
               <div className="flex flex-col gap-2 mt-2">
                 <hr className="w-full" />
-                <div className="flex gap-4 items-center justify-between -mt-1">
-                  <hr className="w-1/3" />
-                  <p className="text-xs text-gray-400">원문 내용</p>
-                  <hr className="w-1/3" />
-                </div>
-                <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50">
+
+                <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50 mt-1">
                   <div className="h-16 col-span-3 relative">
                     <img
                       src={memo.original_image}
@@ -251,17 +245,15 @@ const MemoContent: React.FC<MemoContentProps> = ({
                   </p>
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         );
       case 1: // 아이디어 맵 (이전의 핵심 문장, 이전의 2번 탭)
         return (
           <div className="pt-4" ref={tabRefs.key}>
             {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
-            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between">
-              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">
-                아이디어 맵
-              </h2>
+            <div className="border-l-2 border-gray-400 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
+              <h2 className="flex-1 tracking-tighter  text-sm text-gray-800">아이디어 맵</h2>
               <ShareButton
                 memo={memo}
                 tabType="key"
@@ -330,7 +322,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                           {points.length > 0 && (
                             <div className="space-y-2 mb-3">
                               {points.map((point: any, pidx: number) => (
-                                <p key={pidx} className="text-sm text-gray-100 leading-relaxed">
+                                <p key={pidx} className=" text-gray-100 leading-relaxed">
                                   {renderHTML(point || '')}
                                 </p>
                               ))}
@@ -352,7 +344,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                 return (
                                   <div key={ssidx} className="mb-2">
                                     {/* 하위 섹션 제목 */}
-                                    <h4 className="text-sm font-semibold text-gray-100 mb-1">
+                                    <h4 className=" font-semibold text-gray-100 mb-1">
                                       {renderHTML(subHeading)}
                                     </h4>
 
@@ -362,7 +354,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                         {subPoints.map((subPoint: any, spidx: number) => (
                                           <p
                                             key={spidx}
-                                            className="text-xs text-gray-100 leading-relaxed"
+                                            className="text-sm text-gray-100 leading-relaxed"
                                           >
                                             {renderHTML(subPoint || '')}
                                           </p>
@@ -398,8 +390,8 @@ const MemoContent: React.FC<MemoContentProps> = ({
         return (
           <div className="pt-4" ref={tabRefs.main}>
             {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
-            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between">
-              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">주요 내용</h2>
+            <div className="border-l-2 border-gray-400 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
+              <h2 className="flex-1 tracking-tighter  text-sm text-gray-800">주요 내용</h2>
               <ShareButton
                 memo={memo}
                 tabType="main"
@@ -426,8 +418,8 @@ const MemoContent: React.FC<MemoContentProps> = ({
         return (
           <div className="pt-4" ref={tabRefs.original}>
             {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
-            <div className="border-l-2 border-emerald-800 pl-2 py-1 mb-3 flex items-center justify-between">
-              <h2 className="tracking-tighter font-semibold text-sm text-emerald-800">원문</h2>
+            <div className="border-l-2 border-gray-400 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
+              <h2 className="flex-1 tracking-tighter  text-sm text-gray-800">원문</h2>
               <ShareButton
                 memo={memo}
                 tabType="original"
@@ -484,12 +476,8 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 {memo.original_image && (
                   <div className="flex flex-col gap-2 mt-2">
                     <hr className="w-full" />
-                    <div className="flex gap-4 items-center justify-between -mt-1">
-                      <hr className="w-1/3" />
-                      <p className="text-xs text-gray-400">원문 내용</p>
-                      <hr className="w-1/3" />
-                    </div>
-                    <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50">
+
+                    <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50 mt-1">
                       <div className="h-16 col-span-3 relative">
                         <img
                           src={memo.original_image}

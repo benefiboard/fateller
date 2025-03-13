@@ -30,7 +30,8 @@ import {
   User,
   GraduationCap,
   Briefcase,
-  Hourglass, // 문학/창작
+  Hourglass,
+  Share2, // 문학/창작
 } from 'lucide-react';
 import { Memo, Profile } from '../utils/types';
 import MemoContent from './MemoContent';
@@ -129,39 +130,39 @@ const MemoItem: React.FC<MemoItemProps> = ({
 
     switch (category) {
       case '인문/철학':
-        return <BookOpen size={24} />;
+        return <BookOpen size={16} />;
       case '역사':
-        return <Hourglass size={24} />;
+        return <Hourglass size={16} />;
       case '경영/경제':
-        return <BarChart3 size={24} />;
+        return <BarChart3 size={16} />;
       case '언어':
-        return <Languages size={24} />;
+        return <Languages size={16} />;
       case '정치':
-        return <LandPlot size={24} />;
+        return <LandPlot size={16} />;
       case '사회':
-        return <Users size={24} />;
+        return <Users size={16} />;
       case '국제':
-        return <Globe size={24} />;
+        return <Globe size={16} />;
       case '과학/IT':
-        return <Atom size={24} />;
+        return <Atom size={16} />;
       case '수학':
-        return <SquareRadical size={24} />;
+        return <SquareRadical size={16} />;
       case '기술/공학':
-        return <Cpu size={24} />;
+        return <Cpu size={16} />;
       case '의학/건강':
-        return <Stethoscope size={24} />;
+        return <Stethoscope size={16} />;
       case '예술/문화':
-        return <Palette size={24} />;
+        return <Palette size={16} />;
       case '문학/창작':
-        return <PenTool size={24} />;
+        return <PenTool size={16} />;
       case '개인':
-        return <User size={24} />;
+        return <User size={16} />;
       case '학습':
-        return <GraduationCap size={24} />;
+        return <GraduationCap size={16} />;
       case '업무':
-        return <Briefcase size={24} />;
+        return <Briefcase size={16} />;
       default:
-        return <Tag size={24} />;
+        return <Tag size={16} />;
     }
   };
 
@@ -199,13 +200,13 @@ const MemoItem: React.FC<MemoItemProps> = ({
     <article className="p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors">
       <div className="flex">
         {/* 카테고리 아이콘 (각 카테고리에 맞게 변경) */}
-        <div className="mr-3 flex-shrink-0">
+        {/* <div className="mr-3 flex-shrink-0">
           <div
             className={`w-10 h-10 rounded-full flex items-center justify-center border border-emerald-800 text-emerald-800`}
           >
             {getCategoryIcon()}
           </div>
-        </div>
+        </div> */}
 
         {/* 메모 내용 */}
         <div className="flex-1 min-w-0">
@@ -213,15 +214,21 @@ const MemoItem: React.FC<MemoItemProps> = ({
           <div className="flex items-start justify-between">
             <div className="flex items-center">
               <span
-                className={` text-sm px-2 py-0.5 rounded-full mr-2 font-semibold border border-emerald-800 text-emerald-800`}
+                className={`w-8 h-8 rounded-full flex items-center justify-center border border-emerald-800 text-emerald-800`}
+              >
+                {getCategoryIcon()}
+              </span>
+              <span
+                className={` text-sm px-1 py-0.5 rounded-full  font-semibold b text-emerald-800`}
               >
                 {memo.labeling?.category || '미분류'}
               </span>
-              <span className="text-gray-500 text-sm">{memo.time || '방금 전'}</span>
+              <span className="text-gray-400 text-sm ml-1 mr-2">|</span>
+              <span className="text-gray-400 text-sm">{memo.time || '방금 전'}</span>
             </div>
 
             {/* 옵션 메뉴 */}
-            <div className="relative">
+            <div className="relative ">
               <button
                 onClick={toggleOptions}
                 className="text-gray-500 hover:text-emerald-400 p-1 rounded-full hover:bg-emerald-50"
@@ -241,18 +248,19 @@ const MemoItem: React.FC<MemoItemProps> = ({
                       className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       <Pencil size={16} className="text-gray-600" />
-                      <p>메모 수정</p>
+                      <p>메모수정</p>
                     </button>
 
-                    <button
+                    {/* <button
                       onClick={handleShare}
                       className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      <Share size={16} className="text-gray-600" />
+                      <Share2 size={16} className="text-gray-600" />
                       <p>공유하기</p>
-                    </button>
+                    </button> */}
 
-                    <button
+                    {/* 추후 추가 버튼들 삭제금지 */}
+                    {/* <button
                       onClick={() => {
                         onAnalyze(memo);
                         setShowOptions(false);
@@ -277,7 +285,7 @@ const MemoItem: React.FC<MemoItemProps> = ({
                     >
                       <Lightbulb size={16} className="text-gray-600" />
                       <p>인사이트 생성</p>
-                    </button>
+                    </button> */}
 
                     <button
                       onClick={() => {

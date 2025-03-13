@@ -1,7 +1,7 @@
 // components/common/ShareButton.tsx - ref 참조 방식으로 수정
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Share, Download, Copy, Link, Image, FileText, X, Check } from 'lucide-react';
+import { Share, Download, Copy, Link, Image, FileText, X, Check, Share2 } from 'lucide-react';
 import {
   captureElementAsImage,
   copyElementAsImage,
@@ -32,7 +32,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({
   memo,
   tabType,
   contentRef,
-  buttonClassName = 'text-emerald-600',
+  buttonClassName = 'text-gray-400',
   onShareSuccess,
   onShareError,
 }) => {
@@ -224,8 +224,8 @@ const ShareButton: React.FC<ShareButtonProps> = ({
         className={`share-button flex flex-col items-center  p-1 rounded-full hover:bg-gray-100 transition-colors ${buttonClassName}`}
         aria-label="공유 옵션"
       >
-        <Share size={20} />
-        <p className="text-xs  tracking-tighter">공유</p>
+        <Share2 size={20} />
+        {/* <p className="text-xs  tracking-tighter">공유</p> */}
       </button>
 
       {/* 드롭다운 메뉴 */}
