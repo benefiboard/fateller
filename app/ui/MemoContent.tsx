@@ -296,7 +296,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                 return (
                   // 하나의 통합된 박스로 변경
-                  <div className="p-4 py-8 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md animate-gradient">
+                  <div className="p-4 py-10 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md animate-gradient">
                     {sections.map((section: any, idx: number) => {
                       // 섹션 유효성 검사
                       if (!section || typeof section !== 'object') return null;
@@ -310,7 +310,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                       return (
                         <div
                           key={idx}
-                          className={`${idx > 0 ? 'mt-8 pt-4 border-t border-white/30' : ''}`}
+                          className={`${idx > 0 ? 'mt-6 pt-6 border-t border-white/30' : ''}`}
                         >
                           {/* 섹션 제목 */}
                           <h3 className="text-lg font-bold text-white mb-3 pb-2 tracking-tighter">
