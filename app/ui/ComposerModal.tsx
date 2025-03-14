@@ -792,9 +792,9 @@ YouTube 링크를 입력하세요...`;
                   >
                     <option value="">카테고리 선택</option>
                     <option value="인문/철학">인문/철학</option>
-                    <option value="역사">역사</option>
                     <option value="경영/경제">경영/경제</option>
                     <option value="언어">언어</option>
+                    <option value="역사">역사</option>
                     <option value="정치">정치</option>
                     <option value="사회">사회</option>
                     <option value="국제">국제</option>
