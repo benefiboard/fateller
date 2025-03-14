@@ -1,3 +1,5 @@
+'use client'; // 클라이언트 컴포넌트로 변환
+
 import React from 'react';
 
 export default function OfflinePage() {

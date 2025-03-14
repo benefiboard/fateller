@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "typeRoots": ["app/types", "./node_modules/@types"],
+    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
+    "typeRoots": ["app/types", "./node_modules/@types", "lib/types"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -27,7 +27,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "app/components/shared/ui/NutritionCardMaintsx"
-, "app/mirror/career/change"  ],
+    "app/components/shared/ui/NutritionCardMaintsx",
+    "app/mirror/career/change",
+    "lib/types/**/*.d.ts",
+    "worker/index.js"
+  ],
   "exclude": ["node_modules", ".next"]
 }
