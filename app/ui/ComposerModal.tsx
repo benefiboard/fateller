@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Image, Video, Loader, AlertCircle } from 'lucide-react';
+import { X, Image, Video, Loader, AlertCircle, Plus, Trash } from 'lucide-react';
 import { Memo } from '../utils/types';
 import LoadingModal from './LoadingModal';
 import AlertModal from './AlertModal';
@@ -9,6 +9,19 @@ import { Textarea } from '@/components/ui/textarea';
 
 // 처리 단계 타입 정의
 export type ProcessingStep = 'idle' | 'extracting' | 'analyzing';
+
+// 아이디어 맵 섹션 타입 정의
+interface Section {
+  heading: string;
+  points: string[];
+  sub_sections?: SubSection[];
+}
+
+// 하위 섹션 타입 정의
+interface SubSection {
+  sub_heading: string;
+  sub_points: string[];
+}
 
 interface ComposerModalProps {
   isOpen: boolean;
@@ -77,6 +90,12 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
   const [extractionAlertMessage, setExtractionAlertMessage] = useState('');
   const [isUrlExtracting, setIsUrlExtracting] = useState(false);
 
+  // 아이디어 맵 구조화된 데이터
+  const [structuredMap, setStructuredMap] = useState<Section[]>([]);
+
+  // 미리보기 상태
+  const [showPreview, setShowPreview] = useState(false);
+
   // 목적 선택 핸들러 추가
   const handlePurposeSelect = (purpose: string) => {
     setSelectedPurpose(purpose);
@@ -87,6 +106,28 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
         purpose: purpose,
       }));
     }
+  };
+
+  // JSON을 구조화된 데이터로 파싱하는 함수
+  const parseIdeaMap = (jsonString: string): Section[] => {
+    try {
+      // JSON 형식인지 확인
+      if (typeof jsonString === 'string' && jsonString.trim().startsWith('{')) {
+        const parsed = JSON.parse(jsonString);
+        return parsed.sections || [];
+      }
+      // 일반 텍스트인 경우 기본 섹션 생성
+      return [{ heading: '', points: [jsonString || ''], sub_sections: [] }];
+    } catch (error) {
+      console.error('JSON 파싱 오류:', error);
+      // 파싱 실패 시 기본 섹션 생성
+      return [{ heading: '', points: [''], sub_sections: [] }];
+    }
+  };
+
+  // 구조화된 데이터를 JSON으로 변환하는 함수
+  const stringifyIdeaMap = (sections: Section[]): string => {
+    return JSON.stringify({ sections });
   };
 
   // 모달이 열릴 때 초기 데이터 설정
@@ -105,6 +146,10 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
         });
         setSelectedPurpose(editingMemo.purpose || '일반');
         setKeywordsInput(editingMemo.labeling.keywords.join(', '));
+
+        // 아이디어 맵 파싱
+        const parsedSections = parseIdeaMap(editingMemo.tweet_main);
+        setStructuredMap(parsedSections);
       } else {
         // AI 분석 모드일 때
         setSelectedPurpose(editingMemo.purpose || '일반');
@@ -114,6 +159,8 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     } else if (isOpen) {
       // 새 메모 작성 모드
       resetForm();
+      // 기본 섹션 설정
+      setStructuredMap([{ heading: '', points: [''], sub_sections: [] }]);
     }
 
     // 모달이 열릴 때마다 취소 상태 초기화
@@ -138,6 +185,8 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     setProcessingStep('idle');
     setExtractedData(null);
     setSelectedPurpose('일반'); // 선택된 목적 리셋
+    setStructuredMap([{ heading: '', points: [''], sub_sections: [] }]);
+    setShowPreview(false);
   };
 
   // 입력 텍스트 변경 처리
@@ -188,6 +237,209 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
   // 키워드 입력 처리 함수
   const handleKeywordsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setKeywordsInput(e.target.value);
+  };
+
+  // 아이디어 맵 관련 함수들
+  // 섹션 제목 업데이트
+  const updateSectionHeading = (sectionIndex: number, newHeading: string) => {
+    const newData = [...structuredMap];
+    if (!newData[sectionIndex]) return;
+
+    newData[sectionIndex].heading = newHeading;
+    setStructuredMap(newData);
+
+    // 상태 업데이트 후 editFormData도 업데이트
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  // 포인트 업데이트
+  const updateSectionPoint = (sectionIndex: number, pointIndex: number, newText: string) => {
+    const newData = [...structuredMap];
+    if (!newData[sectionIndex] || !newData[sectionIndex].points) return;
+
+    newData[sectionIndex].points[pointIndex] = newText;
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  // 섹션 추가
+  const addSection = () => {
+    const newData = [...structuredMap, { heading: '', points: [''], sub_sections: [] }];
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  // 섹션 삭제
+  const removeSection = (index: number) => {
+    if (structuredMap.length <= 1) {
+      // 최소 1개의 섹션은 유지
+      return;
+    }
+
+    const newData = [...structuredMap];
+    newData.splice(index, 1);
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  // 포인트 추가
+  const addPoint = (sectionIndex: number) => {
+    const newData = [...structuredMap];
+    if (!newData[sectionIndex]) return;
+
+    if (!newData[sectionIndex].points) {
+      newData[sectionIndex].points = [];
+    }
+
+    newData[sectionIndex].points.push('');
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  // 포인트 삭제
+  const removePoint = (sectionIndex: number, pointIndex: number) => {
+    const newData = [...structuredMap];
+    if (!newData[sectionIndex] || !newData[sectionIndex].points) return;
+
+    if (newData[sectionIndex].points.length <= 1) {
+      // 최소 1개의 포인트는 유지
+      return;
+    }
+
+    newData[sectionIndex].points.splice(pointIndex, 1);
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  // 하위 섹션 관련 함수
+  const addFirstSubSection = (sectionIndex: number) => {
+    const newData = [...structuredMap];
+    if (!newData[sectionIndex]) return;
+
+    newData[sectionIndex].sub_sections = [{ sub_heading: '', sub_points: [''] }];
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  const addSubSection = (sectionIndex: number) => {
+    const newData = [...structuredMap];
+    if (!newData[sectionIndex]) return;
+
+    if (!newData[sectionIndex].sub_sections) {
+      newData[sectionIndex].sub_sections = [];
+    }
+
+    newData[sectionIndex].sub_sections.push({ sub_heading: '', sub_points: [''] });
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  const removeSubSection = (sectionIndex: number, subSectionIndex: number) => {
+    const newData = [...structuredMap];
+    if (!newData[sectionIndex] || !newData[sectionIndex].sub_sections) return;
+
+    newData[sectionIndex].sub_sections.splice(subSectionIndex, 1);
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  const updateSubSectionHeading = (
+    sectionIndex: number,
+    subSectionIndex: number,
+    newHeading: string
+  ) => {
+    const newData = [...structuredMap];
+    if (
+      !newData[sectionIndex] ||
+      !newData[sectionIndex].sub_sections ||
+      !newData[sectionIndex].sub_sections[subSectionIndex]
+    )
+      return;
+
+    newData[sectionIndex].sub_sections[subSectionIndex].sub_heading = newHeading;
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  const addSubSectionPoint = (sectionIndex: number, subSectionIndex: number) => {
+    const newData = [...structuredMap];
+    if (
+      !newData[sectionIndex] ||
+      !newData[sectionIndex].sub_sections ||
+      !newData[sectionIndex].sub_sections[subSectionIndex]
+    )
+      return;
+
+    newData[sectionIndex].sub_sections[subSectionIndex].sub_points.push('');
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  const removeSubSectionPoint = (
+    sectionIndex: number,
+    subSectionIndex: number,
+    pointIndex: number
+  ) => {
+    const newData = [...structuredMap];
+    if (
+      !newData[sectionIndex] ||
+      !newData[sectionIndex].sub_sections ||
+      !newData[sectionIndex].sub_sections[subSectionIndex] ||
+      !newData[sectionIndex].sub_sections[subSectionIndex].sub_points
+    )
+      return;
+
+    const subPoints = newData[sectionIndex].sub_sections[subSectionIndex].sub_points;
+    if (subPoints.length <= 1) return; // 최소 1개 유지
+
+    subPoints.splice(pointIndex, 1);
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
+  };
+
+  const updateSubSectionPoint = (
+    sectionIndex: number,
+    subSectionIndex: number,
+    pointIndex: number,
+    newText: string
+  ) => {
+    const newData = [...structuredMap];
+    if (
+      !newData[sectionIndex] ||
+      !newData[sectionIndex].sub_sections ||
+      !newData[sectionIndex].sub_sections[subSectionIndex] ||
+      !newData[sectionIndex].sub_sections[subSectionIndex].sub_points
+    )
+      return;
+
+    newData[sectionIndex].sub_sections[subSectionIndex].sub_points[pointIndex] = newText;
+    setStructuredMap(newData);
+
+    const jsonString = stringifyIdeaMap(newData);
+    handleEditFormChange('tweet_main', jsonString);
   };
 
   // 백그라운드 처리 핸들러
@@ -587,15 +839,6 @@ YouTube 링크를 입력하세요...`;
             {/* AI 분석 모드 UI */}
             {mode === 'analyze' && (
               <div className="flex">
-                {/* <div className="mr-[6px]">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-                    <img
-                      src={profile.avatar}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div> */}
                 <div className="flex-1">
                   <textarea
                     className="w-full border-0 focus:ring-0 focus:outline-none resize-none p-2 min-h-[68vh]"
@@ -619,6 +862,7 @@ YouTube 링크를 입력하세요...`;
                       {/* 목적 버튼 그룹 - 작은 화면에서도 잘 보이도록 수정 */}
                       <div className="flex flex-wrap gap-2 text-emerald-600">
                         <button
+                          type="button"
                           className={`px-2 py-1 text-sm rounded ${
                             selectedPurpose === '일반'
                               ? 'bg-emerald-600 text-gray-100'
@@ -629,6 +873,7 @@ YouTube 링크를 입력하세요...`;
                           일반
                         </button>
                         <button
+                          type="button"
                           className={`px-2 py-1 text-sm rounded ${
                             selectedPurpose === '업무' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
@@ -637,6 +882,7 @@ YouTube 링크를 입력하세요...`;
                           업무
                         </button>
                         <button
+                          type="button"
                           className={`px-2 py-1 text-sm rounded ${
                             selectedPurpose === '개인' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
@@ -644,15 +890,8 @@ YouTube 링크를 입력하세요...`;
                         >
                           개인
                         </button>
-                        {/* <button
-                          className={`px-2 py-1 text-sm rounded ${
-                            selectedPurpose === '할일' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
-                          }`}
-                          onClick={() => handlePurposeSelect('할일')}
-                        >
-                          할일
-                        </button> */}
                         <button
+                          type="button"
                           className={`px-2 py-1 text-sm rounded ${
                             selectedPurpose === '학습' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
@@ -672,6 +911,7 @@ YouTube 링크를 입력하세요...`;
                           {characterCount}/10000
                         </div>
                         <button
+                          type="button"
                           className={`rounded-full px-4 py-1 text-white font-bold ${
                             !inputText.trim() || isSubmitting || characterCount > 10000
                               ? 'bg-emerald-400 cursor-not-allowed'
@@ -697,131 +937,359 @@ YouTube 링크를 입력하세요...`;
 
             {/* 직접 수정 모드 UI */}
             {mode === 'direct' && (
-              <div className="space-y-4">
-                {/* 제목 수정 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    value={editFormData.title}
-                    onChange={(e) => handleEditFormChange('title', e.target.value)}
-                  />
-                </div>
+              <div className="space-y-6">
+                {/* 기본 정보 섹션 */}
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <span className="mr-2">📝</span> 기본 정보
+                  </h3>
 
-                {/* 핵심 문장 수정 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">핵심 문장</label>
-                  <textarea
-                    className="w-full p-2 border border-gray-300 rounded-md min-h-12"
-                    value={editFormData.key_sentence}
-                    onChange={(e) => handleEditFormChange('key_sentence', e.target.value)}
-                  ></textarea>
-                </div>
+                  {/* 제목 수정 */}
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      제목
+                      <span className="ml-1 text-xs text-gray-400">
+                        (메모의 주제를 나타내는 제목)
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      value={editFormData.title}
+                      onChange={(e) => handleEditFormChange('title', e.target.value)}
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">목적</label>
-                  <div className="flex flex-wrap gap-2">
-                    {['일반', '업무', '개인', '할일', '학습'].map((purpose) => (
-                      <button
-                        key={purpose}
-                        type="button"
-                        className={`px-3 py-1 text-sm rounded-md ${
-                          editFormData.purpose === purpose
-                            ? 'bg-teal-500 text-white'
-                            : 'bg-gray-100 text-teal-500'
-                        }`}
-                        onClick={() => handleEditFormChange('purpose', purpose)}
-                      >
-                        {purpose}
-                      </button>
-                    ))}
+                  {/* 아이디어 수정 */}
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      아이디어
+                      <span className="ml-1 text-xs text-gray-400">
+                        (메모의 핵심 내용을 한 문장으로)
+                      </span>
+                    </label>
+                    <textarea
+                      className="w-full p-2 border border-gray-300 rounded-md min-h-12"
+                      value={editFormData.key_sentence}
+                      onChange={(e) => handleEditFormChange('key_sentence', e.target.value)}
+                    ></textarea>
+                  </div>
+
+                  {/* 카테고리 수정 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">분류</label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      value={editFormData.category}
+                      onChange={(e) => handleEditFormChange('category', e.target.value)}
+                    >
+                      <option value="">분류 선택</option>
+                      <option value="인문/철학">인문/철학</option>
+                      <option value="경영/경제">경영/경제</option>
+                      <option value="언어">언어</option>
+                      <option value="역사">역사</option>
+                      <option value="정치">정치</option>
+                      <option value="사회">사회</option>
+                      <option value="국제">국제</option>
+                      <option value="과학/IT">과학/IT</option>
+                      <option value="수학">수학</option>
+                      <option value="기술/공학">기술/공학</option>
+                      <option value="의학/건강">의학/건강</option>
+                      <option value="예술/문화">예술/문화</option>
+                      <option value="문학/창작">문학/창작</option>
+                      <option value="개인">개인</option>
+                      <option value="학습">학습</option>
+                      <option value="업무">업무</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* 트윗 내용 수정 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">트윗 내용</label>
-                  <textarea
-                    className="w-full p-2 border border-gray-300 rounded-md min-h-24"
-                    value={editFormData.tweet_main}
-                    onChange={(e) => handleEditFormChange('tweet_main', e.target.value)}
-                  ></textarea>
-                </div>
+                {/* 아이디어 맵 섹션 */}
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <span className="mr-2">🗺️</span> 아이디어 맵
+                    <span className="ml-1 text-xs text-gray-400">
+                      (메모의 내용을 구조화된 형태로)
+                    </span>
+                  </h3>
 
-                {/* 스레드 수정 */}
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="block text-sm font-medium text-gray-700">스레드</label>
+                  <div className="space-y-4 border border-gray-200 rounded-md p-4 bg-white">
+                    {structuredMap.map((section, sectionIndex) => (
+                      <div key={sectionIndex} className="bg-gray-50 p-3 rounded border">
+                        <div className="flex items-center mb-2">
+                          <span className="mr-2 font-bold text-sm">{sectionIndex + 1}.</span>
+                          <input
+                            type="text"
+                            className="flex-1 p-2 border border-gray-300 rounded"
+                            value={section.heading || ''}
+                            onChange={(e) => updateSectionHeading(sectionIndex, e.target.value)}
+                            placeholder="섹션 제목"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeSection(sectionIndex)}
+                            className="ml-2 text-red-500"
+                            disabled={structuredMap.length <= 1}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+
+                        {/* 포인트 목록 */}
+                        <div className="ml-6 space-y-2 mb-3">
+                          {(section.points || []).map((point, pointIndex) => (
+                            <div key={pointIndex} className="flex items-start">
+                              <span className="mt-2 mr-2">•</span>
+                              <textarea
+                                className="flex-1 p-2 border border-gray-300 rounded text-sm"
+                                value={point || ''}
+                                onChange={(e) =>
+                                  updateSectionPoint(sectionIndex, pointIndex, e.target.value)
+                                }
+                                placeholder="포인트 내용"
+                                rows={2}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removePoint(sectionIndex, pointIndex)}
+                                className="ml-2 text-red-500"
+                                disabled={(section.points || []).length <= 1}
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ))}
+
+                          <button
+                            type="button"
+                            onClick={() => addPoint(sectionIndex)}
+                            className="mt-2 text-xs bg-teal-500 text-white px-2 py-1 rounded"
+                          >
+                            + 포인트 추가
+                          </button>
+                        </div>
+
+                        {/* 하위 섹션 UI */}
+                        {(section.sub_sections || []).length > 0 && (
+                          <div className="ml-6 mt-3 border-l-2 border-teal-200 pl-3">
+                            <p className="text-sm font-medium text-gray-600 mb-2">하위 섹션</p>
+
+                            {(section.sub_sections || []).map((subSection, subSectionIndex) => (
+                              <div key={subSectionIndex} className="mb-3 bg-white p-2 rounded">
+                                <div className="flex items-center mb-2">
+                                  <span className="mr-2 text-xs">▷</span>
+                                  <input
+                                    type="text"
+                                    className="flex-1 p-1 text-sm border border-gray-300 rounded"
+                                    value={subSection.sub_heading || ''}
+                                    onChange={(e) =>
+                                      updateSubSectionHeading(
+                                        sectionIndex,
+                                        subSectionIndex,
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="하위 섹션 제목"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeSubSection(sectionIndex, subSectionIndex)}
+                                    className="ml-2 text-red-500"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+
+                                {/* 하위 포인트 목록 */}
+                                <div className="ml-4 space-y-1">
+                                  {(subSection.sub_points || []).map((subPoint, subPointIndex) => (
+                                    <div key={subPointIndex} className="flex items-start">
+                                      <span className="mt-1 mr-1 text-xs">•</span>
+                                      <textarea
+                                        className="flex-1 p-1 text-sm border border-gray-300 rounded"
+                                        value={subPoint || ''}
+                                        onChange={(e) =>
+                                          updateSubSectionPoint(
+                                            sectionIndex,
+                                            subSectionIndex,
+                                            subPointIndex,
+                                            e.target.value
+                                          )
+                                        }
+                                        placeholder="하위 포인트 내용"
+                                        rows={1}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          removeSubSectionPoint(
+                                            sectionIndex,
+                                            subSectionIndex,
+                                            subPointIndex
+                                          )
+                                        }
+                                        className="ml-1 text-red-500"
+                                        disabled={(subSection.sub_points || []).length <= 1}
+                                      >
+                                        <X size={14} />
+                                      </button>
+                                    </div>
+                                  ))}
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      addSubSectionPoint(sectionIndex, subSectionIndex)
+                                    }
+                                    className="mt-1 text-xs bg-teal-400 text-white px-1.5 py-0.5 rounded"
+                                  >
+                                    + 포인트 추가
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+
+                            <button
+                              type="button"
+                              onClick={() => addSubSection(sectionIndex)}
+                              className="text-xs text-teal-600 bg-teal-50 px-2 py-1 rounded mt-1"
+                            >
+                              + 하위 섹션 추가
+                            </button>
+                          </div>
+                        )}
+
+                        {/* 섹션에 아직 하위 섹션이 없을 경우 추가 버튼 */}
+                        {(section.sub_sections || []).length === 0 && (
+                          <button
+                            type="button"
+                            onClick={() => addFirstSubSection(sectionIndex)}
+                            className="ml-6 text-xs text-teal-600 bg-teal-50 px-2 py-1 rounded"
+                          >
+                            + 하위 섹션 추가
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
                     <button
                       type="button"
-                      className="text-xs bg-teal-500 text-white px-2 py-1 rounded-md"
-                      onClick={handleAddThreadItem}
+                      onClick={addSection}
+                      className="w-full text-center text-teal-600 bg-teal-50 hover:bg-teal-100 py-2 rounded"
                     >
-                      + 항목 추가
+                      + 새 섹션 추가
                     </button>
                   </div>
+                </div>
 
-                  {editFormData.thread.map((item, index) => (
-                    <div key={index} className="flex mb-2">
-                      <textarea
-                        className="flex-1 p-2 border border-gray-300 rounded-md min-h-12"
-                        value={item}
-                        onChange={(e) => handleThreadItemChange(index, e.target.value)}
-                      ></textarea>
+                {/* 주요 내용 섹션 */}
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <span className="mr-2">📄</span> 주요 내용
+                  </h3>
 
+                  {/* 주요 내용(이전 스레드) 수정 */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        주요 내용
+                        <span className="ml-1 text-xs text-gray-400">
+                          (내용을 단계별로 구분하여 설명)
+                        </span>
+                      </label>
                       <button
                         type="button"
-                        className="ml-2 text-red-500"
-                        onClick={() => handleRemoveThreadItem(index)}
-                        disabled={editFormData.thread.length <= 1}
+                        className="text-xs bg-teal-500 text-white px-2 py-1 rounded-md"
+                        onClick={handleAddThreadItem}
                       >
-                        <X size={18} />
+                        + 항목 추가
                       </button>
                     </div>
-                  ))}
+
+                    <div className="space-y-2">
+                      {editFormData.thread.map((item, index) => (
+                        <div key={index} className="flex">
+                          <textarea
+                            className="flex-1 p-2 border border-gray-300 rounded-md min-h-12"
+                            value={item}
+                            onChange={(e) => handleThreadItemChange(index, e.target.value)}
+                            placeholder={`주요 내용 #${index + 1}`}
+                          ></textarea>
+
+                          <button
+                            type="button"
+                            className="ml-2 text-red-500"
+                            onClick={() => handleRemoveThreadItem(index)}
+                            disabled={editFormData.thread.length <= 1}
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                {/* 카테고리 수정 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
-                  <select
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    value={editFormData.category}
-                    onChange={(e) => handleEditFormChange('category', e.target.value)}
-                  >
-                    <option value="">카테고리 선택</option>
-                    <option value="인문/철학">인문/철학</option>
-                    <option value="경영/경제">경영/경제</option>
-                    <option value="언어">언어</option>
-                    <option value="역사">역사</option>
-                    <option value="정치">정치</option>
-                    <option value="사회">사회</option>
-                    <option value="국제">국제</option>
-                    <option value="과학/IT">과학/IT</option>
-                    <option value="수학">수학</option>
-                    <option value="기술/공학">기술/공학</option>
-                    <option value="의학/건강">의학/건강</option>
-                    <option value="예술/문화">예술/문화</option>
-                    <option value="문학/창작">문학/창작</option>
-                    <option value="개인">개인</option>
-                    <option value="학습">학습</option>
-                    <option value="업무">업무</option>
-                  </select>
-                </div>
+                {/* 태그 및 라벨링 섹션 */}
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <span className="mr-2">🏷️</span> 태그 및 목적
+                  </h3>
 
-                {/* 키워드 수정 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    키워드 (쉼표로 구분)
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    value={keywordsInput}
-                    onChange={handleKeywordsInputChange}
-                    placeholder="키워드1, 키워드2, 키워드3"
-                  />
+                  {/* 사용 목적 */}
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      사용 목적
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {['일반', '업무', '개인', '학습'].map((purpose) => (
+                        <button
+                          key={purpose}
+                          type="button"
+                          className={`px-3 py-1 text-sm rounded-md ${
+                            editFormData.purpose === purpose
+                              ? 'bg-teal-500 text-white'
+                              : 'bg-gray-100 text-teal-500'
+                          }`}
+                          onClick={() => handleEditFormChange('purpose', purpose)}
+                        >
+                          {purpose}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 키워드 수정 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      키워드
+                      <span className="ml-1 text-xs text-gray-400">(쉼표로 구분)</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      value={keywordsInput}
+                      onChange={handleKeywordsInputChange}
+                      placeholder="키워드1, 키워드2, 키워드3"
+                    />
+
+                    {/* 키워드 태그 미리보기 */}
+                    {keywordsInput.trim() && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {keywordsInput.split(',').map(
+                          (keyword, idx) =>
+                            keyword.trim() && (
+                              <span
+                                key={idx}
+                                className="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full"
+                              >
+                                #{keyword.trim()}
+                              </span>
+                            )
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {error && (
@@ -831,9 +1299,18 @@ YouTube 링크를 입력하세요...`;
                   </div>
                 )}
 
-                {/* 저장 버튼 */}
-                <div className="flex justify-end pt-2">
+                {/* 미리보기 토글 버튼 */}
+                <div className="flex justify-between pt-2">
                   <button
+                    type="button"
+                    className="text-teal-600 text-sm"
+                    onClick={() => setShowPreview((prev) => !prev)}
+                  >
+                    {showPreview ? '미리보기 닫기' : '미리보기 보기'}
+                  </button>
+
+                  <button
+                    type="button"
                     className={`rounded-full px-4 py-1 text-white font-bold ${
                       isSubmitting
                         ? 'bg-teal-300 cursor-not-allowed'
@@ -845,6 +1322,56 @@ YouTube 링크를 입력하세요...`;
                     {isSubmitting ? <Loader size={16} className="animate-spin" /> : '저장'}
                   </button>
                 </div>
+
+                {/* 미리보기 영역 */}
+                {showPreview && (
+                  <div className="mt-4 border p-4 rounded-lg">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">수정 미리보기</h3>
+                    <div className="bg-white p-3 rounded border">
+                      <h4 className="font-medium">{editFormData.title || '(제목 없음)'}</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {editFormData.key_sentence || '(아이디어 없음)'}
+                      </p>
+
+                      <div className="mt-2">
+                        <p className="text-sm">
+                          {editFormData.tweet_main
+                            ? '아이디어 맵이 있습니다'
+                            : '(아이디어 맵 없음)'}
+                        </p>
+                      </div>
+
+                      {editFormData.thread.length > 0 && editFormData.thread[0] && (
+                        <div className="mt-2 text-sm text-gray-700">
+                          <p>주요 내용 ({editFormData.thread.length}개 항목)</p>
+                        </div>
+                      )}
+
+                      <div className="mt-2 flex items-center">
+                        <span className="text-xs bg-gray-200 rounded px-2 py-0.5">
+                          {editFormData.category || '미분류'}
+                        </span>
+                        <span className="ml-2 text-xs bg-teal-100 rounded px-2 py-0.5">
+                          {editFormData.purpose}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {keywordsInput.split(',').map(
+                          (keyword, idx) =>
+                            keyword.trim() && (
+                              <span
+                                key={idx}
+                                className="bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded-full"
+                              >
+                                #{keyword.trim()}
+                              </span>
+                            )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
