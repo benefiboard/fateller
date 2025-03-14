@@ -1,33 +1,3 @@
-{
-  /* 원본이미지와 제목 */
-}
-{
-  /* {memo.original_image && (
-              <div className="flex flex-col gap-2 mt-2">
-                <hr className="w-full" />
-
-                <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50 mt-1">
-                  <div className="h-16 col-span-3 relative">
-                    <img
-                      src={memo.original_image}
-                      alt="Original Image"
-                      className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        // 이미지 로드 실패 시 대체 이미지나 에러 처리
-                        console.log('이미지 로드 실패:', e);
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                  <p className="col-span-5 text-sm leading-tight text-gray-600 flex-grow overflow-hidden">
-                    {memo.original_title || 'no title'}
-                  </p>
-                </div>
-              </div>
-            )} */
-}
-
 // MemoContent.tsx - 타이핑 즉시 완료 기능 추가
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -628,6 +598,32 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 </span>
               ))}
             </div>
+
+            {/* 원본이미지와 제목 */}
+            {memo.original_image && (
+              <div className="flex flex-col gap-2 mt-2">
+                <hr className="w-full" />
+
+                <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50 mt-1">
+                  <div className="h-16 col-span-3 relative">
+                    <img
+                      src={memo.original_image}
+                      alt="Original Image"
+                      className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        // 이미지 로드 실패 시 대체 이미지나 에러 처리
+                        console.log('이미지 로드 실패:', e);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <p className="col-span-5 text-sm leading-tight text-gray-600 flex-grow overflow-hidden">
+                    {memo.original_title || 'no title'}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         );
       case 1: // 아이디어 맵 - 이미 완료된 경우 바로 표시
