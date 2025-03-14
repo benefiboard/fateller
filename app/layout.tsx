@@ -37,10 +37,10 @@ export const viewport: Viewport = {
 };
 
 const APP_NAME = 'BrainLabel';
-const APP_DESCRIPTION = '찍으면 끝나는 메모 관리, AI가 자동으로 분석하고 연결합니다';
+const APP_DESCRIPTION = '아이디어 관리, AI가 자동으로 분석하고 연결합니다';
 
 export const metadata: Metadata = {
-  title: 'BrainLabel - 메모 AI 분석 및 관리',
+  title: 'BrainLabel - 아이디어 AI 분석 및 관리',
   description: APP_DESCRIPTION,
   manifest: '/manifest.json',
   icons: {
