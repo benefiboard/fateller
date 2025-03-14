@@ -5,6 +5,7 @@ import { Memo } from '../utils/types';
 import { Sparkle, ChevronDown, ChevronUp, ExternalLink, Quote, Share } from 'lucide-react';
 import Link from 'next/link';
 import ShareButton from './ShareButton';
+import Typewriter from 'typewriter-effect';
 
 // 탭 인덱스 타입 정의
 type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 아이디어 맵(이전 핵심 문장), 2: 주요 내용(이전 1), 3: 원문
@@ -205,9 +206,22 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {/* 핵심 문장을 강조 - 심플한 디자인 */}
             <div className=" p-4 py-8 my-4 rounded-lg border-2 bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-200 shadow-md animate-gradient">
               <div className="relative p-2">
-                <p className="text-lg font-medium text-gray-100 ">
+                {/* <p className="text-lg font-medium text-gray-100 ">
                   {renderHTML(memo.labeling.key_sentence)}
-                </p>
+                </p> */}
+                <Typewriter
+                  onInit={(typewriter) => {
+                    // HTML 태그 처리된 텍스트가 있는 경우
+                    const processedText = processStrongTags(memo.labeling.key_sentence);
+
+                    typewriter.typeString(processedText).pauseFor(1000).start();
+                  }}
+                  options={{
+                    cursor: '',
+                    delay: 80,
+                    wrapperClassName: 'text-lg font-medium text-gray-100',
+                  }}
+                />
               </div>
             </div>
 
