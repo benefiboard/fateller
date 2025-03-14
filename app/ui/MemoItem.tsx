@@ -1,7 +1,7 @@
 // app/ui/MemoItem.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   MoreHorizontal,
   Pencil,
@@ -74,6 +74,43 @@ const MemoItem: React.FC<MemoItemProps> = ({
 
   // 새로운 상태: 저장됨 표시
   const [isSaved, setIsSaved] = useState(false);
+
+  // 메모가 화면에 보이는지 감지하기 위한 상태
+  const [isVisible, setIsVisible] = useState(false);
+
+  // 메모의 ref 생성
+  const memoRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer 설정
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // 화면에 50% 이상 보이면 visible로 설정
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          // 한 번 보여진 후에는 관찰 중단
+          if (memoRef.current) {
+            observer.unobserve(memoRef.current);
+          }
+        }
+      },
+      {
+        threshold: 0.35, // 50% 이상 보일 때 콜백 실행
+      }
+    );
+
+    // ref가 있으면 관찰 시작
+    if (memoRef.current) {
+      observer.observe(memoRef.current);
+    }
+
+    // 컴포넌트 언마운트 시 관찰 중단
+    return () => {
+      if (memoRef.current) {
+        observer.unobserve(memoRef.current);
+      }
+    };
+  }, []);
 
   const toggleOptions = () => {
     setShowOptions(!showOptions);
@@ -166,38 +203,11 @@ const MemoItem: React.FC<MemoItemProps> = ({
     }
   };
 
-  // 카테고리에 따른 배경색 반환 함수 (선택 사항)
-  // const getCategoryBgColor = () => {
-  //   const category = memo.labeling?.category || '';
-
-  //   switch (category) {
-  //     case '인문/철학':
-  //       return 'bg-purple-100 text-purple-600';
-  //     case '경영/경제':
-  //       return 'bg-blue-100 text-blue-600';
-  //     case '정치':
-  //       return 'bg-red-100 text-red-600';
-  //     case '사회과학':
-  //       return 'bg-amber-100 text-amber-600';
-  //     case '자연과학':
-  //       return 'bg-green-100 text-green-600';
-  //     case '수학':
-  //       return 'bg-indigo-100 text-indigo-600';
-  //     case '기술/공학':
-  //       return 'bg-gray-100 text-gray-600';
-  //     case '의학/건강':
-  //       return 'bg-rose-100 text-rose-600';
-  //     case '예술/문화':
-  //       return 'bg-pink-100 text-pink-600';
-  //     case '문학/창작':
-  //       return 'bg-orange-100 text-orange-600';
-  //     default:
-  //       return 'bg-emerald-100 text-emerald-600';
-  //   }
-  // };
-
   return (
-    <article className="p-4 pl-2 border-b border-gray-200 hover:bg-gray-50 transition-colors">
+    <article
+      ref={memoRef}
+      className="p-4 pl-2 border-b border-gray-200 hover:bg-gray-50 transition-colors"
+    >
       <div className="flex">
         {/* 카테고리 아이콘 (각 카테고리에 맞게 변경) */}
         <div className="mr-1 flex-shrink-0">
@@ -312,6 +322,7 @@ const MemoItem: React.FC<MemoItemProps> = ({
             onToggleThread={() => memo.id && onToggleThread(memo.id)}
             onToggleLabeling={() => memo.id && onToggleLabeling(memo.id)}
             onToggleOriginal={() => memo.id && onToggleOriginal(memo.id)}
+            isVisible={isVisible}
           />
         </div>
       </div>
