@@ -13,6 +13,7 @@ import LeftSidebar from './ui/LeftSidebar';
 import RightSidebar from './ui/RightSidebar';
 import BottomNavigation from './ui/BottomNavigation';
 import Header from './ui/Header';
+import { PWAProviders } from './layout-component/PWAProviders';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -35,9 +36,12 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
+const APP_NAME = 'BrainLabel';
+const APP_DESCRIPTION = '찍으면 끝나는 메모 관리, AI가 자동으로 분석하고 연결합니다';
+
 export const metadata: Metadata = {
   title: 'BrainLabel - 메모 AI 분석 및 관리',
-  description: '찍으면 끝나는 메모 관리',
+  description: APP_DESCRIPTION,
   manifest: '/manifest.json',
   icons: {
     icon: '/icons/icon-192x192.png',
@@ -45,19 +49,30 @@ export const metadata: Metadata = {
     apple: '/icons/icon-192x192.png',
   },
   appleWebApp: {
-    title: 'BrainLabel',
+    title: APP_NAME,
     statusBarStyle: 'default',
     capable: true,
   },
-  applicationName: 'BrainLabel',
+  applicationName: APP_NAME,
   formatDetection: {
     telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    siteName: APP_NAME,
+    title: 'BrainLabel - 메모 AI 분석 및 관리',
+    description: APP_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary',
+    title: 'BrainLabel - 메모 AI 분석 및 관리',
+    description: APP_DESCRIPTION,
   },
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
-    'apple-mobile-web-app-title': 'BrainLabel',
+    'apple-mobile-web-app-title': APP_NAME,
   },
 };
 
@@ -82,41 +97,43 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white`}>
-        {/* <MobileDetector> */}
-        {/* X 스타일 레이아웃 */}
-        <div className="min-h-screen flex justify-center">
-          {/* 전체 레이아웃 컨테이너 */}
-          <div className="flex w-full max-w-7xl">
-            {/* 왼쪽 사이드바 - 모바일에서는 숨김, 태블릿/데스크탑에서 보임 */}
-            <div className="hidden md:block md:w-[68px] lg:w-[275px] h-screen sticky top-0 border-r border-gray-200">
-              <LeftSidebar minimized={false} />
-            </div>
+        <PWAProviders>
+          {/* <MobileDetector> */}
+          {/* X 스타일 레이아웃 */}
+          <div className="min-h-screen flex justify-center">
+            {/* 전체 레이아웃 컨테이너 */}
+            <div className="flex w-full max-w-7xl">
+              {/* 왼쪽 사이드바 - 모바일에서는 숨김, 태블릿/데스크탑에서 보임 */}
+              <div className="hidden md:block md:w-[68px] lg:w-[275px] h-screen sticky top-0 border-r border-gray-200">
+                <LeftSidebar minimized={false} />
+              </div>
 
-            {/* 메인 컨텐츠 영역 */}
-            <main className="flex-1 min-h-screen max-w-md w-full mx-auto border-x border-gray-200 relative">
-              {/* 메인 컨텐츠 */}
-              {children}
+              {/* 메인 컨텐츠 영역 */}
+              <main className="flex-1 min-h-screen max-w-md w-full mx-auto border-x border-gray-200 relative">
+                {/* 메인 컨텐츠 */}
+                {children}
 
-              {/* 모바일 전용 하단 네비게이션 - 태블릿/데스크탑에서는 숨김 */}
-              {/* {shouldShowNav && (
-                  <div className="md:hidden">
-                    <BottomNavigation />
-                  </div>
-                )} */}
-            </main>
+                {/* 모바일 전용 하단 네비게이션 - 태블릿/데스크탑에서는 숨김 */}
+                {/* {shouldShowNav && (
+                    <div className="md:hidden">
+                      <BottomNavigation />
+                    </div>
+                  )} */}
+              </main>
 
-            {/* 오른쪽 사이드바 - 데스크탑에서만 보임 */}
-            <div className="hidden lg:block w-[350px] h-screen sticky top-0 pl-4">
-              <RightSidebar />
+              {/* 오른쪽 사이드바 - 데스크탑에서만 보임 */}
+              <div className="hidden lg:block w-[350px] h-screen sticky top-0 pl-4">
+                <RightSidebar />
+              </div>
             </div>
           </div>
-        </div>
 
-        <StoreInitializer currentUser={currentUser} />
-        <MysticSymbolsEffect />
-        {/* </MobileDetector> */}
-        <AnalyticsTracker currentUser={currentUser} />
-        <SpeedInsights />
+          <StoreInitializer currentUser={currentUser} />
+          <MysticSymbolsEffect />
+          {/* </MobileDetector> */}
+          <AnalyticsTracker currentUser={currentUser} />
+          <SpeedInsights />
+        </PWAProviders>
       </body>
     </html>
   );

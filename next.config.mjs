@@ -1,8 +1,34 @@
 // next.config.mjs
 
-/** @type {import('next').NextConfig} */
-import withPWA from 'next-pwa';
+import withPWAInit from '@ducanh2912/next-pwa';
 
+const withPWA = withPWAInit({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+  workboxOptions: {
+    // 기존 buildExcludes 옵션을 exclude로 변경
+    exclude: [/middleware-manifest\.json$/],
+    // 외부 링크 처리를 위한 runtimeCaching 설정
+    runtimeCaching: [
+      {
+        urlPattern: /^https:\/\/link\.coupang\.com/,
+        handler: 'NetworkOnly',
+        options: {
+          backgroundSync: {
+            name: 'external-links',
+            options: {
+              maxRetentionTime: 60 * 60 * 24, // 24시간
+            },
+          },
+        },
+      },
+    ],
+  },
+});
+
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['timezone'],
@@ -28,27 +54,4 @@ const nextConfig = {
   transpilePackages: ['youtube-transcript-api', 'cheerio'],
 };
 
-const withPWAConfig = withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  buildExcludes: [/middleware-manifest\.json$/],
-  // 외부 링크 처리를 위한 추가 설정
-  runtimeCaching: [
-    {
-      urlPattern: /^https:\/\/link\.coupang\.com/,
-      handler: 'NetworkOnly',
-      options: {
-        backgroundSync: {
-          name: 'external-links',
-          options: {
-            maxRetentionTime: 60 * 60 * 24, // 24시간
-          },
-        },
-      },
-    },
-  ],
-});
-
-export default withPWAConfig(nextConfig);
+export default withPWA(nextConfig);
