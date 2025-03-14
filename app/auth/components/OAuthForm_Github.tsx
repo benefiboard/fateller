@@ -23,7 +23,7 @@ export default function GithubButton() {
   }, [supabase.auth]);
 
   return (
-    <Button onClick={loginWithGithub} className="w-full flex gap-2">
+    <Button onClick={loginWithGithub} className="w-full flex gap-2 bg-emerald-800">
       <FaGithub size="1.6rem" fill="#eee" />
       Sign in with GitHub
     </Button>

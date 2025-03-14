@@ -104,7 +104,7 @@ export default async function RootLayout({
             {/* 전체 레이아웃 컨테이너 */}
             <div className="flex w-full max-w-7xl">
               {/* 왼쪽 사이드바 - 모바일에서는 숨김, 태블릿/데스크탑에서 보임 */}
-              <div className="hidden md:block md:w-[68px] lg:w-[275px] h-screen sticky top-0 border-r border-gray-200">
+              <div className="hidden md:block md:w-[68px] lg:w-[275px] h-screen sticky top-0 ">
                 <LeftSidebar minimized={false} />
               </div>
 

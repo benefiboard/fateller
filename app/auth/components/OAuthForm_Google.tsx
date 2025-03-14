@@ -23,7 +23,7 @@ export default function GoogleButton() {
   }, [supabase.auth]);
 
   return (
-    <Button onClick={loginWithGoogle} className="w-full flex gap-2">
+    <Button onClick={loginWithGoogle} className="w-full flex gap-2 bg-emerald-800">
       <FaGoogle size="1.6rem" fill="#eee" />
       Sign in with Google
     </Button>

@@ -1,4 +1,3 @@
-// app/ui/LeftSidebar.tsx
 'use client';
 
 import React from 'react';
@@ -62,6 +61,11 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({
 const LeftSidebar: React.FC<{ minimized?: boolean }> = ({ minimized = false }) => {
   const pathname = usePathname();
   const toggleSearch = useSearchStore((state) => state.toggleSearch);
+
+  // auth 경로에서는 사이드바를 표시하지 않음
+  if (pathname?.startsWith('/auth')) {
+    return null;
+  }
 
   return (
     <div className="h-full py-2 flex flex-col justify-between">

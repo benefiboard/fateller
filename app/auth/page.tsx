@@ -48,12 +48,12 @@ export default async function AuthPage() {
       <div className="w-full max-w-md mx-auto space-y-8">
         {/* 로고 */}
         <div className="flex justify-center">
-          <div className="relative w-48 h-12 sm:w-56 sm:h-14">
+          <div className="relative w-48 h-48 ">
             <Image
-              src="/logo-benefipic.png"
+              src="/icons/icon-512x512.png"
               alt="Benefipic-logo"
               fill
-              className="object-contain"
+              className="object-cover"
               priority
             />
           </div>

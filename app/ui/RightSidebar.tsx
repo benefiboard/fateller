@@ -1,8 +1,8 @@
-// app/ui/RightSidebar.tsx
 'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Lightbulb,
   BookOpen,
@@ -41,6 +41,13 @@ const CATEGORIES = [
 type SectionKey = 'stats' | 'recentMemos' | 'categories' | 'futureFeatures';
 
 const RightSidebar = () => {
+  const pathname = usePathname();
+
+  // auth 경로에서는 사이드바를 표시하지 않음
+  if (pathname?.startsWith('/auth')) {
+    return null;
+  }
+
   // 사이드바 섹션 확장/축소 상태 관리
   // 첫 번째 섹션만 열어두고 나머지는 접어둠
   const [expandedSections, setExpandedSections] = useState({
