@@ -5,6 +5,7 @@ import './globals.css';
 import { getUser } from '@/lib/supabse/server';
 import { headers } from 'next/headers';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/react';
 import StoreInitializer from './layout-component/StoreInitializer';
 import MysticSymbolsEffect from './layout-component/BubbleEffect/MysticSymbolsEffect';
 import AnalyticsTracker from './layout-component/AnalyticsTracker';
@@ -132,6 +133,7 @@ export default async function RootLayout({
           <MysticSymbolsEffect />
           {/* </MobileDetector> */}
           <AnalyticsTracker currentUser={currentUser} />
+          <Analytics />
           <SpeedInsights />
         </PWAProviders>
       </body>
