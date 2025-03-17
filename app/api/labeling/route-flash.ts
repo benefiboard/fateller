@@ -441,7 +441,7 @@ const TIMEOUT_DURATION = 25000;
 
 // Google Generative AI API 인스턴스 설정
 const setupGeminiAPI = () => {
-  const apiKey = process.env.GEMINI_API_KEY || 'AIzaSyBRXKuxlyZCCGO126mbs3BT66uGnSfiQUE';
+  const apiKey = process.env.GEMINI_API_KEY || 'envlocal';
   return new GoogleGenerativeAI(apiKey);
 };
 
