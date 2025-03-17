@@ -978,13 +978,13 @@ YouTube 링크를 입력하세요...`;
                           }`}
                         >
                           <div>{characterCount}/10000</div>
-                          <div
+                          {/* <div
                             className={`text-xs ${
                               requiredCredits > 1 ? 'text-amber-600 font-medium' : 'text-gray-500'
                             }`}
                           >
                             필요 크레딧: {requiredCredits}개
-                          </div>
+                          </div> */}
                         </div>
                         <button
                           type="button"

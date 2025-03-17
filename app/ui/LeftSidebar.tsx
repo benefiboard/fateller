@@ -119,7 +119,7 @@ const LeftSidebar: React.FC<{ minimized?: boolean }> = ({ minimized = false }) =
           minimized={minimized}
         /> */}
         <SidebarLink
-          href="/user-info"
+          href="/auth"
           icon={<User size={26} />}
           label="프로필"
           active={pathname === '/profile'}

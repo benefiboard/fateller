@@ -71,10 +71,10 @@ const MobileSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
             <span className="ml-4 text-gray-900">메시지</span>
           </Link> */}
 
-          <Link href="/user-info" className="block py-3 flex items-center">
+          <Link href="/auth" className="block py-3 flex items-center">
             <User
               size={24}
-              className={pathname === '/user-info' ? 'text-emerald-500' : 'text-gray-800'}
+              className={pathname === '/auth' ? 'text-emerald-500' : 'text-gray-800'}
             />
             <span className="ml-4 text-gray-900">프로필</span>
           </Link>

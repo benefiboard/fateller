@@ -73,7 +73,7 @@ const Header = () => {
             <button onClick={() => setMobileMenuOpen(true)} className="md:hidden text-gray-500">
               <Menu size={24} />
             </button>
-            <Link href="/user-info">
+            <Link href="/auth">
               <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
                 {profile.avatar ? (
                   <img src={profile.avatar} alt="프로필" className="w-full h-full object-cover" />
