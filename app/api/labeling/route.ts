@@ -518,16 +518,41 @@ export async function POST(req: NextRequest) {
     const validPurpose = (Object.keys(PROMPTS).includes(purpose) ? purpose : '일반') as Purpose;
     let selectedPrompt = PROMPTS[validPurpose];
 
-    // 기존 캐시된 요약이 있는지 확인 (있으면 크레딧 차감 없이 반환)
+    // 기존 캐시된 요약이 있는지 확인 (있으면 크레딧 무조건 1만 차감 반환)
     if (sourceId) {
       try {
         // 기존 요약 조회
         const summaryResult = await getContentSummary(sourceId, purpose);
 
-        // 2. 기존 요약이 있으면 바로 반환 (크레딧 차감 없음)
+        // 2. 기존 요약이 있으면 1개의 크레딧을 차감하고 반환
         if (summaryResult.existingSummary) {
           const cachedSummary = summaryResult.summary;
           console.log(`캐싱된 요약 사용: sourceId=${sourceId}, purpose=${purpose}`);
+
+          // 여기에 크레딧 차감 로직 추가 (항상 1개만 차감)
+          const newCreditsRemaining = creditsData.credits_remaining - 1;
+          const { data: updateData, error: updateError } = await supabase
+            .from('user_credits')
+            .update({ credits_remaining: newCreditsRemaining })
+            .eq('user_id', userId)
+            .select('credits_remaining')
+            .single();
+
+          if (updateError) {
+            console.error('캐시 사용 시 크레딧 차감 오류:', updateError);
+            return NextResponse.json(
+              {
+                error: '크레딧 차감에 실패했습니다.',
+                originalTitle: originalTitle || '',
+                originalImage: originalImage || '',
+              },
+              { status: 500 }
+            );
+          }
+
+          console.log(
+            `캐시 데이터 사용으로 크레딧 1개 차감, 남은 크레딧: ${updateData.credits_remaining}`
+          );
 
           return NextResponse.json({
             title: cachedSummary.title,
@@ -544,10 +569,10 @@ export async function POST(req: NextRequest) {
             // 추가 정보
             sourceId: sourceId,
             embeddingId: cachedSummary.embedding_id,
-            // 크레딧 정보 추가
+            // 크레딧 정보 업데이트 - 1개 사용했음을 반영
             credits: {
-              remaining: creditsData.credits_remaining,
-              used: 0, // 캐시 사용 시 크레딧 미사용
+              remaining: updateData.credits_remaining,
+              used: 1, // 캐시 사용 시에도 1 크레딧 사용
             },
           });
         }
