@@ -96,9 +96,6 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
   // 미리보기 상태
   const [showPreview, setShowPreview] = useState(false);
 
-  // 크레딧
-  const [requiredCredits, setRequiredCredits] = useState(1);
-
   // 목적 선택 핸들러 추가
   const handlePurposeSelect = (purpose: string) => {
     setSelectedPurpose(purpose);
@@ -197,10 +194,6 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     const text = e.target.value;
     setInputText(text);
     setCharacterCount(text.length);
-
-    // 필요 크레딧 계산
-    const required = Math.max(1, Math.ceil(text.length / 10000));
-    setRequiredCredits(required);
   };
 
   // 폼 필드 변경 처리 함수
@@ -935,17 +928,6 @@ YouTube 링크를 입력하세요...`;
                             '작성'
                           )}
                         </button>
-
-                        <div className="flex justify-between text-xs mt-1">
-                          <div className="text-gray-500">{characterCount} 자</div>
-                          <div
-                            className={
-                              requiredCredits > 1 ? 'font-medium text-amber-600' : 'text-gray-500'
-                            }
-                          >
-                            필요 크레딧: {requiredCredits}개
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </div>
