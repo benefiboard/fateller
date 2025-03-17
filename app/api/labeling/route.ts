@@ -1,4 +1,3 @@
-// app/api/labeling/route.ts
 import { getContentSummary } from '@/app/utils/summary-manager';
 import { createSupabaseServerClient } from '@/lib/supabse/server';
 import { NextRequest, NextResponse } from 'next/server';
@@ -354,7 +353,6 @@ const STUDY_PROMPT = `당신은 학습 학습 최적화 전문가입니다.
         "heading": "다른 섹션 제목 예시",
         "points": [
           "• 요점 - 원문에 있는 내용만",
-          "• 요점 - 원문에 있는 내용만",
           // 필요한 만큼 추가
         ],
         "sub_sections": []
@@ -484,8 +482,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 크레딧 부족 확인
-    if (creditsData.credits_remaining < requiredCredits) {
+    // 크레딧 부족 확인 (특별 처리 추가)
+    if (creditsData.credits_remaining <= 0) {
+      return NextResponse.json(
+        {
+          error: '크레딧이 없습니다',
+          required: requiredCredits,
+          remaining: creditsData.credits_remaining,
+          originalTitle: originalTitle || '',
+          originalImage: originalImage || '',
+        },
+        { status: 402 }
+      ); // 402 Payment Required
+    }
+
+    // 특별 케이스: 크레딧이 1개 남았을 때는 필요 크레딧과 상관없이 진행
+    let actualRequiredCredits = requiredCredits;
+
+    if (creditsData.credits_remaining === 1 && requiredCredits > 1) {
+      console.log('크레딧이 1개만 남았지만 특별 처리로 진행합니다.');
+      actualRequiredCredits = 1; // 1개만 차감
+    } else if (creditsData.credits_remaining < requiredCredits) {
       return NextResponse.json(
         {
           error: '크레딧이 부족합니다',
@@ -527,6 +544,11 @@ export async function POST(req: NextRequest) {
             // 추가 정보
             sourceId: sourceId,
             embeddingId: cachedSummary.embedding_id,
+            // 크레딧 정보 추가
+            credits: {
+              remaining: creditsData.credits_remaining,
+              used: 0, // 캐시 사용 시 크레딧 미사용
+            },
           });
         }
       } catch (cacheError) {
@@ -536,7 +558,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 크레딧 차감 (먼저 현재 값 가져온 후 계산하여 업데이트)
-    const newCreditsRemaining = creditsData.credits_remaining - requiredCredits;
+    const newCreditsRemaining = creditsData.credits_remaining - actualRequiredCredits;
     const { data: updateData, error: updateError } = await supabase
       .from('user_credits')
       .update({ credits_remaining: newCreditsRemaining })
@@ -557,7 +579,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(
-      `크레딧 차감 완료: ${requiredCredits}개 차감, 남은 크레딧: ${updateData.credits_remaining}`
+      `크레딧 차감 완료: ${actualRequiredCredits}개 차감, 남은 크레딧: ${updateData.credits_remaining}`
     );
 
     // 오리지널 타이틀이 있을 경우 프롬프트에 타이틀 강조 지시사항 추가
@@ -570,7 +592,7 @@ export async function POST(req: NextRequest) {
     console.log('====== OpenAI API 요청 시작 ======');
     console.log(`요청 시간: ${new Date().toISOString()}`);
     console.log(`입력 텍스트 길이: ${text.length} 자`);
-    console.log(`필요 크레딧: ${requiredCredits} 개`);
+    console.log(`필요 크레딧: ${actualRequiredCredits} 개 (원래 필요: ${requiredCredits}개)`);
     console.log(`오리지널제목: ${originalTitle}`);
     console.log(`요청 의도: ${validPurpose}`);
 
@@ -583,14 +605,52 @@ export async function POST(req: NextRequest) {
 
     if (!text || typeof text !== 'string') {
       console.log('오류: 유효한 텍스트가 제공되지 않음');
-      return NextResponse.json({ error: '유효한 텍스트가 필요합니다.' }, { status: 400 });
+
+      // 크레딧 환불 (오류 발생 시)
+      const refundedCredits = updateData.credits_remaining + actualRequiredCredits;
+      await supabase
+        .from('user_credits')
+        .update({ credits_remaining: refundedCredits })
+        .eq('user_id', userId);
+
+      console.log(`입력 오류로 크레딧 환불: ${actualRequiredCredits}개`);
+
+      return NextResponse.json(
+        {
+          error: '유효한 텍스트가 필요합니다.',
+          credits: {
+            remaining: refundedCredits,
+            used: 0,
+          },
+        },
+        { status: 400 }
+      );
     }
 
     // API 키 확인
     const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
     if (!apiKey) {
       console.log('오류: API 키가 설정되지 않음');
-      return NextResponse.json({ error: 'API 키가 설정되지 않았습니다.' }, { status: 500 });
+
+      // 크레딧 환불 (API 키 오류)
+      const refundedCredits = updateData.credits_remaining + actualRequiredCredits;
+      await supabase
+        .from('user_credits')
+        .update({ credits_remaining: refundedCredits })
+        .eq('user_id', userId);
+
+      console.log(`API 키 오류로 크레딧 환불: ${actualRequiredCredits}개`);
+
+      return NextResponse.json(
+        {
+          error: 'API 키가 설정되지 않았습니다.',
+          credits: {
+            remaining: refundedCredits,
+            used: 0,
+          },
+        },
+        { status: 500 }
+      );
     }
 
     // Create an AbortController for timeout handling
@@ -642,14 +702,13 @@ export async function POST(req: NextRequest) {
         console.error('OpenAI API 오류:', errorData);
 
         // API 호출 실패 시 크레딧 환불
-        // 현재 남은 크레딧 + 차감했던 크레딧 값으로 업데이트
-        const refundedCredits = updateData.credits_remaining + requiredCredits;
+        const refundedCredits = updateData.credits_remaining + actualRequiredCredits;
         await supabase
           .from('user_credits')
           .update({ credits_remaining: refundedCredits })
           .eq('user_id', userId);
 
-        console.log(`API 오류로 인한 크레딧 환불: ${requiredCredits}개`);
+        console.log(`API 오류로 인한 크레딧 환불: ${actualRequiredCredits}개`);
 
         return NextResponse.json(
           {
@@ -657,6 +716,10 @@ export async function POST(req: NextRequest) {
             status: response.status,
             originalTitle: originalTitle || '',
             originalImage: originalImage || '',
+            credits: {
+              remaining: refundedCredits,
+              used: 0,
+            },
           },
           { status: response.status }
         );
@@ -732,12 +795,17 @@ export async function POST(req: NextRequest) {
         console.log(`총 처리 시간: ${totalElapsedTime}ms`);
         console.log('====== OpenAI API 처리 완료 ======');
 
-        // 응답 반환
+        // 응답 반환 (크레딧 정보 포함)
         return NextResponse.json({
           ...parsedContent,
           originalTitle: originalTitle || '',
           originalImage: originalImage || '',
           sourceId: sourceId,
+          // 크레딧 정보 추가
+          credits: {
+            remaining: updateData.credits_remaining,
+            used: actualRequiredCredits,
+          },
         });
       } catch (error) {
         // parseError를 Error 타입으로 처리하여 타입 오류 해결
@@ -748,13 +816,13 @@ export async function POST(req: NextRequest) {
         console.log('==================================');
 
         // 파싱 실패 시 크레딧 환불
-        const refundedCredits = updateData.credits_remaining + requiredCredits;
+        const refundedCredits = updateData.credits_remaining + actualRequiredCredits;
         await supabase
           .from('user_credits')
           .update({ credits_remaining: refundedCredits })
           .eq('user_id', userId);
 
-        console.log(`파싱 오류로 인한 크레딧 환불: ${requiredCredits}개`);
+        console.log(`파싱 오류로 인한 크레딧 환불: ${actualRequiredCredits}개`);
 
         // Return a cleaner error message that will be easier to handle on the client
         return NextResponse.json(
@@ -763,6 +831,10 @@ export async function POST(req: NextRequest) {
             details: parseError.message,
             originalTitle: originalTitle || '', // 오류 응답에도 포함
             originalImage: originalImage || '', // 오류 응답에도 포함
+            credits: {
+              remaining: refundedCredits,
+              used: 0,
+            },
           },
           { status: 422 }
         );
@@ -777,13 +849,13 @@ export async function POST(req: NextRequest) {
       const fetchError = error as Error;
 
       // 오류 시 크레딧 환불
-      const refundedCredits = updateData.credits_remaining + requiredCredits;
+      const refundedCredits = updateData.credits_remaining + actualRequiredCredits;
       await supabase
         .from('user_credits')
         .update({ credits_remaining: refundedCredits })
         .eq('user_id', userId);
 
-      console.log(`API 호출 오류로 인한 크레딧 환불: ${requiredCredits}개`);
+      console.log(`API 호출 오류로 인한 크레딧 환불: ${actualRequiredCredits}개`);
 
       if (fetchError.name === 'AbortError') {
         console.error('API 요청 시간 초과');
@@ -794,6 +866,10 @@ export async function POST(req: NextRequest) {
             isTimeout: true,
             originalTitle: originalTitle || '', // 추가
             originalImage: originalImage || '', // 추가
+            credits: {
+              remaining: refundedCredits,
+              used: 0,
+            },
           },
           { status: 408 }
         );
@@ -805,6 +881,10 @@ export async function POST(req: NextRequest) {
           error: `API 호출 오류: ${fetchError.message}`,
           originalTitle: originalTitle || '', // 추가
           originalImage: originalImage || '', // 추가
+          credits: {
+            remaining: refundedCredits,
+            used: 0,
+          },
         },
         { status: 500 }
       );

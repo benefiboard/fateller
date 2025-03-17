@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Image, Video, Loader, AlertCircle, Plus, Trash } from 'lucide-react';
 import { Memo } from '../utils/types';
 import LoadingModal from './LoadingModal';
@@ -6,6 +6,7 @@ import AlertModal from './AlertModal';
 import { RequestTracker } from '../utils/requestTracker';
 import { extractAndAnalyze } from '../utils/apiClient';
 import { Textarea } from '@/components/ui/textarea';
+import { useCreditStore } from '../store/creditStore';
 
 // 처리 단계 타입 정의
 export type ProcessingStep = 'idle' | 'extracting' | 'analyzing';
@@ -63,6 +64,11 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
   // 목적 선택 상태 추가
   const [selectedPurpose, setSelectedPurpose] = useState<string>('일반');
 
+  // 크레딧 관련 상태 추가
+  const { creditsRemaining, fetchCredits } = useCreditStore();
+  const [requiredCredits, setRequiredCredits] = useState(1);
+  const [showCreditAlert, setShowCreditAlert] = useState(false);
+
   // 직접 수정 폼 데이터
   const [editFormData, setEditFormData] = useState<{
     title: string;
@@ -96,8 +102,10 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
   // 미리보기 상태
   const [showPreview, setShowPreview] = useState(false);
 
-  // 크레딧
-  const [requiredCredits, setRequiredCredits] = useState(1);
+  // 컴포넌트 마운트 시 크레딧 정보 가져오기
+  useEffect(() => {
+    fetchCredits();
+  }, [fetchCredits]);
 
   // 목적 선택 핸들러 추가
   const handlePurposeSelect = (purpose: string) => {
@@ -158,6 +166,13 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
         setSelectedPurpose(editingMemo.purpose || '일반');
         setInputText(editingMemo.original_text || editingMemo.thread.join('\n\n'));
         setCharacterCount((editingMemo.original_text || editingMemo.thread.join('\n\n')).length);
+
+        // 필요 크레딧 계산
+        const required = Math.max(
+          1,
+          Math.ceil((editingMemo.original_text || editingMemo.thread.join('\n\n')).length / 10000)
+        );
+        setRequiredCredits(required);
       }
     } else if (isOpen) {
       // 새 메모 작성 모드
@@ -190,6 +205,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     setSelectedPurpose('일반'); // 선택된 목적 리셋
     setStructuredMap([{ heading: '', points: [''], sub_sections: [] }]);
     setShowPreview(false);
+    setRequiredCredits(1); // 필요 크레딧 리셋
   };
 
   // 입력 텍스트 변경 처리
@@ -493,6 +509,22 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
   // 제출 처리
   const handleSubmit = async () => {
+    // 크레딧 체크
+    if (creditsRemaining <= 0) {
+      setShowCreditAlert(true);
+      return;
+    }
+
+    // 크레딧이 1개만 남았는데 필요한 크레딧이 1개 이상일 경우 특별 처리
+    // 특별 케이스: 크레딧이 1개 남았을 때는 필요 크레딧과 상관없이 진행
+    if (creditsRemaining === 1 && requiredCredits > 1) {
+      console.log('크레딧이 1개만 남았지만 특별 처리로 진행합니다.');
+      // 계속 진행 (특별 처리)
+    } else if (creditsRemaining < requiredCredits) {
+      setShowCreditAlert(true);
+      return;
+    }
+
     setIsSubmitting(true);
     setProcessingStep('extracting');
     setError(null);
@@ -575,7 +607,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
               if (onBackgroundProcess) {
                 onBackgroundProcess({
                   extractionFailed: true, // 추출 실패 플래그
-                  errorMessage: `추출 불가, 내용 직접 입력해주세요}`,
+                  errorMessage: `추출 불가, 내용 직접 입력해주세요`,
                   originalUrl: url,
                   text: url,
                   mode: 'analyze',
@@ -685,6 +717,9 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
               // 백그라운드 처리 완료 후 모달 닫기 (사용자가 기다리기로 선택한 경우)
               setIsSubmitting(false);
               onClose();
+
+              // 제출 완료 후 크레딧 정보 갱신
+              fetchCredits();
             }
           } catch (error) {
             // 수정됨: 추출 과정 예외 발생 시 처리 개선
@@ -740,6 +775,9 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
             await onBackgroundProcess(processData);
             setIsSubmitting(false);
             onClose();
+
+            // 제출 완료 후 크레딧 정보 갱신
+            fetchCredits();
           }
         }
       }
@@ -823,6 +861,30 @@ YouTube 링크를 입력하세요...`;
           }
         }}
       />
+
+      {/* 크레딧 부족 알림 모달 */}
+      {showCreditAlert && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-md p-6">
+            <h3 className="text-lg font-bold mb-3">크레딧이 부족합니다</h3>
+            <p>
+              필요 크레딧: <b>{requiredCredits}</b>개
+            </p>
+            <p>
+              잔여 크레딧: <b>{creditsRemaining}</b>개
+            </p>
+            <p className="mt-2 text-sm text-gray-600">크레딧은 매일 자정에 10개로 초기화됩니다.</p>
+            <div className="mt-4 flex justify-end">
+              <button
+                className="px-4 py-2 bg-teal-500 text-white rounded"
+                onClick={() => setShowCreditAlert(false)}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 기존 모달 내용 - isSubmitting이 아닐 때만 표시 */}
       {!isSubmitting && (
@@ -911,11 +973,18 @@ YouTube 링크를 입력하세요...`;
                       {/* 카운터와 제출 버튼 - 작은 화면에서는 아래에 배치 */}
                       <div className="flex items-center justify-between sm:justify-end">
                         <div
-                          className={`text-sm mr-3 ${
+                          className={`text-sm mr-3 flex flex-col items-end ${
                             characterCount > 10000 ? 'text-red-500' : 'text-gray-500'
                           }`}
                         >
-                          {characterCount}/10000
+                          <div>{characterCount}/10000</div>
+                          <div
+                            className={`text-xs ${
+                              requiredCredits > 1 ? 'text-amber-600 font-medium' : 'text-gray-500'
+                            }`}
+                          >
+                            필요 크레딧: {requiredCredits}개
+                          </div>
                         </div>
                         <button
                           type="button"
@@ -935,17 +1004,6 @@ YouTube 링크를 입력하세요...`;
                             '작성'
                           )}
                         </button>
-
-                        <div className="flex justify-between text-xs mt-1">
-                          <div className="text-gray-500">{characterCount} 자</div>
-                          <div
-                            className={
-                              requiredCredits > 1 ? 'font-medium text-amber-600' : 'text-gray-500'
-                            }
-                          >
-                            필요 크레딧: {requiredCredits}개
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </div>
