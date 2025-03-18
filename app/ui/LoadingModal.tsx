@@ -19,7 +19,7 @@ const LoadingModal: React.FC<LoadingModalProps> = ({
   step,
   extractedData,
   onContinueInBackground,
-  autoBackgroundDelay = 3000, // 기본값 3초
+  autoBackgroundDelay = 2000, // 기본값 2초
 }) => {
   const [showExtendedMessage, setShowExtendedMessage] = useState(false);
   const backgroundTimerRef = useRef<NodeJS.Timeout | null>(null);
