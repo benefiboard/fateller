@@ -68,8 +68,9 @@ const Header = () => {
       <MobileSidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
 
       <header className="sticky top-0 bg-white bg-opacity-95 backdrop-blur-sm z-10 border-b border-gray-200">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-1">
+        <div className="px-4 py-3 grid grid-cols-3 items-center">
+          {/* 왼쪽 영역 - justify-self-start로 좌측 정렬 */}
+          <div className="flex items-center gap-1 justify-self-start">
             <button onClick={() => setMobileMenuOpen(true)} className="md:hidden text-gray-500">
               <Menu size={24} />
             </button>
@@ -78,46 +79,29 @@ const Header = () => {
                 {profile.avatar ? (
                   <img src={profile.avatar} alt="프로필" className="w-full h-full object-cover" />
                 ) : (
-                  <UserCircle size={24} className="text-gray-500" /> // UserPen 대신 UserCircle 사용
+                  <UserCircle size={24} className="text-gray-500" />
                 )}
               </div>
             </Link>
             <CreditDisplay />
           </div>
 
-          {/* 페이지 제목 */}
-          <div className="flex items-center gap-1">
+          {/* 중앙 영역 - justify-self-center로 중앙 정렬 */}
+          <div className="justify-self-center">
             <h1 className="text-xl font-bold">{getPageTitle()}</h1>
-            {/* <CreditDisplay /> */}
           </div>
 
-          {/* 설정 버튼 */}
-          <div className="flex items-center gap-2">
+          {/* 오른쪽 영역 - justify-self-end로 우측 정렬 */}
+          <div className="flex items-center gap-2 justify-self-end">
             <button
               className="p-2 rounded-full hover:bg-gray-100"
               aria-label="검색"
-              onClick={toggleSearch} // Zustand의 toggleSearch 함수 사용
+              onClick={toggleSearch}
             >
               <Search size={24} className="text-gray-600" />
             </button>
           </div>
         </div>
-
-        {/* 홈 페이지에서만 탭 표시 */}
-        {/* {pathname === '/' && (
-          <div className="flex border-b border-gray-200">
-            <Tab
-              label="회원님의 아이디어"
-              isActive={activeTab === 'for-you'}
-              onClick={() => handleTabChange('for-you')}
-            />
-            <Tab
-              label="추천 아이디어"
-              isActive={activeTab === 'suggest'}
-              onClick={() => handleTabChange('suggest')}
-            />
-          </div>
-        )} */}
       </header>
     </>
   );

@@ -878,21 +878,23 @@ const MemoPageContent: React.FC = () => {
 
       {/* 메모 작성 버튼 */}
       {!showComposer && (
-        <div className="fixed flex flex-col gap-2 bottom-8 right-4 z-10">
-          <button
-            onClick={handleScrollToTop}
-            className="w-12 h-12 rounded-full bg-emerald-400 text-white flex items-center justify-center shadow-lg lg:w-14 lg:h-14"
-          >
-            <ChevronsUp size={24} className="lg:hidden" />
-            <ChevronsUp size={32} className="hidden lg:block" />
-          </button>
-          <button
-            onClick={() => handleOpenComposer('analyze')}
-            className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg lg:w-14 lg:h-14"
-          >
-            <MessageCirclePlus size={24} className="lg:hidden" />
-            <MessageCirclePlus size={32} className="hidden lg:block" />
-          </button>
+        <div className="max-w-md mx-auto w-full fixed bottom-8 right-0 left-0  md:-right-16  lg:right-16 flex justify-end pr-4 z-10">
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={handleScrollToTop}
+              className="w-12 h-12 rounded-full bg-emerald-400 text-white flex items-center justify-center shadow-lg lg:w-14 lg:h-14"
+            >
+              <ChevronsUp size={24} className="lg:hidden" />
+              <ChevronsUp size={32} className="hidden lg:block" />
+            </button>
+            <button
+              onClick={() => handleOpenComposer('analyze')}
+              className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg lg:w-14 lg:h-14"
+            >
+              <MessageCirclePlus size={24} className="lg:hidden" />
+              <MessageCirclePlus size={32} className="hidden lg:block" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -1015,7 +1017,7 @@ const MemoPageContent: React.FC = () => {
       )}
 
       {/* 메모 목록 */}
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-gray-200 ">
         {memos.length === 0 && !isLoading ? (
           <div className="p-10 text-center text-gray-500">
             {searchTerm || selectedCategory ? (
