@@ -55,7 +55,7 @@ export default function LandingAuthUserPage() {
           {/* 대형 히어로 이미지/애니메이션 */}
           <div className="relative w-full max-w-5xl mx-auto rounded-xl overflow-hidden shadow-2xl">
             <div className="aspect-[16/9] w-full bg-gray-200 relative">
-              <img src="/landing/main.jpg" alt="" className="object-cover w-full h-full" />
+              <img src="/landing/main.webp" alt="" className="object-cover w-full h-full" />
               {/* 여기에 실제 히어로 이미지나 애니메이션 삽입 */}
               {/* <Image src="/hero-image.png" alt="Brain Labeling 앱 화면" fill className="object-cover" /> */}
               {/* <div className="absolute inset-0 flex items-center justify-center">
@@ -79,7 +79,7 @@ export default function LandingAuthUserPage() {
             {/* 문제 시각화 1 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md">
               <div className="aspect-square relative bg-gray-200">
-                <img src="/landing/1-1.jpg" alt="" className="object-cover w-full h-full" />
+                <img src="/landing/1-1.webp" alt="" className="object-cover w-full h-full" />
                 {/* <Image src="/problem-image-1.png" alt="정보 과부하" fill className="object-cover" /> */}
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">정보 과부하로 고통받는 사람 이미지</p>
@@ -96,7 +96,7 @@ export default function LandingAuthUserPage() {
             {/* 문제 시각화 2 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md">
               <div className="aspect-square relative bg-gray-200">
-                <img src="/landing/1-2.jpg" alt="" className="object-cover w-full h-full" />
+                <img src="/landing/1-2.webp" alt="" className="object-cover w-full h-full" />
                 {/* <Image src="/problem-image-2.png" alt="메모 정리의 부담" fill className="object-cover" /> */}
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">복잡한 메모 정리에 시간 쏟는 모습 이미지</p>
@@ -113,7 +113,7 @@ export default function LandingAuthUserPage() {
             {/* 문제 시각화 3 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md">
               <div className="aspect-square relative bg-gray-200">
-                <img src="/landing/1-3.jpg" alt="" className="object-cover w-full h-full" />
+                <img src="/landing/1-3.webp" alt="" className="object-cover w-full h-full" />
                 {/* <Image src="/problem-image-3.png" alt="외국어 콘텐츠 장벽" fill className="object-cover" /> */}
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">외국어 콘텐츠를 이해하기 어려워하는 모습 이미지</p>
@@ -143,7 +143,7 @@ export default function LandingAuthUserPage() {
             <div className="rounded-xl overflow-hidden shadow-md">
               <div className="aspect-video relative bg-gray-200">
                 <img
-                  src="/landing/2-1.jpg"
+                  src="/landing/2-1.webp"
                   alt=""
                   className="object-cover w-full h-full opacity-50"
                 />
@@ -166,7 +166,7 @@ export default function LandingAuthUserPage() {
             {/* After 이미지 */}
             <div className="rounded-xl overflow-hidden shadow-md">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/2-2.jpg" alt="" className="object-cover w-full h-full" />
+                <img src="/landing/2-2.webp" alt="" className="object-cover w-full h-full" />
                 {/* <Image src="/after-image.png" alt="Brain Labeling" fill className="object-cover" /> */}
                 <div className="absolute inset-0 flex items-center justify-center p-4">
                   {/* <p className="text-gray-500">AI가 깔끔하게 정리한 구조화된 메모 이미지</p> */}
@@ -207,7 +207,7 @@ export default function LandingAuthUserPage() {
             </div>
             <div className="order-1 md:order-2 rounded-xl overflow-hidden shadow-lg border-4 border-emerald-100">
               <div className="aspect-[4/3] relative bg-gray-200 ">
-                <img src="/landing/3-1.jpg" alt="" className="object-cover w-full h-full " />
+                <img src="/landing/3-1.webp" alt="" className="object-cover w-full h-full " />
                 {/* <Image src="/feature-input.png" alt="다양한 입력 방식" fill className="object-cover" /> */}
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">다양한 입력 방식 화면 이미지</p>
@@ -220,7 +220,7 @@ export default function LandingAuthUserPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mb-16">
             <div className="rounded-xl overflow-hidden shadow-lg border-4 border-emerald-100">
               <div className="aspect-[4/3] relative bg-gray-200">
-                <img src="/landing/3-2.jpg" alt="" className="object-cover w-full h-full" />
+                <img src="/landing/3-2.webp" alt="" className="object-cover w-full h-full" />
                 {/* <Image src="/feature-analysis.png" alt="AI 분석" fill className="object-cover" /> */}
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">AI가 콘텐츠를 분석하는 과정 시각화 이미지</p>
@@ -267,7 +267,7 @@ export default function LandingAuthUserPage() {
             </div>
             <div className="order-1 md:order-2 rounded-xl overflow-hidden shadow-lg border-4 border-emerald-100">
               <div className="aspect-[4/3] relative bg-gray-200">
-                <img src="/landing/3-3.jpg" alt="" className="object-cover w-full h-full " />
+                <img src="/landing/3-3.webp" alt="" className="object-cover w-full h-full " />
                 {/* <Image src="/feature-structure.png" alt="구조화된 결과" fill className="object-cover" /> */}
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">구조화된 메모 결과 화면 이미지</p>
@@ -288,7 +288,7 @@ export default function LandingAuthUserPage() {
             {/* 사례 1 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-1.jpg" alt="" className="object-cover w-full h-full " />
+                <img src="/landing/4-1.webp" alt="" className="object-cover w-full h-full " />
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">웹 기사가 요약된 화면 이미지</p>
                 </div> */}
@@ -302,7 +302,7 @@ export default function LandingAuthUserPage() {
             {/* 사례 2 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-2.jpg" alt="" className="object-cover w-full h-full " />
+                <img src="/landing/4-2.webp" alt="" className="object-cover w-full h-full " />
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">유튜브 영상 자막이 요약된 화면 이미지</p>
                 </div> */}
@@ -316,7 +316,7 @@ export default function LandingAuthUserPage() {
             {/* 사례 3 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-3.jpg" alt="" className="object-cover w-full h-full " />
+                <img src="/landing/4-3.webp" alt="" className="object-cover w-full h-full " />
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">외국어 콘텐츠가 한글로 요약된 화면 이미지</p>
                 </div> */}
@@ -330,7 +330,7 @@ export default function LandingAuthUserPage() {
             {/* 사례 4 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-4.jpg" alt="" className="object-cover w-full h-full " />
+                <img src="/landing/4-4.webp" alt="" className="object-cover w-full h-full " />
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">회의 내용이 구조화된 화면 이미지</p>
                 </div> */}
@@ -344,7 +344,7 @@ export default function LandingAuthUserPage() {
             {/* 사례 5 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-5.jpg" alt="" className="object-cover w-full h-full " />
+                <img src="/landing/4-5.webp" alt="" className="object-cover w-full h-full " />
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">학습 자료가 구조화된 화면 이미지</p>
                 </div> */}
@@ -358,7 +358,7 @@ export default function LandingAuthUserPage() {
             {/* 사례 6 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-6.jpg" alt="" className="object-cover w-full h-full " />
+                <img src="/landing/4-6.webp" alt="" className="object-cover w-full h-full " />
                 {/* <div className="absolute inset-0 flex items-center justify-center p-4">
                   <p className="text-gray-500">콘텐츠 가치 판단 인터페이스 이미지</p>
                 </div> */}

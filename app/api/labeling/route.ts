@@ -505,7 +505,15 @@ export async function POST(req: NextRequest) {
     const userId = session.user.id;
 
     // 텍스트 길이에 따른 필요 크레딧 계산
-    const requiredCredits = Math.max(1, Math.ceil(text.length / 10000));
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(text);
+    const byteLength = bytes.length;
+
+    // 30,000 바이트마다 1 크레딧 소모 (영문 약 30,000자, 한글 약 10,000자에 해당)
+    const requiredCredits = Math.max(1, Math.ceil(byteLength / 30000));
+
+    // 로그에 바이트 정보 추가
+    console.log(`입력 텍스트 길이: ${text.length} 자 (${byteLength} 바이트)`);
 
     // 사용자 크레딧 정보 조회 및 필요시 리셋 (함수 호출)
     await supabase.rpc('maybe_reset_credits', { uid: userId });
