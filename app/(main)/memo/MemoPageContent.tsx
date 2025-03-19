@@ -13,23 +13,23 @@ import {
 } from 'lucide-react';
 
 // UI 컴포넌트 임포트
-import Header from './ui/Header';
-import MemoItem from './ui/MemoItem';
-import Notification from './ui/Notification';
-import BottomNavigation from './ui/BottomNavigation';
-import ComposerModal, { ProcessingStep } from './ui/ComposerModal';
-import SearchAndFilterBar from './ui/SearchAndFilterBar';
+import Header from '../../ui/Header';
+import MemoItem from '../../ui/MemoItem';
+import Notification from '../../ui/Notification';
+import BottomNavigation from '../../ui/BottomNavigation';
+import ComposerModal, { ProcessingStep } from '../../ui/ComposerModal';
+import SearchAndFilterBar from '../../ui/SearchAndFilterBar';
 
 // 훅 임포트
-import useMemos from './hooks/useMemos';
-import useMemosState from './hooks/useMemosState';
-import useNotification from './hooks/useNotification';
-import usePendingMemos, { PendingMemoStatus } from './hooks/usePendingMemos';
-import AlertModal from './ui/AlertModal';
-import { RequestTracker } from './utils/requestTracker';
-import { extractAndAnalyze } from './utils/apiClient';
-import { useUserStore } from './store/userStore';
-import { useSearchStore } from './store/searchStore';
+import useMemos from '../../hooks/useMemos';
+import useMemosState from '../../hooks/useMemosState';
+import useNotification from '../../hooks/useNotification';
+import usePendingMemos, { PendingMemoStatus } from '../../hooks/usePendingMemos';
+import AlertModal from '../../ui/AlertModal';
+import { RequestTracker } from '../../utils/requestTracker';
+import { extractAndAnalyze } from '../../utils/apiClient';
+import { useUserStore } from '../../store/userStore';
+import { useSearchStore } from '../../store/searchStore';
 
 // 상단 알림 인터페이스
 interface TopAlert {

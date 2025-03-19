@@ -1,4 +1,6 @@
 // app/api/credits/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabse/server';
 import { checkAndResetCredits } from '@/app/utils/serverCredits';

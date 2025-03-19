@@ -1,10 +1,10 @@
-//app/page.tsx
+//app/(main)/page.tsx
 
 'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUserStore } from './store/userStore';
+import { useUserStore } from '../../store/userStore';
 import MemoPageContent from './MemoPageContent';
 
 export default function Page() {
