@@ -336,6 +336,36 @@ function extractYoutubeId(url: string): string | null {
     return embedMatch[1];
   }
 
+  // 라이브 URL 형식 (추가)
+  let liveMatch = url.match(
+    /^https?:\/\/(?:www\.)?youtube\.com\/live\/([a-zA-Z0-9_-]{11})(?:\?|$)/
+  );
+  if (liveMatch) {
+    return liveMatch[1];
+  }
+
+  // YouTube Shorts
+  let shortsMatch = url.match(
+    /^https?:\/\/(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})(?:\?|$)/
+  );
+  if (shortsMatch) {
+    return shortsMatch[1];
+  }
+
+  // YouTube Music
+  let musicMatch = url.match(
+    /^https?:\/\/music\.youtube\.com\/watch\?(?:.*&)?v=([a-zA-Z0-9_-]{11})(?:&|$)/
+  );
+  if (musicMatch) {
+    return musicMatch[1];
+  }
+
+  // 모바일 앱 딥링크
+  let vMatch = url.match(/^https?:\/\/(?:www\.)?youtube\.com\/v\/([a-zA-Z0-9_-]{11})(?:\?|$)/);
+  if (vMatch) {
+    return vMatch[1];
+  }
+
   return null;
 }
 
