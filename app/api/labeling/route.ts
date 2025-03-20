@@ -510,7 +510,7 @@ export async function POST(req: NextRequest) {
     const byteLength = bytes.length;
 
     // 30,000 바이트마다 1 크레딧 소모 (영문 약 30,000자, 한글 약 10,000자에 해당)
-    const requiredCredits = Math.max(1, Math.ceil(byteLength / 30000));
+    const requiredCredits = Math.max(1, Math.ceil(byteLength / 12000));
 
     // 로그에 바이트 정보 추가
     console.log(`입력 텍스트 길이: ${text.length} 자 (${byteLength} 바이트)`);

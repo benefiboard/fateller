@@ -293,6 +293,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
     if (!text) return '';
 
     // <hi> 태그를 Tailwind CSS 클래스로 변환
+    if (typeof text !== 'string') {
+      return text || '';
+    }
     return text.replace(
       /<hi>(.*?)<\/hi>/g,
       '<span class="font-bold underline underline-offset-4 px-[2px]">$1</span>'

@@ -1,4 +1,4 @@
-//app/MemoPageContent.tsx
+//app/(main)/memo/MemoPageContent.tsx
 
 'use client';
 
@@ -19,12 +19,14 @@ import Notification from '../../ui/Notification';
 import BottomNavigation from '../../ui/BottomNavigation';
 import ComposerModal, { ProcessingStep } from '../../ui/ComposerModal';
 import SearchAndFilterBar from '../../ui/SearchAndFilterBar';
+import PendingMemosList from '../../ui/PendingMemosList'; // 새로 추가한 컴포넌트
 
 // 훅 임포트
 import useMemos from '../../hooks/useMemos';
 import useMemosState from '../../hooks/useMemosState';
 import useNotification from '../../hooks/useNotification';
 import usePendingMemos, { PendingMemoStatus } from '../../hooks/usePendingMemos';
+import useBackgroundProcess from '../../hooks/useBackgroundProcess'; // 새로 추가한 훅
 import AlertModal from '../../ui/AlertModal';
 import { RequestTracker } from '../../utils/requestTracker';
 import { extractAndAnalyze } from '../../utils/apiClient';
@@ -104,6 +106,9 @@ const MemoPageContent: React.FC = () => {
     removePendingMemo,
     removeAllPendingMemos,
   } = usePendingMemos();
+
+  // 백그라운드 처리 훅 (새로 추가)
+  const { processUrl, cancelTask, cancelAllTasks } = useBackgroundProcess();
 
   // 검색어 변경 핸들러
   const handleSearch = (term: string) => {
@@ -188,7 +193,23 @@ const MemoPageContent: React.FC = () => {
     setShowGlobalAlert(true);
   };
 
-  // 백그라운드 처리 함수
+  // 오류 처리 함수
+  const handleProcessError = (pendingId: string, error: any) => {
+    let errorMessage = '알 수 없는 오류가 발생했습니다';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    }
+
+    updatePendingMemo(pendingId, {
+      status: 'error',
+      error: errorMessage,
+    });
+    showNotification(`오류가 발생했습니다: ${errorMessage}`, 'error');
+  };
+
+  // 백그라운드 처리 함수 - 간소화된 버전
   const handleBackgroundProcess = async (data: any) => {
     console.log('백그라운드 처리 데이터:', data);
 
@@ -207,341 +228,153 @@ const MemoPageContent: React.FC = () => {
         });
         setShowGlobalAlert(true);
 
-        // 수정됨: URL 추출 실패 알림 추가
+        // URL 추출 실패 알림 추가
         showNotification('콘텐츠 추출에 실패했습니다.', 'error');
-
-        return; // 더 이상 처리하지 않음
+        return;
       }
 
-      // 백그라운드 계속 버튼을 클릭한 경우 (isOngoing=true)
-      if (data.isOngoing) {
-        // 추출 단계일 때도 처리 중인 메모에 추가
-        if (data.currentStep === 'extracting') {
-          console.log('추출 단계 처리 시작');
+      // 중복 생성 방지 플래그 확인
+      if (data.skipPendingCreation) {
+        console.log('중복 생성 방지 플래그가 설정되어 있어 실제 API 호출은 하지 않습니다.');
 
-          // 표시용 pendingMemo 생성 (skipPendingCreation 플래그가 있어도 UI 표시 목적으로 생성)
-          const pendingId = addPendingMemo(data.originalUrl || data.text || '');
+        // 시뮬레이션된 처리 플로우 (실제 API 호출 없음)
+        const pendingId = addPendingMemo(data.originalUrl || data.text || '');
 
-          // 상태 및 데이터 업데이트
+        // extracting → processing → analyzing 상태 변환 시뮬레이션
+        updatePendingMemo(pendingId, {
+          status: 'extracting',
+          extractedData: {
+            title: '내용 추출 중...',
+            content: data.originalUrl || data.text || '',
+          },
+        });
+
+        setTimeout(() => {
           updatePendingMemo(pendingId, {
-            status: 'extracting',
+            status: 'processing',
             extractedData: {
-              title: '내용 추출 중...',
+              title: '데이터 정제 중...',
               content: data.originalUrl || data.text || '',
             },
           });
 
-          // 중복 생성 방지 플래그 확인 - 실제 API 호출은 이 플래그에 따라 결정
-          if (data.skipPendingCreation) {
-            console.log('중복 생성 방지 플래그가 설정되어 있어 실제 API 호출은 하지 않습니다.');
-
-            // extracting → processing → analyzing으로 상태 변환 타이머 설정
-            setTimeout(() => {
-              // extracting → processing 상태로 전환
-              console.log('extracting → processing 상태 전환');
-              updatePendingMemo(pendingId, {
-                status: 'processing',
-                extractedData: {
-                  title: '데이터 정제 중...',
-                  content: data.originalUrl || data.text || '',
-                },
-              });
-
-              // processing → analyzing 상태로 전환
-              setTimeout(() => {
-                console.log('processing → analyzing 상태 전환');
-                updatePendingMemo(pendingId, {
-                  status: 'analyzing',
-                  extractedData: {
-                    title: 'AI 분석 중...',
-                    content: data.originalUrl || data.text || '',
-                  },
-                });
-
-                // analyzing 상태 3초 후 모두 제거
-                setTimeout(() => {
-                  removePendingMemo(pendingId);
-                }, 3000);
-              }, 8000); // processing 상태 8초 유지
-            }, 3000); // extracting 상태 3초 유지
-
-            return; // API 호출은 하지 않고 종료
-          }
-
-          // 추출 단계에서 백그라운드 처리 요청의 경우에도 URL 유효성 체크
-          try {
-            // 원본 URL이 있는 경우 추출 시도
-            if (data.originalUrl && data.originalUrl.match(/^https?:\/\//i)) {
-              console.log('백그라운드에서 URL 추출 시도:', data.originalUrl);
-
-              // 중복 요청 방지 기능이 내장된 API 클라이언트 사용
-              const extractResponse = await fetch('/api/extract-and-analyze', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  text: data.originalUrl,
-                }),
-              });
-
-              if (!extractResponse.ok) {
-                // HTTP 상태 코드를 통해 오류 감지
-                const errorText = await extractResponse.text();
-                let errorMessage = `URL에서 콘텐츠를 추출할 수 없습니다. (상태 코드: ${extractResponse.status})`;
-
-                try {
-                  // 응답 내용이 JSON인지 확인
-                  const errorJson = JSON.parse(errorText);
-                  if (errorJson.error) {
-                    errorMessage = errorJson.error;
-                  }
-                } catch (e) {
-                  // JSON 파싱 실패 시 원본 텍스트 사용
-                  if (errorText && errorText.length < 100) {
-                    errorMessage = errorText;
-                  }
-                }
-
-                // 오류 상태로 업데이트
-                updatePendingMemo(pendingId, {
-                  status: 'error',
-                  error: errorMessage,
-                });
-
-                // 알럿 모달 표시
-                setAlertData({
-                  title: '콘텐츠 추출 실패',
-                  message: errorMessage,
-                  url: data.originalUrl,
-                });
-                setShowGlobalAlert(true);
-
-                // 알림 표시 - 여기에 명시적으로 추가
-                showNotification('콘텐츠 추출에 실패했습니다.', 'error');
-                console.error('추출 API 오류:', errorMessage);
-
-                return;
-              }
-
-              const extractData = await extractResponse.json();
-
-              if (extractData.error) {
-                const errorMessage = extractData.error || '콘텐츠 추출 중 오류가 발생했습니다.';
-
-                // 오류 상태로 업데이트
-                updatePendingMemo(pendingId, {
-                  status: 'error',
-                  error: errorMessage,
-                });
-
-                // 알럿 모달 표시
-                setAlertData({
-                  title: '콘텐츠 추출 실패',
-                  message: errorMessage,
-                  url: data.originalUrl,
-                });
-                setShowGlobalAlert(true);
-
-                // 알림 표시
-                showNotification('콘텐츠 추출에 실패했습니다.', 'error');
-                console.error('추출 API 오류 응답:', errorMessage);
-
-                return;
-              }
-
-              // sourceId 확인 및 저장 (추가된 부분)
-              const sourceId = extractData.sourceId;
-              console.log('소스 ID 포함 여부:', sourceId ? true : false, sourceId);
-
-              // 페이월 콘텐츠 검사 추가
-              const lowerContent = (extractData.content || '').toLowerCase();
-              const paywallKeywords = [
-                'subscribe',
-                'subscription',
-                'sign in',
-                'log in',
-                'member',
-                'verify access',
-              ];
-              const hasPaywallIndicators = paywallKeywords.some((keyword) =>
-                lowerContent.includes(keyword)
-              );
-
-              // 추출된 콘텐츠 유효성 검사
-              if (
-                !extractData.content ||
-                extractData.content.trim().length < 200 ||
-                (hasPaywallIndicators && extractData.content.trim().length < 1000) ||
-                (extractData.title &&
-                  (extractData.title.toLowerCase().includes('access denied') ||
-                    extractData.title.toLowerCase().includes('error')))
-              ) {
-                let errorMessage = `URL에서 유효한 콘텐츠를 찾을 수 없습니다. 직접 내용을 복사하여 붙여넣어 주세요.`;
-
-                // 페이월 발견 시 메시지 수정
-                if (hasPaywallIndicators) {
-                  errorMessage = `이 콘텐츠는 구독이 필요한 페이지로 보입니다. 직접 내용을 복사하여 붙여넣어 주세요.`;
-                }
-
-                // 오류 상태로 업데이트
-                updatePendingMemo(pendingId, {
-                  status: 'error',
-                  error: errorMessage,
-                });
-
-                setAlertData({
-                  title: '콘텐츠 추출 실패',
-                  message: errorMessage,
-                  url: data.originalUrl,
-                });
-                setShowGlobalAlert(true);
-
-                // 수정됨: URL 추출 실패 알림 추가
-                showNotification('콘텐츠 추출에 실패했습니다.', 'error');
-
-                return;
-              }
-
-              // 유효한 콘텐츠가 있는 경우
-              // 추출 완료 후에도 extracting 상태를 3초간 유지
-              setTimeout(() => {
-                // extracting → processing 상태로 전환
-                console.log('extracting → processing 상태 전환');
-                updatePendingMemo(pendingId, {
-                  status: 'processing',
-                  extractedData: {
-                    title: '데이터 정제 중...',
-                    imageUrl: extractData.imageUrl || '',
-                    content: extractData.content,
-                    sourceUrl: extractData.sourceUrl || null,
-                  },
-                });
-
-                // processing 상태를 8초 유지 후 analyzing 상태로 전환
-                setTimeout(() => {
-                  console.log('processing → analyzing 상태 전환');
-                  updatePendingMemo(pendingId, {
-                    status: 'analyzing',
-                    extractedData: {
-                      title: extractData.title || '분석 중...',
-                      imageUrl: extractData.imageUrl || '',
-                      content: extractData.content,
-                      sourceUrl: extractData.sourceUrl || null,
-                    },
-                  });
-
-                  // 데이터 준비
-                  data.sourceId = sourceId;
-                  data.text = extractData.content;
-                  data.isUrl = true;
-                  data.sourceUrl = extractData.sourceUrl || data.originalUrl;
-                  data.originalTitle = extractData.title || '';
-                  data.originalImage = extractData.imageUrl || '';
-                  data.currentStep = 'analyzing';
-
-                  // 백그라운드 API 호출 시작
-                  const handleApiCall = async () => {
-                    try {
-                      if (data.id) {
-                        await updateMemoWithAI(data.id, data.text, {
-                          isUrl: data.isUrl,
-                          sourceUrl: data.sourceUrl || null,
-                          originalTitle: data.originalTitle || '',
-                          originalImage: data.originalImage || '',
-                          purpose: data.purpose || '일반',
-                          sourceId: sourceId,
-                        });
-                      } else {
-                        await createMemo(data.text, {
-                          isUrl: data.isUrl,
-                          sourceUrl: data.sourceUrl || null,
-                          originalTitle: data.originalTitle || '',
-                          originalImage: data.originalImage || '',
-                          purpose: data.purpose || '일반',
-                          sourceId: sourceId,
-                        });
-                      }
-
-                      // API 호출 완료 후 completed 상태로 업데이트
-                      console.log('API 호출 완료, completed 상태로 업데이트');
-                      updatePendingMemo(pendingId, { status: 'completed' });
-                      setTimeout(() => removePendingMemo(pendingId), 3000);
-                    } catch (error) {
-                      // 오류 발생 시 상태 업데이트
-                      let errorMessage = '알 수 없는 오류가 발생했습니다';
-                      if (error instanceof Error) {
-                        errorMessage = error.message;
-                      } else if (typeof error === 'string') {
-                        errorMessage = error;
-                      }
-
-                      updatePendingMemo(pendingId, {
-                        status: 'error',
-                        error: errorMessage,
-                      });
-                      showNotification(`오류가 발생했습니다: ${errorMessage}`, 'error');
-                    }
-                  };
-
-                  // API 호출 시작
-                  handleApiCall();
-                }, 8000); // processing 상태 8초 유지
-              }, 3000); // extracting 상태 3초 유지
-            } else {
-              // URL이 아닌 경우 오류 상태로 업데이트
-              updatePendingMemo(pendingId, {
-                status: 'error',
-                error: '유효한 URL이 아닙니다.',
-              });
-            }
-          } catch (error) {
-            console.error('백그라운드 URL 추출 오류:', error);
-            let errorMessage = '알 수 없는 오류가 발생했습니다';
-            if (error instanceof Error) {
-              errorMessage = error.message;
-            }
-
-            // 오류 상태로 업데이트
+          setTimeout(() => {
             updatePendingMemo(pendingId, {
+              status: 'analyzing',
+              extractedData: {
+                title: 'AI 분석 중...',
+                content: data.originalUrl || data.text || '',
+              },
+            });
+
+            setTimeout(() => {
+              removePendingMemo(pendingId);
+            }, 3000);
+          }, 8000);
+        }, 3000);
+
+        return;
+      }
+
+      // URL 처리 (추출 단계)
+      if (
+        data.currentStep === 'extracting' &&
+        data.originalUrl &&
+        data.originalUrl.match(/^https?:\/\//i)
+      ) {
+        // 대기 메모 생성 (UI용)
+        const pendingId = addPendingMemo(data.originalUrl);
+
+        // 처리 시작
+        processUrl(data.originalUrl, {
+          taskId: pendingId,
+          onStateChange: (id: string, status: string, stateData: any) => {
+            // 상태 변경 시 UI 업데이트
+            updatePendingMemo(id, {
+              status: status as PendingMemoStatus,
+              extractedData: stateData.extractData ||
+                stateData.extractedData || {
+                  title: stateData.message || '처리 중...',
+                  content: data.originalUrl,
+                },
+            });
+          },
+          onComplete: async (id: string, extractData: any) => {
+            // 완료 시 메모 생성 API 호출
+            try {
+              if (data.id) {
+                await updateMemoWithAI(data.id, extractData.content, {
+                  isUrl: true,
+                  sourceUrl: extractData.sourceUrl || null,
+                  originalTitle: extractData.title || '',
+                  originalImage: extractData.imageUrl || '',
+                  purpose: data.purpose || '일반',
+                  sourceId: extractData.sourceId || null,
+                });
+              } else {
+                await createMemo(extractData.content, {
+                  isUrl: true,
+                  sourceUrl: extractData.sourceUrl || null,
+                  originalTitle: extractData.title || '',
+                  originalImage: extractData.imageUrl || '',
+                  purpose: data.purpose || '일반',
+                  sourceId: extractData.sourceId || null,
+                });
+              }
+
+              // UI 상태 업데이트
+              updatePendingMemo(id, { status: 'completed' });
+
+              // 성공 알림
+              showNotification('메모가 성공적으로 생성되었습니다.', 'success');
+
+              // 완료된 항목 제거
+              setTimeout(() => removePendingMemo(id), 3000);
+            } catch (error) {
+              handleProcessError(id, error);
+            }
+          },
+          onError: (id: string, errorMessage: string) => {
+            updatePendingMemo(id, {
               status: 'error',
               error: errorMessage,
             });
+            showNotification(`오류가 발생했습니다: ${errorMessage}`, 'error');
 
+            // 오류 모달 표시
             setAlertData({
               title: '콘텐츠 추출 실패',
-              message: `오류가 발생했습니다: ${errorMessage}. 직접 내용을 복사하여 붙여넣어 주세요.`,
-              url: data.originalUrl || '',
+              message: errorMessage,
+              url: data.originalUrl,
             });
             setShowGlobalAlert(true);
+          },
+        });
+        return;
+      }
 
-            // 수정됨: URL 추출 실패 알림 추가
-            showNotification('콘텐츠 추출에 실패했습니다.', 'error');
-          }
-          return;
-        }
-
+      // 일반 메모 처리 (분석 단계)
+      if (data.isOngoing || data.currentStep === 'analyzing' || !data.currentStep) {
         // 중복 생성 방지 플래그 확인
         if (data.skipPendingCreation) {
           console.log('중복 생성 방지 플래그가 설정되어 있어 pendingMemo를 생성하지 않습니다.');
           return;
         }
 
-        // 분석 단계일 때 처리 중인 메모에 추가
+        // 대기 메모 생성
         const pendingId = addPendingMemo(data.text || data.content || '');
 
-        // 상태 및 추출 데이터 업데이트
+        // 분석 중 상태로 설정
         updatePendingMemo(pendingId, {
-          status: 'analyzing', // 항상 분석 중 상태로 추가
+          status: 'analyzing',
           extractedData: {
-            title: data.originalTitle || '',
+            title: data.originalTitle || 'AI 분석 중...',
             imageUrl: data.originalImage || '',
             content: data.text || data.content || '',
             sourceUrl: data.sourceUrl || null,
           },
         });
 
-        // 백그라운드 처리에도 API 호출 및 완료 처리 추가
         try {
           // OpenAI API 호출 및 메모 저장
           if (data.id) {
@@ -564,87 +397,15 @@ const MemoPageContent: React.FC = () => {
             });
           }
 
-          // 완료 상태로 업데이트 후 제거
+          // 완료 상태로 업데이트
           updatePendingMemo(pendingId, { status: 'completed' });
+          showNotification('메모가 성공적으로 생성되었습니다.', 'success');
+
+          // 완료된 항목 제거
           setTimeout(() => removePendingMemo(pendingId), 3000);
         } catch (error) {
-          // 오류 발생 시 상태 업데이트
-          let errorMessage = '알 수 없는 오류가 발생했습니다';
-          if (error instanceof Error) {
-            errorMessage = error.message;
-          } else if (typeof error === 'string') {
-            errorMessage = error;
-          }
-
-          updatePendingMemo(pendingId, {
-            status: 'error',
-            error: errorMessage,
-          });
-          showNotification(`오류가 발생했습니다: ${errorMessage}`, 'error');
+          handleProcessError(pendingId, error);
         }
-
-        return;
-      }
-
-      // 새로운 요청인 경우 (handleSubmit에서 호출된 경우)
-      const pendingId = addPendingMemo(data.text);
-
-      try {
-        // 상태 및 추출 데이터 업데이트
-        const status: PendingMemoStatus =
-          data.currentStep === 'extracting' ? 'extracting' : 'analyzing';
-
-        updatePendingMemo(pendingId, {
-          status: status,
-          extractedData: {
-            title: data.originalTitle || '',
-            imageUrl: data.originalImage || '',
-            content: data.text,
-            sourceUrl: data.sourceUrl || null,
-          },
-        });
-
-        // OpenAI API 호출 및 메모 저장
-        if (data.id) {
-          await updateMemoWithAI(data.id, data.text, {
-            isUrl: data.isUrl,
-            sourceUrl: data.sourceUrl || null,
-            originalTitle: data.originalTitle || '',
-            originalImage: data.originalImage || '',
-            purpose: data.purpose || '일반',
-            sourceId: data.sourceId || null,
-          });
-        } else {
-          await createMemo(data.text, {
-            isUrl: data.isUrl,
-            sourceUrl: data.sourceUrl || null,
-            originalTitle: data.originalTitle || '',
-            originalImage: data.originalImage || '',
-            purpose: data.purpose || '일반',
-            sourceId: data.sourceId || null,
-          });
-        }
-
-        // 완료 상태로 업데이트 후 알림
-        updatePendingMemo(pendingId, { status: 'completed' });
-        showNotification('메모가 성공적으로 생성되었습니다.', 'success');
-
-        // 잠시 후 목록에서 제거 (UI에서 처리 완료 표시를 보여주기 위해)
-        setTimeout(() => removePendingMemo(pendingId), 3000);
-      } catch (error) {
-        // 오류 발생 시 상태 업데이트
-        let errorMessage = '알 수 없는 오류가 발생했습니다';
-        if (error instanceof Error) {
-          errorMessage = error.message;
-        } else if (typeof error === 'string') {
-          errorMessage = error;
-        }
-
-        updatePendingMemo(pendingId, {
-          status: 'error',
-          error: errorMessage,
-        });
-        showNotification(`오류가 발생했습니다: ${errorMessage}`, 'error');
       }
     } catch (finalError) {
       // 최종 오류 처리
@@ -771,40 +532,6 @@ const MemoPageContent: React.FC = () => {
     }
   };
 
-  // 더블 탭 감지를 위한 상태와 타이머
-  const [lastTap, setLastTap] = useState<number>(0);
-  const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // 대기 중인 메모 헤더 클릭 처리 (더블 탭으로 모든 메모 정리)
-  const handlePendingHeaderClick = () => {
-    const now = new Date().getTime();
-    const DOUBLE_TAP_DELAY = 300; // 더블 탭 인식 시간 (ms)
-
-    if (now - lastTap < DOUBLE_TAP_DELAY) {
-      // 더블 탭 감지됨
-      if (tapTimerRef.current) {
-        clearTimeout(tapTimerRef.current);
-        tapTimerRef.current = null;
-      }
-
-      // 모든 대기 메모 제거
-      removeAllPendingMemos();
-      showTopAlert('모든 처리 중인 메모가 제거되었습니다.', 'info');
-    } else {
-      // 첫 번째 탭
-      setLastTap(now);
-
-      if (tapTimerRef.current) {
-        clearTimeout(tapTimerRef.current);
-      }
-
-      tapTimerRef.current = setTimeout(() => {
-        // 단일 탭 처리 (필요한 경우)
-        tapTimerRef.current = null;
-      }, DOUBLE_TAP_DELAY);
-    }
-  };
-
   const handlePurposeSelect = (purpose: string | null) => {
     console.log('목적 선택:', purpose);
     setSelectedPurpose(purpose);
@@ -853,7 +580,7 @@ const MemoPageContent: React.FC = () => {
       {/* 헤더 */}
       <Header />
 
-      {/* 검색 및 필터 바 (새로 추가) */}
+      {/* 검색 및 필터 바 */}
       <div
         className={`transition-all duration-300 ease-in-out overflow-hidden ${
           searchVisible ? 'max-h-64' : 'max-h-0'
@@ -912,109 +639,13 @@ const MemoPageContent: React.FC = () => {
         />
       )}
 
-      {/* 대기 중인 메모 목록 - 모든 단계 메모 표시 */}
-      {pendingMemos.length > 0 && (
-        <div className="p-2 bg-gray-50">
-          <h3
-            className="text-sm font-medium text-gray-700 mb-2 px-2 flex justify-between items-center"
-            onClick={handlePendingHeaderClick}
-          >
-            <span>처리 중인 메모</span>
-            <span className="text-xs text-gray-400">({pendingMemos.length})</span>
-          </h3>
-          <div className="space-y-2">
-            {/* filter 제거하고 모든 상태 표시 */}
-            {pendingMemos.map((pendingMemo) => (
-              <div
-                key={pendingMemo.id}
-                className="p-3 bg-white rounded-lg shadow-sm border border-gray-100"
-              >
-                <div className="flex items-center">
-                  {/* 상태에 따른 아이콘 */}
-                  <div className="mr-3">
-                    {pendingMemo.status === 'extracting' && (
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        {/* 추출 아이콘 */}
-                        <span className="animate-pulse">⬇️</span>
-                      </div>
-                    )}
-                    {pendingMemo.status === 'processing' && (
-                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                        <span className="animate-pulse">⚙️</span>
-                      </div>
-                    )}
-                    {pendingMemo.status === 'analyzing' && (
-                      <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
-                        <span className="animate-pulse">🧠</span>
-                      </div>
-                    )}
-                    {pendingMemo.status === 'completed' && (
-                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                        <span>✅</span>
-                      </div>
-                    )}
-                    {pendingMemo.status === 'error' && (
-                      <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                        <span>❌</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">
-                      {pendingMemo.status === 'extracting'
-                        ? '내용 추출 중...'
-                        : pendingMemo.status === 'processing'
-                        ? '데이터 정제 중...'
-                        : pendingMemo.status === 'analyzing'
-                        ? 'AI 분석 중...'
-                        : pendingMemo.extractedData?.title || '처리 중인 메모'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {pendingMemo.status === 'extracting' && 'URL에서 콘텐츠를 추출하는 중...'}
-                      {pendingMemo.status === 'processing' && '추출된 데이터 정제 및 구조화 중...'}
-                      {pendingMemo.status === 'analyzing' && 'AI 분석 중...'}
-                      {pendingMemo.status === 'completed' && (
-                        <span className="text-green-500">처리 완료!</span>
-                      )}
-                      {pendingMemo.status === 'error' && (
-                        <span className="text-red-500">{pendingMemo.error || '오류 발생'}</span>
-                      )}
-                    </p>
-
-                    {/* 추출 중일 때 입력 텍스트 표시 */}
-                    {pendingMemo.status === 'extracting' && (
-                      <p className="text-xs text-gray-400 mt-1 line-clamp-1 italic">
-                        {pendingMemo.inputText}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* 이미지 미리보기 (있는 경우) */}
-                  {pendingMemo.extractedData?.imageUrl && (
-                    <div className="ml-2 w-12 h-12">
-                      <img
-                        src={pendingMemo.extractedData.imageUrl}
-                        alt="미리보기"
-                        className="w-full h-full object-cover rounded"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                  )}
-
-                  {/* 개별 메모 제거 버튼 */}
-                  <button
-                    className="ml-2 p-1 text-gray-400 hover:text-red-500"
-                    onClick={() => removePendingMemo(pendingMemo.id)}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* 대기 중인 메모 목록 - 새 컴포넌트 사용 */}
+      <PendingMemosList
+        pendingMemos={pendingMemos}
+        onRemove={removePendingMemo}
+        onRemoveAll={removeAllPendingMemos}
+        onHeaderDoubleClick={() => showTopAlert('모든 처리 중인 메모가 제거되었습니다.', 'info')}
+      />
 
       {/* 메모 목록 */}
       <div className="divide-y divide-gray-200 ">
@@ -1077,16 +708,11 @@ const MemoPageContent: React.FC = () => {
         message={
           <>
             <p>{alertData.message}</p>
-            {/* {alertData.url && (
-              <div className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
-                <code>{alertData.url}</code>
-              </div>
-            )} */}
           </>
         }
         onConfirm={() => {
           setShowGlobalAlert(false);
-          // 수정됨: 모달이 닫힐 때 추가 안내 알림 표시
+          // 모달이 닫힐 때 추가 안내 알림 표시
           showNotification('콘텐츠 추출에 실패했습니다.', 'error');
         }}
       />
