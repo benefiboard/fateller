@@ -573,10 +573,10 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
             {/* 핵심 문장 - 애플 스타일 */}
             <div
-              className="p-4 my-4 rounded-lg bg-gray-50 border border-gray-200 shadow-sm cursor-pointer"
+              className="p-4 py-8 my-4 rounded-lg bg-gray-50 border border-gray-200 shadow-sm cursor-pointer"
               onClick={completeCurrentTabTyping}
             >
-              <div className="text-base text-gray-800 leading-relaxed">
+              <div className="text-lg font-medium text-gray-800 leading-relaxed">
                 {shouldStartTyping && !tab0Completed ? (
                   <Typewriter
                     onInit={(typewriter) => {
@@ -590,7 +590,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                     options={{
                       cursor: '',
                       delay: 80,
-                      wrapperClassName: 'text-base text-gray-800 leading-relaxed',
+                      wrapperClassName: 'text-lg font-medium text-gray-800 leading-relaxed',
                     }}
                   />
                 ) : (
@@ -608,7 +608,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
               {memo.labeling.keywords.map((keyword, keywordIndex) => (
                 <span
                   key={keywordIndex}
-                  className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full"
+                  className="px-2 py-1 text-sm bg-gray-100 text-gray-700 rounded-full"
                 >
                   #{keyword}
                 </span>
@@ -617,22 +617,26 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
             {/* 원본이미지와 제목 */}
             {memo.original_image && (
-              <div className="mt-5 rounded-lg overflow-hidden border border-gray-100 shadow-sm">
-                <div className="p-3 bg-gray-50">
-                  <p className="text-sm font-medium text-gray-800">
+              <div className="flex flex-col gap-2 mt-2">
+                <hr className="w-full" />
+
+                <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50 mt-1">
+                  <div className="h-16 col-span-3 relative">
+                    <img
+                      src={memo.original_image}
+                      alt="Original Image"
+                      className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        // 이미지 로드 실패 시 대체 이미지나 에러 처리
+                        console.log('이미지 로드 실패:', e);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <p className="col-span-5 text-sm leading-tight text-gray-600 flex-grow overflow-hidden">
                     {memo.original_title || 'no title'}
                   </p>
-                </div>
-                <div className="aspect-video bg-gray-200 relative">
-                  <img
-                    src={memo.original_image}
-                    alt="Original Image"
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
                 </div>
               </div>
             )}
@@ -670,7 +674,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                   parsedContent.sections.length > 0
                 ) {
                   return (
-                    <div className="space-y-6">
+                    <div className="space-y-12">
                       {parsedContent.sections.map((section: any, idx: number) => {
                         if (!section || typeof section !== 'object') return null;
 
@@ -684,11 +688,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
                           <div key={idx} className="mb-4">
                             {/* 섹션 헤더 */}
                             <div className="mb-3">
-                              <div className="text-xs font-medium text-gray-400">
-                                섹션 {idx + 1}
+                              <div className="text-xs font-medium text-gray-400 flex items-center gap-2 mb-2">
+                                <p>Section {idx + 1}</p>
+                                <hr className="flex-1 border-t border-gray-300" />
                               </div>
-                              <h3 className="text-base font-semibold text-gray-900">
-                                {renderHTML(heading)}
+                              <h3 className="text-lg font-bold text-gray-900">
+                                {idx + 1}. {renderHTML(heading)}
                               </h3>
                             </div>
 
@@ -712,10 +717,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                     key={pidx}
                                     className="p-3 bg-gray-50 rounded-lg border border-gray-100 shadow-sm"
                                   >
-                                    <div className="font-medium text-gray-900 mb-1">{title}</div>
-                                    {content && (
-                                      <div className="text-sm text-gray-700">{content}</div>
-                                    )}
+                                    <div className="text-lg font-semibold text-gray-900 mb-1">
+                                      <span className="text-sm text-gray-600">▶ </span>
+                                      {title}
+                                    </div>
+                                    {content && <div className=" text-gray-700">{content}</div>}
                                   </div>
                                 );
                               })}
@@ -723,7 +729,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                             {/* 하위 섹션 */}
                             {subSections.length > 0 && (
-                              <div className="mt-4 ml-4 pl-4 border-l-2 border-gray-200">
+                              <div className="mt-4 ml-4 pl-4 border-l-2 border-gray-400">
                                 {subSections.map((subSection: any, ssidx: number) => {
                                   if (!subSection || typeof subSection !== 'object') return null;
 
@@ -735,7 +741,8 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                   return (
                                     <div key={ssidx} className="mb-3">
                                       {/* 하위 섹션 제목 */}
-                                      <h4 className="font-medium text-gray-800 mb-2">
+                                      <h4 className="text-lg font-medium text-gray-800 mb-2">
+                                        <span className="text-sm text-gray-600">§ </span>
                                         {renderHTML(subHeading)}
                                       </h4>
 
@@ -755,15 +762,15 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                             }
 
                                             return (
-                                              <div
-                                                key={spidx}
-                                                className="p-2 bg-gray-50 rounded text-sm"
-                                              >
+                                              <div key={spidx} className="p-2 bg-gray-50 rounded">
                                                 <div className="font-medium text-gray-800">
+                                                  <span className="text-sm text-gray-600">- </span>
                                                   {title}
                                                 </div>
                                                 {content && (
-                                                  <div className="text-gray-600">{content}</div>
+                                                  <div className="text-gray-600 text-sm">
+                                                    {content}
+                                                  </div>
                                                 )}
                                               </div>
                                             );
@@ -797,7 +804,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
           );
         }
 
-        // 아직 타이핑 완료되지 않은 경우 - 순차적 타이핑 효과 적용 (원래 기능 유지)
+        // 아직 타이핑 완료되지 않은 경우 - 순차적 타이핑 효과 적용 (Apple 스타일 UI 적용)
         return (
           <div className="pt-4" ref={tabRefs.key}>
             {/* 헤더 */}
@@ -814,7 +821,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
               </div>
             </div>
 
-            {/* 안전하게 내용 렌더링 - 순차적 타이핑 적용 */}
+            {/* 안전하게 내용 렌더링 - 순차적 타이핑 적용 (Apple 스타일 UI) */}
             {(() => {
               // 기본적으로 일반 문자열로 처리
               let content = memo.tweet_main;
@@ -831,7 +838,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                 return (
                   // 클릭 시 타이핑 완료 효과 유지하면서 애플 스타일 적용
-                  <div className="space-y-6 cursor-pointer" onClick={completeCurrentTabTyping}>
+                  <div className="space-y-12 cursor-pointer" onClick={completeCurrentTabTyping}>
                     {sections.map((section: any, idx: number) => {
                       // 섹션 유효성 검사
                       if (!section || typeof section !== 'object') return null;
@@ -850,10 +857,14 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                       return (
                         <div key={idx} className={`mb-4 ${isSectionVisible ? '' : 'hidden'}`}>
-                          {/* 섹션 헤더 */}
+                          {/* 섹션 헤더 - Apple 스타일 적용 */}
                           <div className="mb-3">
-                            <div className="text-xs font-medium text-gray-400">섹션 {idx + 1}</div>
-                            <h3 className="text-base font-semibold text-gray-900">
+                            <div className="text-xs font-medium text-gray-400 flex items-center gap-2 mb-2">
+                              <p>Section {idx + 1}</p>
+                              <hr className="flex-1 border-t border-gray-300" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900">
+                              {idx + 1}.{' '}
                               {shouldStartTyping &&
                               idx === activeSection &&
                               activeSectionPoint === -1 ? (
@@ -881,7 +892,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                             </h3>
                           </div>
 
-                          {/* 섹션 포인트 - 타이핑 효과 적용 */}
+                          {/* 섹션 포인트 - 타이핑 효과 적용 + Apple 스타일 */}
                           <div className="space-y-3">
                             {points.map((point: any, pidx: number) => {
                               // 수정된 포인트 가시성 조건
@@ -909,12 +920,15 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                     isPointVisible ? '' : 'hidden'
                                   }`}
                                 >
-                                  <div className="font-medium text-gray-900 mb-1">{title}</div>
+                                  <div className="text-lg font-semibold text-gray-900 mb-1">
+                                    <span className="text-sm text-gray-600">▶ </span>
+                                    {title}
+                                  </div>
                                   {content &&
                                   shouldStartTyping &&
                                   idx === activeSection &&
                                   pidx === activeSectionPoint ? (
-                                    <div className="text-sm text-gray-700">
+                                    <div className="text-gray-700">
                                       <Typewriter
                                         onInit={(typewriter) => {
                                           typewriter
@@ -928,23 +942,21 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                         options={{
                                           cursor: '',
                                           delay: 30,
-                                          wrapperClassName: 'text-sm text-gray-700',
+                                          wrapperClassName: 'text-gray-700',
                                         }}
                                       />
                                     </div>
                                   ) : (
-                                    content && (
-                                      <div className="text-sm text-gray-700">{content}</div>
-                                    )
+                                    content && <div className="text-gray-700">{content}</div>
                                   )}
                                 </div>
                               );
                             })}
                           </div>
 
-                          {/* 하위 섹션 - 서브섹션 가시성 문제 수정 */}
+                          {/* 하위 섹션 - Apple 스타일 적용 */}
                           {subSections.length > 0 && (
-                            <div className="mt-4 ml-4 pl-4 border-l-2 border-gray-200">
+                            <div className="mt-4 ml-4 pl-4 border-l-2 border-gray-400">
                               {subSections.map((subSection: any, ssidx: number) => {
                                 // 하위 섹션 유효성 검사
                                 if (!subSection || typeof subSection !== 'object') return null;
@@ -978,8 +990,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                     key={ssidx}
                                     className={`mb-3 ${isSubSectionVisible ? '' : 'hidden'}`}
                                   >
-                                    {/* 하위 섹션 제목 - 타이핑 효과 적용 */}
-                                    <h4 className="font-medium text-gray-800 mb-2">
+                                    {/* 하위 섹션 제목 - 타이핑 효과 적용 + Apple 스타일 */}
+                                    <h4 className="text-lg font-medium text-gray-800 mb-2">
+                                      <span className="text-sm text-gray-600">§ </span>
                                       {shouldStartTyping &&
                                       idx === activeSection &&
                                       ssidx === activeSubSection &&
@@ -1011,7 +1024,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                       )}
                                     </h4>
 
-                                    {/* 하위 섹션 포인트 - 타이핑 효과 적용 */}
+                                    {/* 하위 섹션 포인트 - 타이핑 효과 적용 + Apple 스타일 */}
                                     {subPoints.length > 0 && (
                                       <div className="space-y-2">
                                         {subPoints.map((subPoint: any, spidx: number) => {
@@ -1044,11 +1057,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                           return (
                                             <div
                                               key={spidx}
-                                              className={`p-2 bg-gray-50 rounded text-sm ${
+                                              className={`p-2 bg-gray-50 rounded ${
                                                 isSubPointVisible ? '' : 'hidden'
                                               }`}
                                             >
                                               <div className="font-medium text-gray-800">
+                                                <span className="text-sm text-gray-600">- </span>
                                                 {title}
                                               </div>
                                               {content &&
@@ -1056,7 +1070,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                               idx === activeSection &&
                                               ssidx === activeSubSection &&
                                               spidx === activeSubSectionPoint ? (
-                                                <div className="text-gray-600">
+                                                <div className="text-gray-600 text-sm">
                                                   <Typewriter
                                                     onInit={(typewriter) => {
                                                       typewriter
@@ -1075,13 +1089,15 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                                     options={{
                                                       cursor: '',
                                                       delay: 20,
-                                                      wrapperClassName: 'text-gray-600',
+                                                      wrapperClassName: 'text-gray-600 text-sm',
                                                     }}
                                                   />
                                                 </div>
                                               ) : (
                                                 content && (
-                                                  <div className="text-gray-600">{content}</div>
+                                                  <div className="text-gray-600 text-sm">
+                                                    {content}
+                                                  </div>
                                                 )
                                               )}
                                             </div>
@@ -1101,7 +1117,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 );
               }
 
-              // 기존 문자열 형식으로 표시 - 폴백 처리 + 클릭 효과 추가
+              // 기존 문자열 형식으로 표시 - 폴백 처리 + 클릭 효과 추가 (Apple 스타일)
               return (
                 <div
                   className="p-4 my-4 rounded-lg bg-gray-50 border border-gray-200 shadow-sm cursor-pointer"
@@ -1253,12 +1269,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
           </div>
         );
 
-      case 3: // 원문 - 애플 스타일 적용
+      case 3:
         return (
           <div className="pt-4" ref={tabRefs.original}>
-            {/* 헤더 */}
-            <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
-              <h2 className="tracking-tight text-base font-semibold text-gray-900">원문</h2>
+            {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
+            <div className="border-l-2 border-gray-400 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
+              <h2 className="flex-1 tracking-tighter  text-sm text-gray-800">원문</h2>
               <div onClick={completeAllTypingEffects} style={{ cursor: 'pointer' }}>
                 <ShareButton
                   memo={memo}
@@ -1271,78 +1287,77 @@ const MemoContent: React.FC<MemoContentProps> = ({
             </div>
 
             {memo.original_url ? (
-              // URL인 경우 애플 스타일 적용
-              <div className="space-y-4">
-                {/* URL */}
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="text-xs text-gray-500 mb-1">URL</div>
-                  <p className="text-sm text-gray-700 break-all">{memo.original_url}</p>
-                </div>
+              // URL인 경우 링크와 원문 내용 토글 버튼 표시
+              <div className="">
+                {/* URL을 일반 텍스트로 표시 */}
+                <p className="text-sm text-gray-700 break-all">{memo.original_url}</p>
 
-                {/* 액션 버튼 */}
-                <div className="flex gap-3">
+                {/* 원문으로 이동 버튼 추가 */}
+                <div className="flex flex-col gap-1 mt-2">
                   <Link
                     href={memo.original_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center text-sm text-gray-700 hover:text-gray-900 px-3 py-2 bg-gray-50 rounded-lg"
+                    className="flex items-center text-sm text-gray-800 hover:text-gray-900"
                   >
                     <ExternalLink size={16} className="mr-2" /> 원문으로 이동
                   </Link>
 
+                  {/* 원문 내용보기 버튼 추가 */}
                   {memo.original_text && (
                     <button
                       onClick={toggleOriginalText}
-                      className="flex items-center text-sm text-gray-700 hover:text-gray-900 px-3 py-2 bg-gray-50 rounded-lg"
+                      className="flex items-center text-sm text-gray-800 hover:text-gray-900"
                     >
                       {showOriginalText ? (
                         <>
-                          <ChevronUp size={16} className="mr-2" /> 내용접기
+                          <ChevronUp size={16} className="mr-2" /> 원문 내용접기
                         </>
                       ) : (
                         <>
-                          <ChevronDown size={16} className="mr-2" /> 내용보기
+                          <ChevronDown size={16} className="mr-2" /> 원문 내용보기
                         </>
                       )}
                     </button>
                   )}
                 </div>
 
-                {/* 원문 내용 */}
+                {/* 원문 내용이 있고 보기 상태일 때만 표시 */}
                 {showOriginalText && memo.original_text && (
-                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
-                    <div className="text-xs text-gray-500 mb-2">원문 내용</div>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                      {memo.original_text}
-                    </p>
-                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    {memo.original_text}
+                  </p>
                 )}
 
-                {/* 원본 이미지와 제목 */}
+                {/* 원본이미지와 제목 */}
                 {memo.original_image && (
-                  <div className="mt-4 rounded-lg overflow-hidden border border-gray-100 shadow-sm">
-                    <div className="p-3 bg-gray-50">
-                      <p className="text-sm font-medium text-gray-800">
+                  <div className="flex flex-col gap-2 mt-2">
+                    <hr className="w-full" />
+
+                    <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50 mt-1">
+                      <div className="h-16 col-span-3 relative">
+                        <img
+                          src={memo.original_image}
+                          alt="Original Image"
+                          className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            // 이미지 로드 실패 시 대체 이미지나 에러 처리
+                            console.log('이미지 로드 실패:', e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                      <p className="col-span-5 text-sm leading-tight text-gray-600 flex-grow overflow-hidden">
                         {memo.original_title || 'no title'}
                       </p>
-                    </div>
-                    <div className="aspect-video bg-gray-200 relative">
-                      <img
-                        src={memo.original_image}
-                        alt="Original Content"
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              // 일반 텍스트
-              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 shadow-sm">
+              // 일반 텍스트인 경우 기존처럼 표시
+              <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 shadow-sm">
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">
                   {memo.original_text || '원문이 없습니다.'}
                 </p>
@@ -1350,7 +1365,6 @@ const MemoContent: React.FC<MemoContentProps> = ({
             )}
           </div>
         );
-
       default:
         return null;
     }
