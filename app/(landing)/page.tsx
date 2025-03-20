@@ -1,4 +1,4 @@
-// app/page.tsx
+// app/(landing)/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';

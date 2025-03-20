@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://brainlabeling.com
+
+# Sitemaps
+Sitemap: https://brainlabeling.com/sitemap.xml
