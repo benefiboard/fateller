@@ -219,7 +219,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             </div>
 
             {/* 핵심 문장 - 애플 스타일 */}
-            <div className="p-4 py-8 my-4 rounded-lg bg-emerald-50/50 border border-emerald-200 shadow-sm">
+            <div className="p-4 py-8 my-4 rounded-lg border bg-emerald-50/50 border-gray-200 shadow-sm">
               <div className="text-lg font-medium text-gray-800 leading-relaxed">
                 {renderHTML(memo.labeling.key_sentence)}
               </div>
@@ -230,7 +230,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
               {memo.labeling.keywords.map((keyword, keywordIndex) => (
                 <span
                   key={keywordIndex}
-                  className="px-4 py-1 text-sm bg-emerald-50/50 border border-emerald-200 text-gray-700 rounded-full"
+                  className="px-4 py-1 text-sm border bg-emerald-50/50 border-gray-200 text-gray-700 rounded-full"
                 >
                   #{keyword}
                 </span>
@@ -331,7 +331,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                               return (
                                 <div
                                   key={pidx}
-                                  className="p-3 rounded-lg bg-emerald-50/50 border border-emerald-200 shadow-sm"
+                                  className="p-3 rounded-lg border bg-emerald-50/50 border-gray-200 shadow-sm"
                                 >
                                   <div className="text-lg font-semibold text-gray-900 mb-1">
                                     <span className="text-sm text-gray-600">▶ </span>
@@ -380,7 +380,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                           return (
                                             <div
                                               key={spidx}
-                                              className="p-2 bg-emerald-50/50 border border-emerald-200 rounded"
+                                              className="p-2 border bg-emerald-50/50 border-gray-200 rounded"
                                             >
                                               <div className="font-medium text-gray-800">
                                                 <span className="text-sm text-gray-600">- </span>
@@ -446,7 +446,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 return (
                   <div
                     key={tweetIndex}
-                    className="flex p-4 rounded-lg bg-emerald-50/50 border border-emerald-200 shadow-sm"
+                    className="flex p-4 rounded-lg border bg-emerald-50/50 border-gray-200 shadow-sm"
                   >
                     <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center mr-3 text-xs font-medium text-gray-600">
                       {tweetIndex + 1}
