@@ -53,7 +53,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </div>
 
       <StoreInitializer currentUser={currentUser} />
-      <MysticSymbolsEffect />
+
       <AnalyticsTracker currentUser={currentUser} />
     </PWAProviders>
   );

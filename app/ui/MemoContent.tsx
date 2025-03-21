@@ -255,7 +255,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             </div>
 
             {/* 핵심 문장 - 애플 스타일 */}
-            <div className="p-4 py-8 my-4 rounded-lg border bg-gray-50 border-gray-300 shadow-sm">
+            <div className="p-4 py-8 my-4 rounded-lg border bg-white border-gray-300 shadow-sm">
               <div className="font-medium text-gray-800 leading-relaxed">
                 {renderHTML(memo.labeling.key_sentence)}
               </div>
@@ -278,7 +278,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
               <div className="flex flex-col gap-2 mt-2">
                 <hr className="w-full" />
 
-                <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50 mt-1">
+                <div className="grid grid-cols-8 items-center gap-2 w-full bg-white mt-1">
                   <div className="h-16 col-span-3 relative">
                     <img
                       src={memo.original_image}
@@ -367,7 +367,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                               return (
                                 <div
                                   key={pidx}
-                                  className="p-3 py-6 rounded-lg border border-gray-200 bg-gray-50 shadow-sm"
+                                  className="p-3 py-6 rounded-lg border border-gray-200 bg-white shadow-sm"
                                 >
                                   <div className="text-gray-800">{renderHTML(title)}</div>
                                   {content && (
@@ -414,7 +414,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                           return (
                                             <div
                                               key={spidx}
-                                              className="p-2 border border-gray-100 bg-gray-50 rounded"
+                                              className="p-2 border border-gray-100 bg-white rounded"
                                             >
                                               <div className="text-sm text-gray-800">
                                                 {renderHTML(title)}
@@ -442,7 +442,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
               } else {
                 // 단순 텍스트 콘텐츠인 경우
                 return (
-                  <div className="p-4 my-4 rounded-lg bg-gray-50 border border-gray-200 shadow-sm">
+                  <div className="p-4 my-4 rounded-lg bg-white border border-gray-200 shadow-sm">
                     <p className="text-base text-gray-800 leading-relaxed">
                       {typeof memo.tweet_main === 'string'
                         ? renderHTML(memo.tweet_main)
@@ -479,7 +479,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 return (
                   <div
                     key={tweetIndex}
-                    className="flex p-3 py-6 rounded-lg border border-gray-200 bg-gray-50 shadow-sm"
+                    className="flex p-3 py-6 rounded-lg border border-gray-200 bg-white shadow-sm"
                   >
                     <div className="w-6 h-6 rounded-full border border-gray-400 flex items-center justify-center mr-3 text-xs font-medium text-gray-600">
                       {tweetIndex + 1}
@@ -555,7 +555,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                   <div className="flex flex-col gap-2 mt-2">
                     <hr className="w-full" />
 
-                    <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50 mt-1">
+                    <div className="grid grid-cols-8 items-center gap-2 w-full bg-white mt-1">
                       <div className="h-16 col-span-3 relative">
                         <img
                           src={memo.original_image}
