@@ -84,6 +84,54 @@ const MemoContent: React.FC<MemoContentProps> = ({
     console.error(`${getCurrentTabType()} 탭 ${type} 공유 실패:`, error);
   };
 
+  // 텍스트 내의 문장 끝에만 줄바꿈 추가 (영문 약어 제외)
+  const addLineBreaksToSentences = (text: string): string => {
+    if (!text) return '';
+
+    // 일반적인 영문 약어 목록
+    const commonAbbreviations = [
+      'Mr',
+      'Mrs',
+      'Ms',
+      'Dr',
+      'Prof',
+      'St',
+      'Ave',
+      'Blvd',
+      'Rd',
+      'Ph.D',
+      'etc',
+      'i.e',
+      'e.g',
+      'vs',
+      'Fig',
+      'Inc',
+      'Corp',
+      'Ltd',
+      'Jr',
+      'Sr',
+    ];
+
+    // 약어 패턴 만들기 (각 약어 뒤에 .이 올 경우)
+    const abbreviationPattern = new RegExp(`\\b(${commonAbbreviations.join('|')})\\.`, 'g');
+
+    // 1단계: 약어를 임시 토큰으로 대체 (예: Mr. → Mr_ABV_)
+    let processedText = text.replace(abbreviationPattern, (match) => {
+      return match.replace('.', '_ABV_');
+    });
+
+    // 2단계: 소수점이 아닌 문장 끝 마침표를 찾아 줄바꿈 추가
+    // (?<!\d) - 숫자 뒤가 아님을 확인 (소수점 제외)
+    // \. - 마침표
+    // (?=\s|$) - 뒤에 공백이나 문장 끝이 옴을 확인
+    processedText = processedText.replace(/(?<!\d)\.(?=\s|$)/g, '.<br>');
+
+    // 3단계: 약어 토큰을 다시 마침표로 복원
+    processedText = processedText.replace(/_ABV_/g, '.');
+
+    return processedText;
+  };
+
   // HTML 태그를 처리하는 함수 - 최적화된 버전
   const processContentTags = (text: string): string => {
     if (!text) return '';
@@ -133,7 +181,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
       );
     }
 
-    return processedText;
+    return addLineBreaksToSentences(processedText);
   };
 
   // renderHTML 함수
@@ -417,14 +465,14 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                           return (
                                             <div
                                               key={spidx}
-                                              className="p-2 py-4 border border-gray-100 bg-white rounded"
+                                              className="p-2  border border-gray-100 bg-white rounded"
                                             >
-                                              <div className="text-sm text-gray-800 flex items-start gap-1">
+                                              <div className=" text-gray-600 flex items-start gap-1">
                                                 <div className="text-xs mt-[2px]">⊙</div>
                                                 {renderHTML(title)}
                                               </div>
                                               {content && (
-                                                <div className="text-gray-600 text-sm">
+                                                <div className="text-gray-600 ">
                                                   {renderHTML(content)}
                                                 </div>
                                               )}
