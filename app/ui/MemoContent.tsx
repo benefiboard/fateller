@@ -133,54 +133,54 @@ const MemoContent: React.FC<MemoContentProps> = ({
   };
 
   // HTML 태그를 처리하는 함수 - 최적화된 버전
+  // HTML 태그를 처리하는 함수 - 수정된 버전
   const processContentTags = (text: string): string => {
     if (!text) return '';
     if (typeof text !== 'string') return String(text || '');
 
-    // 태그가 있는 경우만 처리 (성능 최적화)
+    let processedText = text;
+
+    // 태그가 있는 경우만 태그 처리 (성능 최적화)
     const hasKeyTags = /<key>(.*?)<\/key>/g.test(text);
     const hasTermTags = /<term>(.*?)<\/term>/g.test(text);
     const hasExTags = /<ex>(.*?)<\/ex>/g.test(text);
     const hasDataTags = /<data>(.*?)<\/data>/g.test(text);
 
-    if (!(hasKeyTags || hasTermTags || hasExTags || hasDataTags)) {
-      return text;
+    if (hasKeyTags || hasTermTags || hasExTags || hasDataTags) {
+      // 핵심 내용 (key 태그) - 단순한 밑줄만 사용
+      if (hasKeyTags) {
+        processedText = processedText.replace(
+          /<key>(.*?)<\/key>/g,
+          '<span class="border-b-2 border-gray-400 font-extrabold">$1</span>'
+        );
+      }
+
+      // 중요 용어 (term 태그) - 점선 밑줄 사용
+      if (hasTermTags) {
+        processedText = processedText.replace(
+          /<term>(.*?)<\/term>/g,
+          '<span class="font-black text-emerald-800">$1</span>'
+        );
+      }
+
+      // 예시/사례 (ex 태그) - 괄호와 마커 사용
+      if (hasExTags) {
+        processedText = processedText.replace(
+          /<ex>(.*?)<\/ex>/g,
+          '<span class=" italic font-bold">$1</span>'
+        );
+      }
+
+      // 데이터/수치 (data 태그) - 숫자 표시 기호 사용
+      if (hasDataTags) {
+        processedText = processedText.replace(
+          /<data>(.*?)<\/data>/g,
+          '<span class="text-red-900">$1</span>'
+        );
+      }
     }
 
-    let processedText = text;
-
-    // 핵심 내용 (key 태그) - 단순한 밑줄만 사용
-    if (hasKeyTags) {
-      processedText = processedText.replace(
-        /<key>(.*?)<\/key>/g,
-        '<span class="border-b-2 border-gray-400 font-extrabold">$1</span>'
-      );
-    }
-
-    // 중요 용어 (term 태그) - 점선 밑줄 사용
-    if (hasTermTags) {
-      processedText = processedText.replace(
-        /<term>(.*?)<\/term>/g,
-        '<span class="font-black text-emerald-800">$1</span>'
-      );
-    }
-
-    // 예시/사례 (ex 태그) - 괄호와 마커 사용
-    if (hasExTags) {
-      processedText = processedText.replace(
-        /<ex>(.*?)<\/ex>/g,
-        '<span class=" italic font-bold">$1</span>'
-      );
-    }
-
-    // 데이터/수치 (data 태그) - 숫자 표시 기호 사용
-    if (hasDataTags) {
-      processedText = processedText.replace(
-        /<data>(.*?)<\/data>/g,
-        '<span class="text-red-900">$1</span>'
-      );
-    }
-
+    // 항상 줄바꿈 처리를 수행 (태그 유무와 관계없이)
     return addLineBreaksToSentences(processedText);
   };
 
