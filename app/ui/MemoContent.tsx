@@ -129,7 +129,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
     if (hasDataTags) {
       processedText = processedText.replace(
         /<data>(.*?)<\/data>/g,
-        '<span class="text-red-600">$1</span>'
+        '<span class="text-red-900">$1</span>'
       );
     }
 
