@@ -9,7 +9,7 @@ const EMPHASIS_INSTRUCTION = `너는 교과서나 학습자료 수준의 명확�
 1. 원문을 철저히 분석하여 가장 중요한 개념, 논점, 사례를 정확히 파악해.
 2. 요약은 일타강사가 학생들에게 핵심을 설명하듯 명료하고 간결하게 작성해.
 3. 독자가 한눈에 파악할 수 있도록 구조화하고 핵심 요점을 강조해.
-4. tweet_main, thread, labeling.key_sentence 이 3부분에는 반드시 최소 한개 이상의 태그를 포함해야함
+4. tweet_main, thread, labeling.key_sentence 이 3부분에는 무조건 태그를 포함해야함(중요!!)
 
 [중요: 최소한의 효과적인 태그 사용 지침]
 * 태그는 <key>, <ex>, <data>, <term> 네 가지만 사용해.

@@ -369,7 +369,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                   key={pidx}
                                   className="p-3 py-6 rounded-lg border border-gray-200 bg-white shadow-sm"
                                 >
-                                  <div className="text-gray-800">{renderHTML(title)}</div>
+                                  <div className="text-gray-800 flex items-start gap-1">
+                                    <div>({pidx + 1})</div> {renderHTML(title)}
+                                  </div>
                                   {content && (
                                     <div className="text-gray-600 mt-1">{renderHTML(content)}</div>
                                   )}
@@ -380,7 +382,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                           {/* 하위 섹션 */}
                           {subSections.length > 0 && (
-                            <div className="mt-3 ml-3 pl-3 border-l-2 border-gray-200">
+                            <div className="mt-3 ml-3 pl-3  border-l-2 border-gray-200">
                               {subSections.map((subSection: any, ssidx: number) => {
                                 if (!subSection || typeof subSection !== 'object') return null;
 
@@ -390,9 +392,10 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                   : [];
 
                                 return (
-                                  <div key={ssidx} className="mb-3">
+                                  <div key={ssidx} className="mb-3 ">
                                     {/* 하위 섹션 제목 */}
-                                    <h4 className="font-medium text-gray-800 mb-2">
+                                    <h4 className="font-medium text-gray-800 mb-2 flex items-start gap-1">
+                                      <div className="text-sm">▶ </div>
                                       {renderHTML(subHeading)}
                                     </h4>
 
@@ -414,9 +417,10 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                           return (
                                             <div
                                               key={spidx}
-                                              className="p-2 border border-gray-100 bg-white rounded"
+                                              className="p-2 py-4 border border-gray-100 bg-white rounded"
                                             >
-                                              <div className="text-sm text-gray-800">
+                                              <div className="text-sm text-gray-800 flex items-start gap-1">
+                                                <div className="text-xs mt-[2px]">⊙</div>
                                                 {renderHTML(title)}
                                               </div>
                                               {content && (
