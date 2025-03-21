@@ -241,7 +241,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
     switch (tabIndex) {
       case 0: // 아이디어
         return (
-          <div className="pt-4" ref={tabRefs.idea}>
+          <div className="pt-4 " ref={tabRefs.idea}>
             {/* 헤더 */}
             <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">{memo.title}</h2>
@@ -303,7 +303,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
       case 1: // 아이디어 맵
         return (
-          <div className="pt-4" ref={tabRefs.key}>
+          <div className="pt-4 leading-relaxed" ref={tabRefs.key}>
             {/* 헤더 */}
             <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">아이디어 맵</h2>
@@ -461,7 +461,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
       case 2: // 주요 내용
         return (
-          <div className="pt-4" ref={tabRefs.main}>
+          <div className="pt-4 leading-relaxed" ref={tabRefs.main}>
             {/* 헤더 */}
             <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">주요 내용</h2>
