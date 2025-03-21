@@ -1,12 +1,11 @@
 import { getContentSummary } from '@/app/utils/summary-manager';
 import { createSupabaseServerClient } from '@/lib/supabse/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
 
 type Purpose = '일반' | '업무' | '학습' | '개인';
 
 const TITLE_EMPHASIS = `
-중요: 제공된 '오리지널 타이틀'과 원문의 '주요 사례와 예시'는 요약의 핵심 지침으로 우선적으로 고려해야 해. 넌 모든 답변에 절대 반말을 사용하면안돼!
+중요: 제공된 '오리지널 타이틀'과 원문의 '주요 사례와 예시'는 요약의 핵심 지침으로 우선적으로 고려해야 해.
 
 1. 원문 분석 시 오리지널 타이틀이 질문하거나 강조하는 내용에 우선적으로 초점을 맞춰.
 2. 타이틀에 언급된 핵심 주제, 질문 또는 관점이 반드시 요약의 주요 부분에 포함되어야 해.
@@ -467,15 +466,6 @@ const PROMPTS: Record<Purpose, string> = {
 
 const TIMEOUT_DURATION = 25000;
 
-// Google Generative AI API 인스턴스 설정
-const setupGeminiAPI = () => {
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
-  if (!apiKey) {
-    throw new Error('Gemini API 키가 설정되지 않았습니다.');
-  }
-  return new GoogleGenerativeAI(apiKey);
-};
-
 export async function POST(req: NextRequest) {
   // timeoutId 변수를 여기서 선언해서 스코프 문제 해결
   let timeoutId: NodeJS.Timeout | undefined;
@@ -626,7 +616,7 @@ export async function POST(req: NextRequest) {
         }
       } catch (cacheError) {
         console.error('캐싱된 요약 조회 오류:', cacheError);
-        // 오류 발생 시 계속 진행 (Gemini로 새로 생성)
+        // 오류 발생 시 계속 진행 (OpenAI로 새로 생성)
       }
     }
 
@@ -662,7 +652,7 @@ export async function POST(req: NextRequest) {
 
     // 요청 시작 시간 기록
     const startTime = Date.now();
-    console.log('====== Gemini API 요청 시작 ======');
+    console.log('====== OpenAI API 요청 시작 ======');
     console.log(`요청 시간: ${new Date().toISOString()}`);
     console.log(`입력 텍스트 길이: ${text.length} 자`);
     console.log(`필요 크레딧: ${actualRequiredCredits} 개 (원래 필요: ${requiredCredits}개)`);
@@ -700,75 +690,136 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // API 키 확인
+    const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+    if (!apiKey) {
+      console.log('오류: API 키가 설정되지 않음');
+
+      // 크레딧 환불 (API 키 오류)
+      const refundedCredits = updateData.credits_remaining + actualRequiredCredits;
+      await supabase
+        .from('user_credits')
+        .update({ credits_remaining: refundedCredits })
+        .eq('user_id', userId);
+
+      console.log(`API 키 오류로 크레딧 환불: ${actualRequiredCredits}개`);
+
+      return NextResponse.json(
+        {
+          error: 'API 키가 설정되지 않았습니다.',
+          credits: {
+            remaining: refundedCredits,
+            used: 0,
+          },
+        },
+        { status: 500 }
+      );
+    }
+
     // Create an AbortController for timeout handling
     const controller = new AbortController();
     timeoutId = setTimeout(() => controller.abort(), TIMEOUT_DURATION);
 
     try {
-      console.log('Gemini API 호출 중...');
+      console.log('OpenAI API 호출 중...');
 
-      // Gemini API 설정
-      const genAI = setupGeminiAPI();
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-2.0-flash-lite',
-        safetySettings: [
-          {
-            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-            threshold: HarmBlockThreshold.BLOCK_NONE,
-          },
-          {
-            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-            threshold: HarmBlockThreshold.BLOCK_NONE,
-          },
-          {
-            category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-            threshold: HarmBlockThreshold.BLOCK_NONE,
-          },
-          {
-            category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-            threshold: HarmBlockThreshold.BLOCK_NONE,
-          },
-        ],
-        generationConfig: {
-          temperature: 0.2,
-          topP: 0.95,
-          topK: 64,
-          maxOutputTokens: 8192,
-          responseMimeType: 'application/json',
+      // OpenAI API 호출
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
         },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini', // 또는 사용 가능한 다른 모델
+          messages: [
+            {
+              role: 'system',
+              content: selectedPrompt,
+            },
+            {
+              role: 'user',
+              content: originalTitle
+                ? `오리지널 타이틀: "${originalTitle}" 
+                   다음 텍스트를 분석하고 JSON 형식으로 응답해주세요: ${text}`
+                : `다음 텍스트를 분석하고 JSON 형식으로 응답해주세요: ${text}`,
+            },
+          ],
+          response_format: { type: 'json_object' },
+        }),
+        signal: controller.signal, // Add abort signal
       });
-
-      // Gemini API 호출
-      const userContent = originalTitle
-        ? `오리지널 타이틀: "${originalTitle}" 
-           다음 텍스트를 분석하고 JSON 형식으로 응답해주세요: ${text}`
-        : `다음 텍스트를 분석하고 JSON 형식으로 응답해주세요: ${text}`;
-
-      const result = await model.generateContent([selectedPrompt, userContent]);
-
-      // Clear the timeout as the request completed
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-
-      const response = result.response;
-      const responseText = response.text();
 
       // API 호출 완료 시간 계산
       const apiEndTime = Date.now();
       const apiElapsedTime = apiEndTime - startTime;
       console.log(`API 응답 수신 시간: ${apiElapsedTime}ms`);
 
+      // Clear the timeout as the request completed
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('OpenAI API 오류:', errorData);
+
+        // API 호출 실패 시 크레딧 환불
+        const refundedCredits = updateData.credits_remaining + actualRequiredCredits;
+        await supabase
+          .from('user_credits')
+          .update({ credits_remaining: refundedCredits })
+          .eq('user_id', userId);
+
+        console.log(`API 오류로 인한 크레딧 환불: ${actualRequiredCredits}개`);
+
+        return NextResponse.json(
+          {
+            error: `API 오류: ${errorData.error?.message || '알 수 없는 오류가 발생했습니다.'}`,
+            status: response.status,
+            originalTitle: originalTitle || '',
+            originalImage: originalImage || '',
+            credits: {
+              remaining: refundedCredits,
+              used: 0,
+            },
+          },
+          { status: response.status }
+        );
+      }
+
+      // 응답 데이터 처리
+      const data = await response.json();
+
+      // 토큰 사용량 로깅
+      if (data.usage) {
+        console.log('====== OpenAI API 토큰 사용량 ======');
+        console.log('사용 모델:', 'gpt-4o-mini');
+        console.log('입력 토큰 수:', data.usage.prompt_tokens);
+        console.log('출력 토큰 수:', data.usage.completion_tokens);
+        console.log('총 토큰 수:', data.usage.total_tokens);
+
+        // 토큰당 가격은 OpenAI의 가격 정책에 따라 변경될 수 있음
+        const estimatedCost = (
+          data.usage.prompt_tokens * 0.00000015 +
+          data.usage.completion_tokens * 0.0000006
+        ).toFixed(6);
+        console.log('예상 비용(USD):', `$${estimatedCost}`);
+        console.log('====================================');
+      }
+
       try {
+        // API 응답에서 JSON 문자열 추출 및 파싱
+        const content = data.choices[0].message.content;
+
         // 응답 내용 미리보기 (처음 200자)
-        if (responseText.length > 200) {
-          console.log(`응답 내용 미리보기: ${responseText.substring(0, 200)}...`);
+        if (content.length > 200) {
+          console.log(`응답 내용 미리보기: ${content.substring(0, 200)}...`);
         } else {
-          console.log(`응답 내용: ${responseText}`);
+          console.log(`응답 내용: ${content}`);
         }
 
-        // JSON 파싱
-        const parsedContent = JSON.parse(responseText);
+        const parsedContent = JSON.parse(content);
 
         if (sourceId) {
           try {
@@ -805,7 +856,7 @@ export async function POST(req: NextRequest) {
         const totalEndTime = Date.now();
         const totalElapsedTime = totalEndTime - startTime;
         console.log(`총 처리 시간: ${totalElapsedTime}ms`);
-        console.log('====== Gemini API 처리 완료 ======');
+        console.log('====== OpenAI API 처리 완료 ======');
 
         // 응답 반환 (크레딧 정보 포함)
         return NextResponse.json({
@@ -824,7 +875,7 @@ export async function POST(req: NextRequest) {
         const parseError = error as Error;
         console.error('JSON 파싱 오류:', parseError);
         console.log('====== JSON 파싱 오류 발생 ======');
-        console.log('원본 응답:', responseText);
+        console.log('원본 응답:', data.choices[0].message.content);
         console.log('==================================');
 
         // 파싱 실패 시 크레딧 환불

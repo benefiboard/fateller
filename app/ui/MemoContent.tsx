@@ -219,7 +219,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             </div>
 
             {/* 핵심 문장 - 애플 스타일 */}
-            <div className="p-4 py-8 my-4 rounded-lg border bg-gray-50 border-gray-200 shadow-sm">
+            <div className="p-4 py-8 my-4 rounded-lg border bg-gray-50 border-gray-300 shadow-sm">
               <div className=" font-medium text-gray-800 leading-relaxed">
                 {renderHTML(memo.labeling.key_sentence)}
               </div>
@@ -331,13 +331,13 @@ const MemoContent: React.FC<MemoContentProps> = ({
                               return (
                                 <div
                                   key={pidx}
-                                  className="p-3 rounded-lg border bg-gray-50 border-gray-200 shadow-sm"
+                                  className="p-4 rounded-lg border bg-gray-50 border-gray-300 shadow-sm"
                                 >
-                                  <div className=" font-semibold text-gray-900 mb-1">
+                                  <div className="  text-gray-800 ">
                                     <span className="text-sm text-gray-600">▶ </span>
                                     {title}
                                   </div>
-                                  {content && <div className="text-gray-700">{content}</div>}
+                                  {content && <div className="text-gray-600">{content}</div>}
                                 </div>
                               );
                             })}
@@ -380,7 +380,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                           return (
                                             <div
                                               key={spidx}
-                                              className="p-2 border bg-gray-50 border-gray-200 rounded"
+                                              className="p-2 border bg-gray-50 border-gray-300 rounded"
                                             >
                                               <div className="text-sm font-medium text-gray-800">
                                                 <span className="text-xs text-gray-600">- </span>
@@ -446,9 +446,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 return (
                   <div
                     key={tweetIndex}
-                    className="flex p-4 rounded-lg border bg-gray-50 border-gray-200 shadow-sm"
+                    className="flex p-4 py-6 rounded-lg border bg-gray-50 border-gray-300 shadow-sm"
                   >
-                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center mr-3 text-xs font-medium text-gray-600">
+                    <div className="w-6 h-6 rounded-full border-2 border-gray-400 flex items-center justify-center mr-3 text-xs font-medium text-gray-800">
                       {tweetIndex + 1}
                     </div>
                     <div className="flex-1 text-gray-800">{content}</div>
@@ -544,7 +544,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
               </div>
             ) : (
               // 일반 텍스트인 경우 기존처럼 표시
-              <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 shadow-sm">
+              <div className="p-4 rounded-lg border bg-gray-50 border-gray-300 shadow-sm">
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">
                   {memo.original_text || '원문이 없습니다.'}
                 </p>
