@@ -206,7 +206,7 @@ const MemoItem: React.FC<MemoItemProps> = ({
   return (
     <article
       ref={memoRef}
-      className="p-4 pl-2 border  border-gray-50 hover:bg-gradient-to-br from-gray-50/50 to-gray-50/25 hover:border-emerald-600  hover:shadow-lg hover:rounded-2xl transition-all duration-300 ease-in-out"
+      className="p-4 pl-2 border  border-gray-50 hover:bg-gradient-to-br from-gray-50 to-gray-50/25 hover:border-emerald-600  hover:shadow-lg hover:rounded-2xl transition-all duration-300 ease-in-out"
     >
       <div className="flex">
         {/* 카테고리 아이콘 (각 카테고리에 맞게 변경) */}
