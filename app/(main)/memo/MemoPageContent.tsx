@@ -210,7 +210,7 @@ const MemoPageContent: React.FC = () => {
     showNotification(`오류가 발생했습니다: ${errorMessage}`, 'error');
   };
 
-  // 백그라운드 처리 함수 - 간소화된 버전
+  // 백그라운드 처리 함수
   const handleBackgroundProcess = async (data: any) => {
     console.log('백그라운드 처리 데이터:', data);
 
@@ -303,10 +303,9 @@ const MemoPageContent: React.FC = () => {
           onComplete: async (id: string, extractData: any) => {
             // 완료 시 메모 생성 API 호출
             try {
-              let responseData; // 여기에 변수 추가
+              let responseData;
               if (data.id) {
                 responseData = await updateMemoWithAI(data.id, extractData.content, {
-                  // 변수에 결과 저장
                   isUrl: true,
                   sourceUrl: extractData.sourceUrl || null,
                   originalTitle: extractData.title || '',
@@ -316,7 +315,6 @@ const MemoPageContent: React.FC = () => {
                 });
               } else {
                 responseData = await createMemo(extractData.content, {
-                  // 변수에 결과 저장
                   isUrl: true,
                   sourceUrl: extractData.sourceUrl || null,
                   originalTitle: extractData.title || '',
@@ -326,19 +324,17 @@ const MemoPageContent: React.FC = () => {
                 });
               }
 
-              // 여기에 크레딧 정보 처리 코드 추가
+              // 크레딧 정보 처리 - 간소화
               if (
                 responseData &&
                 responseData.credits &&
                 responseData.credits.remaining !== undefined
               ) {
-                // useCreditStore에서 updateCredits 함수 가져와서 호출
-                const { updateCredits } = useCreditStore.getState();
-                updateCredits(responseData.credits.remaining);
-                console.log(`크레딧 정보 업데이트: ${responseData.credits.remaining}개 남음`);
+                console.log('API 응답 크레딧 정보:', responseData.credits);
+                useCreditStore.getState().updateCredits(responseData.credits.remaining);
               }
 
-              // UI 상태 업데이트 (기존 코드)
+              // UI 상태 업데이트
               updatePendingMemo(id, { status: 'completed' });
               showNotification('메모가 성공적으로 생성되었습니다.', 'success');
               setTimeout(() => removePendingMemo(id), 3000);
@@ -389,10 +385,9 @@ const MemoPageContent: React.FC = () => {
 
         try {
           // OpenAI API 호출 및 메모 저장
-          let responseData; // 여기에 변수 추가
+          let responseData;
           if (data.id) {
             responseData = await updateMemoWithAI(data.id, data.text || data.content, {
-              // 변수에 결과 저장
               isUrl: data.isUrl,
               sourceUrl: data.sourceUrl || null,
               originalTitle: data.originalTitle || '',
@@ -402,7 +397,6 @@ const MemoPageContent: React.FC = () => {
             });
           } else {
             responseData = await createMemo(data.text || data.content, {
-              // 변수에 결과 저장
               isUrl: data.isUrl,
               sourceUrl: data.sourceUrl || null,
               originalTitle: data.originalTitle || '',
@@ -412,19 +406,30 @@ const MemoPageContent: React.FC = () => {
             });
           }
 
-          // 여기에 크레딧 정보 처리 코드 추가
+          // 메모 작업 완료 후 크레딧 정보 직접 가져오기
+          // 메모 작업 완료 후 크레딧 정보 직접 가져오기
+          try {
+            const creditsResponse = await fetch('/api/credits');
+            if (creditsResponse.ok) {
+              const creditsData = await creditsResponse.json();
+              console.log('직접 가져온 크레딧 정보:', creditsData);
+              useCreditStore.getState().updateCredits(creditsData.remaining);
+            }
+          } catch (creditsError) {
+            console.error('크레딧 정보 가져오기 실패:', creditsError);
+          }
+
+          // 크레딧 정보 처리 - 간소화
           if (
             responseData &&
             responseData.credits &&
             responseData.credits.remaining !== undefined
           ) {
-            // useCreditStore에서 updateCredits 함수 가져와서 호출
-            const { updateCredits } = useCreditStore.getState();
-            updateCredits(responseData.credits.remaining);
-            console.log(`크레딧 정보 업데이트: ${responseData.credits.remaining}개 남음`);
+            console.log('API 응답 크레딧 정보:', responseData.credits);
+            useCreditStore.getState().updateCredits(responseData.credits.remaining);
           }
 
-          // 완료 상태로 업데이트 (기존 코드)
+          // 완료 상태로 업데이트
           updatePendingMemo(pendingId, { status: 'completed' });
           showNotification('메모가 성공적으로 생성되었습니다.', 'success');
           setTimeout(() => removePendingMemo(pendingId), 3000);
