@@ -486,16 +486,28 @@ export async function POST(req: NextRequest) {
     const { text, originalTitle, originalImage, purpose = '일반', sourceId = null } = body;
 
     // 사용자 인증 정보 확인
+    // const supabase = await createSupabaseServerClient();
+    // const {
+    //   data: { session },
+    // } = await supabase.auth.getSession();
+
+    // if (!session?.user) {
+    //   return NextResponse.json({ error: '인증되지 않은 요청입니다.' }, { status: 401 });
+    // }
+
+    // const userId = session.user.id;
     const supabase = await createSupabaseServerClient();
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (!session?.user) {
-      return NextResponse.json({ error: '인증되지 않은 요청입니다.' }, { status: 401 });
+    if (userError || !user) {
+      console.error('사용자 정보 조회 오류:', userError);
+      return NextResponse.json({ error: '사용자 정보를 확인할 수 없습니다' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     // 텍스트 길이에 따른 필요 크레딧 계산
     const encoder = new TextEncoder();
