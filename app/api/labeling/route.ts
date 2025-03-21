@@ -485,17 +485,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { text, originalTitle, originalImage, purpose = '일반', sourceId = null } = body;
 
-    // 사용자 인증 정보 확인
-    // const supabase = await createSupabaseServerClient();
-    // const {
-    //   data: { session },
-    // } = await supabase.auth.getSession();
-
-    // if (!session?.user) {
-    //   return NextResponse.json({ error: '인증되지 않은 요청입니다.' }, { status: 401 });
-    // }
-
-    // const userId = session.user.id;
+    
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },

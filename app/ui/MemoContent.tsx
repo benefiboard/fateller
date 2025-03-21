@@ -314,7 +314,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
               {memo.labeling.keywords.map((keyword, keywordIndex) => (
                 <span
                   key={keywordIndex}
-                  className="px-4 py-1 text-sm border bg-emerald-50/50 border-gray-200 text-gray-700 rounded-full"
+                  className="px-4 py-1 text-sm border-2 border-emerald-600/50 text-gray-900 rounded-full"
                 >
                   #{keyword}
                 </span>
@@ -417,14 +417,23 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                   key={pidx}
                                   className="p-3 py-6 rounded-lg border border-gray-200 bg-white shadow-sm"
                                 >
-                                  <div className="text-gray-800 flex items-start gap-1">
+                                  <div
+                                    className={
+                                      content
+                                        ? 'text-gray-800 flex font-semibold items-start gap-1'
+                                        : 'text-gray-800  flex items-start gap-1'
+                                    }
+                                  >
                                     <div>({pidx + 1})</div> {renderHTML(title)}
                                   </div>
                                   {content && (
-                                    <div className="text-gray-600 mt-1 ml-1 flex gap-1">
-                                      <div className="">▷</div>
-                                      {renderHTML(content)}
-                                    </div>
+                                    <>
+                                      <hr className="mb-1" />
+                                      <div className="text-gray-600 mt-1 ml-1 flex gap-1">
+                                        <div className="">▷</div>
+                                        {renderHTML(content)}
+                                      </div>
+                                    </>
                                   )}
                                 </div>
                               );
@@ -445,9 +454,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                 return (
                                   <div key={ssidx} className="mb-3 ">
                                     {/* 하위 섹션 제목 */}
-                                    <h4 className="font-medium text-gray-800 mt-6 mb-2 flex items-start gap-1">
-                                      <div className="text-sm">▶ </div>
-                                      {renderHTML(subHeading)}
+                                    <h4 className="font-semibold text-gray-800 mt-6 mb-2">
+                                      <div className="flex items-center gap-1">
+                                        <div className="text-sm">▶ </div>
+                                        {renderHTML(subHeading)}
+                                      </div>
                                     </h4>
 
                                     {/* 하위 섹션 포인트 */}
@@ -468,16 +479,27 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                           return (
                                             <div
                                               key={spidx}
-                                              className="p-2  border border-gray-100 bg-white rounded"
+                                              className="p-2  border border-gray-100 bg-white rounded flex flex-col"
                                             >
-                                              <div className=" text-gray-600 flex items-center gap-1">
-                                                {spidx + 1}){renderHTML(title)}
+                                              <div
+                                                className={
+                                                  content
+                                                    ? 'font-semibold text-gray-600 flex items-start gap-1'
+                                                    : ' text-gray-600 flex items-start gap-1'
+                                                }
+                                              >
+                                                {/* <div className=" font-semibold text-gray-600 flex items-start gap-1"> */}
+                                                <span>{spidx + 1})</span>
+                                                {renderHTML(title)}
                                               </div>
                                               {content && (
-                                                <div className="text-gray-600 flex gap-1">
-                                                  <p>-</p>
-                                                  {renderHTML(content)}
-                                                </div>
+                                                <>
+                                                  <hr className="mb-1" />
+                                                  <div className="text-gray-600 flex gap-1">
+                                                    <span>-</span>
+                                                    {renderHTML(content)}
+                                                  </div>
+                                                </>
                                               )}
                                             </div>
                                           );
@@ -549,7 +571,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
       case 3: // 원문
         return (
-          <div className="pt-4" ref={tabRefs.original}>
+          <div className="pt-4 min-h-96 flex flex-col" ref={tabRefs.original}>
             {/* 헤더 */}
             <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">원문</h2>
@@ -561,83 +583,83 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 onShareError={handleShareError}
               />
             </div>
+            {/* 원본 콘텐츠 */}
+            <div className="flex-1 flex flex-col ">
+              {memo.original_url ? (
+                <>
+                  {/* 텍스트 */}
+                  <div className="flex-1 flex flex-col gap-2 justify-center ">
+                    <Link href={memo.original_url} target="_blank" rel="noopener noreferrer">
+                      <p className="text-sm text-gray-700 break-all">{memo.original_url}</p>
+                    </Link>
 
-            {memo.original_url ? (
-              // URL인 경우 링크와 원문 내용 토글 버튼 표시
-              <div className="">
-                {/* URL을 일반 텍스트로 표시 */}
-                <p className="text-sm text-gray-700 break-all">{memo.original_url}</p>
+                    <div className="flex flex-col gap-1 mt-2">
+                      <Link
+                        href={memo.original_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center text-sm text-gray-800 hover:text-gray-900"
+                      >
+                        <ExternalLink size={16} className="mr-2" /> 원문으로 이동
+                      </Link>
 
-                {/* 원문으로 이동 버튼 추가 */}
-                <div className="flex flex-col gap-1 mt-2">
-                  <Link
-                    href={memo.original_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center text-sm text-gray-800 hover:text-gray-900"
-                  >
-                    <ExternalLink size={16} className="mr-2" /> 원문으로 이동
-                  </Link>
-
-                  {/* 원문 내용보기 버튼 추가 */}
-                  {memo.original_text && (
-                    <button
-                      onClick={toggleOriginalText}
-                      className="flex items-center text-sm text-gray-800 hover:text-gray-900"
-                    >
-                      {showOriginalText ? (
-                        <>
-                          <ChevronUp size={16} className="mr-2" /> 원문 내용접기
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown size={16} className="mr-2" /> 원문 내용보기
-                        </>
+                      {/* 원문 내용보기 버튼 추가 */}
+                      {memo.original_text && (
+                        <button
+                          onClick={toggleOriginalText}
+                          className="flex items-center text-sm text-gray-800 hover:text-gray-900"
+                        >
+                          {showOriginalText ? (
+                            <>
+                              <ChevronUp size={16} className="mr-2" /> 원문 내용접기
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown size={16} className="mr-2" /> 원문 내용보기
+                            </>
+                          )}
+                        </button>
                       )}
-                    </button>
-                  )}
-                </div>
-
-                {/* 원문 내용이 있고 보기 상태일 때만 표시 */}
-                {showOriginalText && memo.original_text && (
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-white rounded-lg border border-gray-200">
-                    {memo.original_text}
-                  </p>
-                )}
-
-                {/* 원본이미지와 제목 */}
-                {memo.original_image && (
-                  <div className="flex flex-col gap-2 mt-2">
-                    <hr className="w-full" />
-
-                    <div className="grid grid-cols-8 items-center gap-2 w-full bg-white mt-1">
-                      <div className="h-16 col-span-3 relative">
-                        <img
-                          src={memo.original_image}
-                          alt="Original Image"
-                          className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            console.log('이미지 로드 실패:', e);
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                      <p className="col-span-5 text-sm leading-tight text-gray-600 flex-grow overflow-hidden">
-                        {memo.original_title || 'no title'}
-                      </p>
                     </div>
+
+                    {/* 원문 내용이 있고 보기 상태일 때만 표시 */}
+                    {showOriginalText && memo.original_text && (
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-white rounded-lg border border-gray-200">
+                        {memo.original_text}
+                      </p>
+                    )}
                   </div>
-                )}
-              </div>
-            ) : (
-              // 일반 텍스트인 경우 기존처럼 표시
-              <div className="p-4 rounded-lg border border-gray-200 bg-white shadow-sm">
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                  {memo.original_text || '원문이 없습니다.'}
-                </p>
-              </div>
-            )}
+                  {/* 이미지 */}
+
+                  {memo.original_image ? (
+                    <div className="w-full aspect-video  flex  gap-4 p-4 border-4 border-gray-200 relative">
+                      <img
+                        src={memo.original_image}
+                        alt="Original Image"
+                        className="absolute inset-0 w-full h-full object-cover rounded-lg "
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          console.log('이미지 로드 실패:', e);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-video  flex flex-col items-center justify-center gap-4 p-4 border-4 border-gray-200">
+                      <Quote size={16} className="text-gray-400" />
+                      <p>{memo.original_title}</p>
+                      <Quote size={16} className="text-gray-400" />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="p-4 rounded-lg border border-gray-200 bg-white shadow-sm">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {memo.original_text || '원문이 없습니다.'}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         );
 

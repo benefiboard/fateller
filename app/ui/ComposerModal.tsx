@@ -717,9 +717,6 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
               // 백그라운드 처리 완료 후 모달 닫기 (사용자가 기다리기로 선택한 경우)
               setIsSubmitting(false);
               onClose();
-
-              // 제출 완료 후 크레딧 정보 갱신
-              fetchCredits();
             }
           } catch (error) {
             // 수정됨: 추출 과정 예외 발생 시 처리 개선
@@ -775,9 +772,6 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
             await onBackgroundProcess(processData);
             setIsSubmitting(false);
             onClose();
-
-            // 제출 완료 후 크레딧 정보 갱신
-            fetchCredits();
           }
         }
       }
