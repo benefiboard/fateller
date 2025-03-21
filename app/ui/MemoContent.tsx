@@ -533,7 +533,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                     key={tweetIndex}
                     className="flex p-3 py-6 rounded-lg border border-gray-200 bg-white shadow-sm"
                   >
-                    <div className="w-6 h-6 rounded-full border border-gray-400 flex items-center justify-center mr-3 text-xs font-medium text-gray-600">
+                    <div className="w-6 h-6 rounded-full border border-gray-400 flex items-center justify-center mt-1 mr-3 text-xs font-medium text-gray-600">
                       {tweetIndex + 1}
                     </div>
                     <div className="flex-1 text-gray-800">{renderHTML(content)}</div>
