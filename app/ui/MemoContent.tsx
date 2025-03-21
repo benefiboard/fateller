@@ -1,5 +1,3 @@
-// MemoContent.tsx - 타이핑 효과 제거 버전
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Memo } from '../utils/types';
@@ -86,23 +84,61 @@ const MemoContent: React.FC<MemoContentProps> = ({
     console.error(`${getCurrentTabType()} 탭 ${type} 공유 실패:`, error);
   };
 
-  // HTML 태그를 처리하는 함수 추가
-  const processStrongTags = (text: string): string => {
+  // HTML 태그를 처리하는 함수 - 최적화된 버전
+  const processContentTags = (text: string): string => {
     if (!text) return '';
+    if (typeof text !== 'string') return String(text || '');
 
-    // <hi> 태그를 Tailwind CSS 클래스로 변환
-    if (typeof text !== 'string') {
-      return text || '';
+    // 태그가 있는 경우만 처리 (성능 최적화)
+    const hasKeyTags = /<key>(.*?)<\/key>/g.test(text);
+    const hasTermTags = /<term>(.*?)<\/term>/g.test(text);
+    const hasExTags = /<ex>(.*?)<\/ex>/g.test(text);
+    const hasDataTags = /<data>(.*?)<\/data>/g.test(text);
+
+    if (!(hasKeyTags || hasTermTags || hasExTags || hasDataTags)) {
+      return text;
     }
-    return text.replace(
-      /<hi>(.*?)<\/hi>/g,
-      '<span class="font-bold underline underline-offset-4 px-[2px]">$1</span>'
-    );
+
+    let processedText = text;
+
+    // 핵심 내용 (key 태그) - 단순한 밑줄만 사용
+    if (hasKeyTags) {
+      processedText = processedText.replace(
+        /<key>(.*?)<\/key>/g,
+        '<span class="border-b-2 border-gray-400 font-extrabold">$1</span>'
+      );
+    }
+
+    // 중요 용어 (term 태그) - 점선 밑줄 사용
+    if (hasTermTags) {
+      processedText = processedText.replace(
+        /<term>(.*?)<\/term>/g,
+        '<span class="font-black text-emerald-800">$1</span>'
+      );
+    }
+
+    // 예시/사례 (ex 태그) - 괄호와 마커 사용
+    if (hasExTags) {
+      processedText = processedText.replace(
+        /<ex>(.*?)<\/ex>/g,
+        '<span class=" italic font-bold">$1</span>'
+      );
+    }
+
+    // 데이터/수치 (data 태그) - 숫자 표시 기호 사용
+    if (hasDataTags) {
+      processedText = processedText.replace(
+        /<data>(.*?)<\/data>/g,
+        '<span class="text-red-600">$1</span>'
+      );
+    }
+
+    return processedText;
   };
 
-  // renderHTML 함수 추가
+  // renderHTML 함수
   const renderHTML = (htmlString: string = '') => {
-    return <span dangerouslySetInnerHTML={{ __html: processStrongTags(htmlString) }} />;
+    return <span dangerouslySetInnerHTML={{ __html: processContentTags(htmlString) }} />;
   };
 
   // 탭 변경 함수 - 수정된 버전
@@ -220,7 +256,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
             {/* 핵심 문장 - 애플 스타일 */}
             <div className="p-4 py-8 my-4 rounded-lg border bg-gray-50 border-gray-300 shadow-sm">
-              <div className=" font-medium text-gray-800 leading-relaxed">
+              <div className="font-medium text-gray-800 leading-relaxed">
                 {renderHTML(memo.labeling.key_sentence)}
               </div>
             </div>
@@ -290,7 +326,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 parsedContent.sections.length > 0
               ) {
                 return (
-                  <div className="space-y-12">
+                  <div className="space-y-6">
                     {parsedContent.sections.map((section: any, idx: number) => {
                       if (!section || typeof section !== 'object') return null;
 
@@ -331,13 +367,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
                               return (
                                 <div
                                   key={pidx}
-                                  className="p-4 rounded-lg border bg-gray-50 border-gray-300 shadow-sm"
+                                  className="p-3 py-6 rounded-lg border border-gray-200 bg-gray-50 shadow-sm"
                                 >
-                                  <div className="  text-gray-800 ">
-                                    <span className="text-sm text-gray-600">▶ </span>
-                                    {title}
-                                  </div>
-                                  {content && <div className="text-gray-600">{content}</div>}
+                                  <div className="text-gray-800">{renderHTML(title)}</div>
+                                  {content && (
+                                    <div className="text-gray-600 mt-1">{renderHTML(content)}</div>
+                                  )}
                                 </div>
                               );
                             })}
@@ -345,7 +380,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                           {/* 하위 섹션 */}
                           {subSections.length > 0 && (
-                            <div className="mt-4 ml-4 pl-4 border-l-2 border-gray-400">
+                            <div className="mt-3 ml-3 pl-3 border-l-2 border-gray-200">
                               {subSections.map((subSection: any, ssidx: number) => {
                                 if (!subSection || typeof subSection !== 'object') return null;
 
@@ -358,7 +393,6 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                   <div key={ssidx} className="mb-3">
                                     {/* 하위 섹션 제목 */}
                                     <h4 className="font-medium text-gray-800 mb-2">
-                                      <span className="text-sm text-gray-600">§ </span>
                                       {renderHTML(subHeading)}
                                     </h4>
 
@@ -380,15 +414,14 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                           return (
                                             <div
                                               key={spidx}
-                                              className="p-2 border bg-gray-50 border-gray-300 rounded"
+                                              className="p-2 border border-gray-100 bg-gray-50 rounded"
                                             >
-                                              <div className="text-sm font-medium text-gray-800">
-                                                <span className="text-xs text-gray-600">- </span>
-                                                {title}
+                                              <div className="text-sm text-gray-800">
+                                                {renderHTML(title)}
                                               </div>
                                               {content && (
                                                 <div className="text-gray-600 text-sm">
-                                                  {content}
+                                                  {renderHTML(content)}
                                                 </div>
                                               )}
                                             </div>
@@ -446,12 +479,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 return (
                   <div
                     key={tweetIndex}
-                    className="flex p-4 py-6 rounded-lg border bg-gray-50 border-gray-300 shadow-sm"
+                    className="flex p-3 py-6 rounded-lg border border-gray-200 bg-gray-50 shadow-sm"
                   >
-                    <div className="w-6 h-6 rounded-full border-2 border-gray-400 flex items-center justify-center mr-3 text-xs font-medium text-gray-800">
+                    <div className="w-6 h-6 rounded-full border border-gray-400 flex items-center justify-center mr-3 text-xs font-medium text-gray-600">
                       {tweetIndex + 1}
                     </div>
-                    <div className="flex-1 text-gray-800">{content}</div>
+                    <div className="flex-1 text-gray-800">{renderHTML(content)}</div>
                   </div>
                 );
               })}
@@ -512,7 +545,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                 {/* 원문 내용이 있고 보기 상태일 때만 표시 */}
                 {showOriginalText && memo.original_text && (
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-white rounded-lg border border-gray-200">
                     {memo.original_text}
                   </p>
                 )}
@@ -544,7 +577,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
               </div>
             ) : (
               // 일반 텍스트인 경우 기존처럼 표시
-              <div className="p-4 rounded-lg border bg-gray-50 border-gray-300 shadow-sm">
+              <div className="p-4 rounded-lg border border-gray-200 bg-white shadow-sm">
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">
                   {memo.original_text || '원문이 없습니다.'}
                 </p>
@@ -561,7 +594,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
   return (
     <>
       {/* 탭 네비게이션 - 애플 스타일 */}
-      <div className="mt-2 border-y border-gray-200">
+      <div className="mt-2 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <button
             onClick={() => changeTab(0)}
