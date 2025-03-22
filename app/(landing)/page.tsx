@@ -19,18 +19,29 @@ export default function Home() {
   }, [currentUser, isInitialized, router]);
 
   return (
-    <main className="flex min-h-screen flex-col bg-white">
+    <main className="flex min-h-screen flex-col bg-white tracking-tighter">
       {/* 네비게이션 */}
       <nav className="sticky top-0 z-10 bg-white shadow-sm py-4 md:py-6">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
-              <img src="/icons/icon-192x192.png" alt="" className="object-cover h-12 w-12" />
-              <span className="ml-2 text-xl font-bold text-gray-900">Brain Labeling</span>
+              <div className=" relative h-12 w-12">
+                <Image
+                  src="/icons/icon-192x192.png"
+                  alt="Brain Labeling Logo"
+                  fill
+                  sizes="48px"
+                  priority
+                  className="object-cover"
+                />
+              </div>
+              <span className=" ml-2 text-lg sm:text-xl font-bold text-gray-900">
+                Brain Labeling
+              </span>
             </div>
             <div className="flex items-center space-x-4 md:space-x-6">
               {!currentUser && (
-                <Link href="/auth" className="text-gray-600 hover:text-gray-900">
+                <Link href="/auth" className="hidden sm:block text-gray-600 hover:text-gray-900">
                   로그인
                 </Link>
               )}
@@ -70,8 +81,17 @@ export default function Home() {
 
           {/* 대형 히어로 이미지/애니메이션 */}
           <div className="relative w-full max-w-5xl mx-auto rounded-xl overflow-hidden shadow-2xl">
-            <div className="aspect-[16/9] w-full bg-gray-200 relative">
-              <img src="/landing/main.webp" alt="" className="object-cover w-full h-full" />
+            <div className="aspect-[16/9] w-full relative">
+              <Image
+                src="/landing/main.webp"
+                alt="콘텐츠 정리 개념 이미지"
+                fill
+                priority
+                sizes="(max-width: 1280px) 100vw, 1280px"
+                className="object-cover"
+                placeholder="blur"
+                blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+              />
               {/* 이미지 위에 오버레이 텍스트 추가 - 고객 중심 메시지 */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
                 <p className="text-white text-lg md:text-xl font-medium">
@@ -99,7 +119,14 @@ export default function Home() {
             {/* 문제 시각화 1 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md transform transition hover:scale-105">
               <div className="aspect-square relative bg-gray-200">
-                <img src="/landing/1-1.webp" alt="" className="object-cover w-full h-full" />
+                <Image
+                  src="/landing/1-1.webp"
+                  alt="콘텐츠 과부하 개념"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover"
+                />
                 {/* 감정적 텍스트 오버레이 추가 */}
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <p className="text-white text-lg font-medium p-4 text-center">
@@ -118,7 +145,14 @@ export default function Home() {
             {/* 문제 시각화 2 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md transform transition hover:scale-105">
               <div className="aspect-square relative bg-gray-200">
-                <img src="/landing/1-2.webp" alt="" className="object-cover w-full h-full" />
+                <Image
+                  src="/landing/1-2.webp"
+                  alt="정리의 부담 개념"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <p className="text-white text-lg font-medium p-4 text-center">
                     "정리되지 않은 메모는 결국 디지털 쓰레기가 됩니다"
@@ -136,7 +170,14 @@ export default function Home() {
             {/* 문제 시각화 3 */}
             <div className="bg-white rounded-xl overflow-hidden shadow-md transform transition hover:scale-105">
               <div className="aspect-square relative bg-gray-200">
-                <img src="/landing/1-3.webp" alt="" className="object-cover w-full h-full" />
+                <Image
+                  src="/landing/1-3.webp"
+                  alt="언어 장벽 개념"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <p className="text-white text-lg font-medium p-4 text-center">
                     "중요한 글로벌 콘텐츠를 놓치고 있지는 않을까요?"
@@ -167,10 +208,13 @@ export default function Home() {
             {/* Before 이미지 */}
             <div className="rounded-xl overflow-hidden shadow-md transform transition hover:shadow-lg">
               <div className="aspect-video relative bg-gray-200">
-                <img
+                <Image
                   src="/landing/2-1.webp"
-                  alt=""
-                  className="object-cover w-full h-full opacity-50"
+                  alt="기존 메모 앱 콘셉트"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover opacity-50"
                 />
                 <div className="absolute inset-0 flex items-center justify-center p-6">
                   <div className="p-6 bg-black/80">
@@ -190,7 +234,14 @@ export default function Home() {
             {/* After 이미지 */}
             <div className="rounded-xl overflow-hidden shadow-md transform transition hover:shadow-lg">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/2-2.webp" alt="" className="object-cover w-full h-full" />
+                <Image
+                  src="/landing/2-2.webp"
+                  alt="Brain Labeling 앱 콘셉트"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 flex items-center justify-center p-6">
                   <div className="p-6 bg-emerald-600/80 rounded-lg">
                     <p className="text-white text-2xl font-semibold">자동으로 정리된 지식</p>
@@ -254,7 +305,14 @@ export default function Home() {
 
                 <div className="rounded-xl overflow-hidden border-4 border-emerald-100">
                   <div className="aspect-[4/3] relative bg-gray-200">
-                    <img src="/landing/3-1.webp" alt="" className="object-cover w-full h-full" />
+                    <Image
+                      src="/landing/3-1.webp"
+                      alt="콘텐츠 입력 방식"
+                      fill
+                      loading="lazy"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover"
+                    />
                     <div className="absolute bottom-0 left-0 right-0 bg-emerald-600/90 p-4">
                       <p className="text-white text-sm md:text-base">
                         "평균적으로 콘텐츠 수집에 드는 시간이 70% 감소했습니다"
@@ -280,7 +338,14 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
                 <div className="order-2 md:order-1 rounded-xl overflow-hidden border-4 border-emerald-100">
                   <div className="aspect-[4/3] relative bg-gray-200">
-                    <img src="/landing/3-2.webp" alt="" className="object-cover w-full h-full" />
+                    <Image
+                      src="/landing/3-2.webp"
+                      alt="AI 분석 및 정리 기능"
+                      fill
+                      loading="lazy"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover"
+                    />
                     <div className="absolute bottom-0 left-0 right-0 bg-emerald-600/90 p-4">
                       <p className="text-white text-sm md:text-base">
                         "기존 앱 설정 보다 100배 쉬워요. 그냥 목적만 선택하면 끝!"
@@ -340,7 +405,14 @@ export default function Home() {
 
                 <div className="rounded-xl overflow-hidden border-4 border-emerald-100">
                   <div className="aspect-[4/3] relative bg-gray-200">
-                    <img src="/landing/3-3.webp" alt="" className="object-cover w-full h-full" />
+                    <Image
+                      src="/landing/3-3.webp"
+                      alt="지식 활용 기능"
+                      fill
+                      loading="lazy"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover"
+                    />
                     <div className="absolute bottom-0 left-0 right-0 bg-emerald-600/90 p-4">
                       <p className="text-white text-sm md:text-base">
                         "이제 콘텐츠를 소비하는 방식이 완전히 바뀌었어요"
@@ -367,9 +439,16 @@ export default function Home() {
           {/* 사례 이미지 갤러리 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
             {/* 사례 1 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform  hover:scale-105">
+            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-1.webp" alt="" className="object-cover w-full h-full " />
+                <Image
+                  src="/landing/4-1.webp"
+                  alt="웹 콘텐츠 요약 사례"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <p className="text-white text-center p-6">
                     "콘텐츠를 다 읽기 전에 가치를 판단할 수 있어 시간이 절약됩니다"
@@ -383,9 +462,16 @@ export default function Home() {
             </div>
 
             {/* 사례 2 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform  hover:scale-105">
+            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-2.webp" alt="" className="object-cover w-full h-full " />
+                <Image
+                  src="/landing/4-2.webp"
+                  alt="유튜브 영상 분석 사례"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <p className="text-white text-center p-6">
                     "1시간 영상을 3분 안에 핵심만 파악할 수 있게 되었어요"
@@ -399,9 +485,16 @@ export default function Home() {
             </div>
 
             {/* 사례 3 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform  hover:scale-105">
+            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-3.webp" alt="" className="object-cover w-full h-full " />
+                <Image
+                  src="/landing/4-3.webp"
+                  alt="외국어 콘텐츠 이해 사례"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <p className="text-white text-center p-6">
                     "외국어 콘텐츠도 이제 부담 없이 접할 수 있게 되었습니다"
@@ -415,9 +508,16 @@ export default function Home() {
             </div>
 
             {/* 사례 4 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform  hover:scale-105">
+            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-4.webp" alt="" className="object-cover w-full h-full " />
+                <Image
+                  src="/landing/4-4.webp"
+                  alt="회의 내용 정리 사례"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <p className="text-white text-center p-6">
                     "회의록 정리 시간이 90% 이상 단축되었습니다"
@@ -431,9 +531,16 @@ export default function Home() {
             </div>
 
             {/* 사례 5 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform  hover:scale-105">
+            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-5.webp" alt="" className="object-cover w-full h-full " />
+                <Image
+                  src="/landing/4-5.webp"
+                  alt="학습 자료 정리 사례"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <p className="text-white text-center p-6">
                     "복잡한 개념도 체계적으로 이해할 수 있게 되었어요"
@@ -447,9 +554,16 @@ export default function Home() {
             </div>
 
             {/* 사례 6 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform  hover:scale-105">
+            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
               <div className="aspect-video relative bg-gray-200">
-                <img src="/landing/4-6.webp" alt="" className="object-cover w-full h-full " />
+                <Image
+                  src="/landing/4-6.webp"
+                  alt="콘텐츠 소비 효율화 사례"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <p className="text-white text-center p-6">
                     "소셜 미디어 대신 가치 있는 콘텐츠에 시간을 투자하게 되었어요"
@@ -623,7 +737,15 @@ export default function Home() {
       <footer className="bg-gray-900 text-gray-400 py-12 md:py-16">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12 text-center">
           <div className="flex justify-center items-center mb-6">
-            <img src="/icons/icon-192x192.png" alt="" className="object-cover h-10 w-10" />
+            <div className="relative h-10 w-10">
+              <Image
+                src="/icons/icon-192x192.png"
+                alt="Brain Labeling 로고"
+                fill
+                sizes="40px"
+                className="object-cover"
+              />
+            </div>
             <span className="ml-3 text-xl font-bold text-white">Brain Labeling</span>
           </div>
           <p className="mb-6 max-w-2xl mx-auto text-lg">
