@@ -1,3 +1,7 @@
+//app/ui/MemoContent.tsx
+
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Memo } from '../utils/types';
@@ -34,6 +38,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
   const [direction, setDirection] = useState(0); // 슬라이드 방향 (-1: 왼쪽, 1: 오른쪽)
   const [showOriginalText, setShowOriginalText] = useState(false);
 
+  // 컴포넌트 전체에 대한 ref 추가
+  const componentRef = useRef<HTMLDivElement>(null);
+
   // 각 탭에 대한 ref 추가
   const tabRefs = {
     idea: useRef<HTMLDivElement>(null),
@@ -55,6 +62,17 @@ const MemoContent: React.FC<MemoContentProps> = ({
         return tabRefs.original;
       default:
         return tabRefs.idea;
+    }
+  };
+
+  // 탭 변경 시 컴포넌트 상단으로 스크롤하는 함수
+  const scrollToComponentTop = () => {
+    if (componentRef.current) {
+      const yOffset = componentRef.current.getBoundingClientRect().top + window.pageYOffset;
+      window.scrollTo({
+        top: yOffset - 64, // 약간의 여백 추가
+        behavior: 'smooth',
+      });
     }
   };
 
@@ -167,7 +185,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
       if (hasExTags) {
         processedText = processedText.replace(
           /<ex>(.*?)<\/ex>/g,
-          '<span class=" italic font-bold">$1</span>'
+          '<span class="italic font-bold">$1</span>'
         );
       }
 
@@ -222,6 +240,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
     }
 
     setActiveTab(newTab);
+
+    // 탭 변경 시 컴포넌트 상단으로 스크롤
+    setTimeout(() => {
+      scrollToComponentTop();
+    }, 50); // 약간의 지연을 두어 상태 업데이트 후 스크롤
   };
 
   // 스와이프로 다음 탭으로 이동
@@ -229,6 +252,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
     const nextTab = (activeTab === 3 ? 0 : activeTab + 1) as TabIndex;
     setDirection(1); // 오른쪽으로 이동
     setActiveTab(nextTab);
+
+    // 탭 변경 시 컴포넌트 상단으로 스크롤
+    setTimeout(() => {
+      scrollToComponentTop();
+    }, 50);
   };
 
   // 스와이프로 이전 탭으로 이동
@@ -236,6 +264,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
     const prevTab = (activeTab === 0 ? 3 : activeTab - 1) as TabIndex;
     setDirection(-1); // 왼쪽으로 이동
     setActiveTab(prevTab);
+
+    // 탭 변경 시 컴포넌트 상단으로 스크롤
+    setTimeout(() => {
+      scrollToComponentTop();
+    }, 50);
   };
 
   // 원문 내용 표시 토글 함수
@@ -268,6 +301,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
       x: direction < 0 ? '100%' : '-100%',
       opacity: 0,
     }),
+  };
+
+  // 애니메이션 완료 후 실행할 핸들러
+  const handleAnimationComplete = () => {
+    // 애니메이션이 완료되면 컴포넌트 위치로 스크롤
+    scrollToComponentTop();
   };
 
   // 아이디어 맵 JSON 파싱 헬퍼 함수
@@ -598,37 +637,48 @@ const MemoContent: React.FC<MemoContentProps> = ({
               {memo.original_url ? (
                 <>
                   {/* 텍스트 */}
-                  <div className="flex-1 flex flex-col gap-2 justify-center ">
-                    <Link href={memo.original_url} target="_blank" rel="noopener noreferrer">
-                      <p className="text-sm text-gray-700 break-all">{memo.original_url}</p>
-                    </Link>
-
-                    <div className="flex flex-col gap-1 mt-2">
+                  <div className="flex-1 flex flex-col gap-2 justify-center">
+                    <div>
                       <Link
                         href={memo.original_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center text-sm text-gray-800 hover:text-gray-900"
+                        className="inline-block"
                       >
-                        <ExternalLink size={16} className="mr-2" /> 원문으로 이동
+                        <p className=" text-gray-600 break-all">{memo.original_url}</p>
                       </Link>
+                    </div>
+
+                    <div className="flex flex-col gap-1 mt-2">
+                      <div>
+                        <Link
+                          href={memo.original_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-sm text-gray-800 hover:text-gray-900"
+                        >
+                          <ExternalLink size={16} className="mr-2" /> 원문으로 이동
+                        </Link>
+                      </div>
 
                       {/* 원문 내용보기 버튼 추가 */}
                       {memo.original_text && (
-                        <button
-                          onClick={toggleOriginalText}
-                          className="flex items-center text-sm text-gray-800 hover:text-gray-900"
-                        >
-                          {showOriginalText ? (
-                            <>
-                              <ChevronUp size={16} className="mr-2" /> 원문 내용접기
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown size={16} className="mr-2" /> 원문 내용보기
-                            </>
-                          )}
-                        </button>
+                        <div>
+                          <button
+                            onClick={toggleOriginalText}
+                            className="inline-flex items-center text-sm text-gray-800 hover:text-gray-900"
+                          >
+                            {showOriginalText ? (
+                              <>
+                                <ChevronUp size={16} className="mr-2" /> 원문 내용접기
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown size={16} className="mr-2" /> 원문 내용보기
+                              </>
+                            )}
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -639,8 +689,8 @@ const MemoContent: React.FC<MemoContentProps> = ({
                       </p>
                     )}
                   </div>
-                  {/* 이미지 */}
 
+                  {/* 이미지 */}
                   {memo.original_image ? (
                     <div className="w-full aspect-video  flex  gap-4 p-4 border-4 border-gray-200 relative">
                       <img
@@ -679,7 +729,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
   };
 
   return (
-    <>
+    <div ref={componentRef}>
       {/* 탭 네비게이션 - 애플 스타일 */}
       <div className="mt-2 border-b border-gray-200">
         <div className="flex items-center justify-between">
@@ -751,12 +801,13 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 goToNextTab();
               }
             }}
+            onAnimationComplete={handleAnimationComplete}
           >
             {renderTabContent(activeTab)}
           </motion.div>
         </AnimatePresence>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -904,7 +904,7 @@ YouTube 링크를 입력하세요...`;
               <div className="flex">
                 <div className="flex-1">
                   <textarea
-                    className="w-full border-0 focus:ring-0 focus:outline-none resize-none p-2 min-h-[68vh]"
+                    className="w-full border-0 focus:ring-0 focus:outline-none resize-none p-2 min-h-[60vh]"
                     placeholder={placeholderText}
                     value={inputText}
                     onChange={handleInputChange}
@@ -919,14 +919,14 @@ YouTube 링크를 입력하세요...`;
                     </div>
                   )}
 
-                  <div className="border-t pt-3">
+                  <div className=" pt-3">
                     {/* 모바일 및 작은 화면에 대응하는 수직 레이아웃으로 변경 */}
-                    <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:justify-between">
+                    <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:justify-between">
                       {/* 목적 버튼 그룹 - 작은 화면에서도 잘 보이도록 수정 */}
-                      <div className="flex flex-wrap gap-2 text-emerald-600">
+                      <div className="border-y py-2 flex flex-wrap gap-2 text-emerald-600">
                         <button
                           type="button"
-                          className={`px-2 py-1 text-sm rounded ${
+                          className={`px-4 py-2  rounded ${
                             selectedPurpose === '일반'
                               ? 'bg-emerald-600 text-gray-100'
                               : 'bg-gray-100'
@@ -937,7 +937,7 @@ YouTube 링크를 입력하세요...`;
                         </button>
                         <button
                           type="button"
-                          className={`px-2 py-1 text-sm rounded ${
+                          className={`px-4 py-2  rounded ${
                             selectedPurpose === '업무' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
                           onClick={() => handlePurposeSelect('업무')}
@@ -946,7 +946,7 @@ YouTube 링크를 입력하세요...`;
                         </button>
                         <button
                           type="button"
-                          className={`px-2 py-1 text-sm rounded ${
+                          className={`px-4 py-2  roundedd ${
                             selectedPurpose === '개인' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
                           onClick={() => handlePurposeSelect('개인')}
@@ -955,7 +955,7 @@ YouTube 링크를 입력하세요...`;
                         </button>
                         <button
                           type="button"
-                          className={`px-2 py-1 text-sm rounded ${
+                          className={`px-4 py-2  rounded ${
                             selectedPurpose === '학습' ? 'bg-teal-500 text-gray-100' : 'bg-gray-100'
                           }`}
                           onClick={() => handlePurposeSelect('학습')}
@@ -965,9 +965,9 @@ YouTube 링크를 입력하세요...`;
                       </div>
 
                       {/* 카운터와 제출 버튼 - 작은 화면에서는 아래에 배치 */}
-                      <div className="flex items-center justify-between sm:justify-end">
+                      <div className="mt-2 flex items-center justify-between sm:justify-end">
                         <div
-                          className={`text-sm mr-3 flex flex-col items-end ${
+                          className={` mr-3 flex flex-col items-end ${
                             characterCount > 10000 ? 'text-red-500' : 'text-gray-500'
                           }`}
                         >
@@ -982,7 +982,7 @@ YouTube 링크를 입력하세요...`;
                         </div>
                         <button
                           type="button"
-                          className={`rounded-full px-4 py-1 text-white font-bold ${
+                          className={`rounded-full px-8 py-2 text-white font-bold ${
                             !inputText.trim() || isSubmitting || characterCount > 10000
                               ? 'bg-emerald-400 cursor-not-allowed'
                               : 'bg-emerald-600 hover:bg-teal-600'
