@@ -1,17 +1,11 @@
 // app/ui/MemoItem.tsx
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import {
   MoreHorizontal,
   Pencil,
-  RotateCcw,
   Trash2,
-  Share,
-  BookmarkPlus,
-  Network,
-  Lightbulb,
-  ExternalLink,
   Tag,
   // 카테고리별 아이콘들
   BookOpen, // 인문/철학
@@ -330,4 +324,9 @@ const MemoItem: React.FC<MemoItemProps> = ({
   );
 };
 
-export default MemoItem;
+export default memo(MemoItem, (prevProps, nextProps) => {
+  return (
+    prevProps.memo.id === nextProps.memo.id &&
+    JSON.stringify(prevProps.memoState) === JSON.stringify(nextProps.memoState)
+  );
+});
