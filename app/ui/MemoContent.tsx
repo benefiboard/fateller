@@ -402,14 +402,24 @@ const MemoContent: React.FC<MemoContentProps> = ({
                             {points.map((point: any, pidx: number) => {
                               // 포인트 파싱 (불릿 제거, 콜론으로 분리)
                               const cleanPoint = point.replace(/^•\s?/, '');
-                              const colonIndex = cleanPoint.indexOf(': ');
-
                               let title = cleanPoint;
                               let content = '';
 
-                              if (colonIndex !== -1) {
+                              // 예시 패턴 검사 (콜론 또는 '(예:' 패턴)
+                              const colonIndex = cleanPoint.indexOf(': ');
+                              const exampleIndex = cleanPoint.indexOf('(예:');
+
+                              if (
+                                colonIndex !== -1 &&
+                                (exampleIndex === -1 || colonIndex < exampleIndex)
+                              ) {
+                                // 일반 콜론 형식
                                 title = cleanPoint.substring(0, colonIndex);
                                 content = cleanPoint.substring(colonIndex + 2);
+                              } else if (exampleIndex !== -1) {
+                                // (예: 형식
+                                title = cleanPoint.substring(0, exampleIndex).trim();
+                                content = cleanPoint.substring(exampleIndex);
                               }
 
                               return (
