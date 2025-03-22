@@ -406,7 +406,7 @@ const MemoPageContent: React.FC = () => {
             });
           }
 
-          // 메모 작업 완료 후 크레딧 정보 직접 가져오기
+          // 메모 작업 완료 후 크레딧 정보 직접 가져오기 after memo create information
           // 메모 작업 완료 후 크레딧 정보 직접 가져오기
           try {
             const creditsResponse = await fetch('/api/credits');
