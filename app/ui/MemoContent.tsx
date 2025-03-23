@@ -44,17 +44,6 @@ const MemoContent: React.FC<MemoContentProps> = ({
   const [direction, setDirection] = useState(0); // 슬라이드 방향 (-1: 왼쪽, 1: 오른쪽)
   const [showOriginalText, setShowOriginalText] = useState(false);
 
-  // 마인드맵 섹션 확장/축소 상태 관리
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-
-  // 섹션 토글 함수
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [sectionId]: !prev[sectionId],
-    }));
-  };
-
   // 탭 변경 여부를 추적하는 상태 추가
   const [isTabChanging, setIsTabChanging] = useState(false);
 
@@ -74,22 +63,6 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
   // 이전 터치 위치 추적 (Y축 스와이프 방지용)
   const touchStartRef = useRef({ x: 0, y: 0 });
-
-  // 현재 활성 탭에 대한 ref 가져오기
-  const getActiveTabRef = () => {
-    switch (activeTab) {
-      case 0:
-        return tabRefs.idea;
-      case 1:
-        return tabRefs.key;
-      case 2:
-        return tabRefs.main;
-      case 3:
-        return tabRefs.original;
-      default:
-        return tabRefs.idea;
-    }
-  };
 
   // 탭 변경 시 컴포넌트 상단으로 스크롤하는 함수
   const scrollToComponentTop = () => {
@@ -578,7 +551,6 @@ const MemoContent: React.FC<MemoContentProps> = ({
                             })}
                           </div>
 
-                          {/* 하위 섹션 생략 - 구조는 동일함 */}
                           {/* 하위 섹션 */}
                           {subSections.length > 0 && (
                             <div className="mt-4 ml-4 pl-4 border-l-2 border-gray-400">
