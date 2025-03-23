@@ -7,6 +7,7 @@ import { useUserStore } from '@/app/store/userStore';
 import createSupabaseBrowserClient from '@/lib/supabse/client';
 import { Memo } from '../utils/types';
 import { formatTimeAgo } from '../utils/formatters';
+import { useCreditStore } from '../store/creditStore';
 
 interface SearchOptions {
   searchTerm?: string;
@@ -330,6 +331,20 @@ export const useMemos = (options: SearchOptions = {}) => {
       });
 
       const responseData = await response.json();
+
+      // 여기에 크레딧 정보 업데이트 코드 추가 - 응답이 성공하든 실패하든 크레딧 정보가 있으면 업데이트
+      if (responseData && responseData.credits && responseData.credits.remaining !== undefined) {
+        console.log('API 응답에서 크레딧 정보 확인:', responseData.credits.remaining);
+
+        // Zustand 스토어 직접 업데이트
+        const { updateCredits } = useCreditStore.getState();
+        updateCredits(responseData.credits.remaining);
+
+        // 강제 업데이트 이벤트 발생
+        window.dispatchEvent(new Event('credit-force-update'));
+
+        console.log('크레딧 정보 업데이트 완료:', responseData.credits.remaining);
+      }
 
       if (!response.ok) {
         // 타임아웃 또는 서버 오류인 경우 재시도

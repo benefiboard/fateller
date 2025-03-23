@@ -921,7 +921,7 @@ YouTube 링크를 입력하세요...`;
 
                   <div className=" pt-3">
                     {/* 모바일 및 작은 화면에 대응하는 수직 레이아웃으로 변경 */}
-                    <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:justify-between">
+                    <div className="flex flex-col space-y-4 ">
                       {/* 목적 버튼 그룹 - 작은 화면에서도 잘 보이도록 수정 */}
                       <div className="border-y py-2 flex flex-wrap gap-2 text-emerald-600">
                         <button
@@ -965,7 +965,7 @@ YouTube 링크를 입력하세요...`;
                       </div>
 
                       {/* 카운터와 제출 버튼 - 작은 화면에서는 아래에 배치 */}
-                      <div className="mt-2 flex items-center justify-between sm:justify-end">
+                      <div className="mt-2 flex items-center justify-between ">
                         <div
                           className={` mr-3 flex flex-col items-end ${
                             characterCount > 10000 ? 'text-red-500' : 'text-gray-500'

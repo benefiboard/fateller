@@ -481,26 +481,54 @@ const MemoContent: React.FC<MemoContentProps> = ({
                           {/* 섹션 포인트 */}
                           <div className="space-y-3">
                             {points.map((point: any, pidx: number) => {
-                              // 포인트 파싱 (불릿 제거, 콜론으로 분리)
+                              // 포인트 파싱 (불릿 제거)
                               const cleanPoint = point.replace(/^•\s?/, '');
                               let title = cleanPoint;
                               let content = '';
 
-                              // 예시 패턴 검사 (콜론 또는 '(예:' 패턴)
+                              // 일반 콜론 형식 검사
                               const colonIndex = cleanPoint.indexOf(': ');
-                              const exampleIndex = cleanPoint.indexOf('(예:');
+
+                              // 괄호+단어+콜론 패턴 검사 (예: (예시: , (사례: , (참고: 등)
+                              const parenthesisPattern = /\([^)]*?:\s/;
+                              const parenthesisMatch = cleanPoint.match(parenthesisPattern);
+                              const parenthesisIndex = parenthesisMatch
+                                ? cleanPoint.indexOf(parenthesisMatch[0])
+                                : -1;
 
                               if (
                                 colonIndex !== -1 &&
-                                (exampleIndex === -1 || colonIndex < exampleIndex)
+                                (parenthesisIndex === -1 || colonIndex < parenthesisIndex)
                               ) {
                                 // 일반 콜론 형식
                                 title = cleanPoint.substring(0, colonIndex);
                                 content = cleanPoint.substring(colonIndex + 2);
-                              } else if (exampleIndex !== -1) {
-                                // (예: 형식
-                                title = cleanPoint.substring(0, exampleIndex).trim();
-                                content = cleanPoint.substring(exampleIndex);
+                              } else if (parenthesisIndex !== -1) {
+                                // 괄호+단어+콜론 형식
+                                // 괄호 시작 위치까지를 제목으로, 괄호 안의 콜론 이후를 내용으로
+                                title = cleanPoint.substring(0, parenthesisIndex).trim();
+
+                                // 괄호 시작부터 끝까지 찾기
+                                const bracketContent = cleanPoint.substring(parenthesisIndex);
+                                const closingBracketIndex = bracketContent.indexOf(')');
+
+                                if (closingBracketIndex !== -1) {
+                                  // 닫는 괄호가 있는 경우
+                                  const colonInBracketIndex = bracketContent.indexOf(':');
+                                  if (
+                                    colonInBracketIndex !== -1 &&
+                                    colonInBracketIndex < closingBracketIndex
+                                  ) {
+                                    // 괄호 안에 콜론이 있는 경우, 콜론 이후부터 내용으로
+                                    content = cleanPoint.substring(parenthesisIndex);
+                                  } else {
+                                    // 괄호 안에 콜론이 없는 경우, 괄호 전체를 포함하여 내용으로
+                                    content = cleanPoint.substring(parenthesisIndex);
+                                  }
+                                } else {
+                                  // 닫는 괄호가 없는 경우, 괄호 이후를 모두 내용으로
+                                  content = cleanPoint.substring(parenthesisIndex);
+                                }
                               }
 
                               return (
@@ -512,7 +540,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                     className={
                                       content
                                         ? 'text-gray-800 flex font-semibold items-start gap-1'
-                                        : 'text-gray-800  flex items-start gap-1'
+                                        : 'text-gray-800 flex items-start gap-1'
                                     }
                                   >
                                     <div>({pidx + 1})</div> {renderHTML(title)}
