@@ -3,7 +3,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Memo } from '../utils/types';
-import { Sparkle, ChevronDown, ChevronUp, ExternalLink, Quote, Share } from 'lucide-react';
+import {
+  Sparkle,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Quote,
+  Share,
+  ChevronRight,
+} from 'lucide-react';
 import Link from 'next/link';
 import ShareButton from './ShareButton';
 
@@ -35,6 +43,17 @@ const MemoContent: React.FC<MemoContentProps> = ({
   const [activeTab, setActiveTab] = useState<TabIndex>(0);
   const [direction, setDirection] = useState(0); // 슬라이드 방향 (-1: 왼쪽, 1: 오른쪽)
   const [showOriginalText, setShowOriginalText] = useState(false);
+
+  // 마인드맵 섹션 확장/축소 상태 관리
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+  // 섹션 토글 함수
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
 
   // 탭 변경 여부를 추적하는 상태 추가
   const [isTabChanging, setIsTabChanging] = useState(false);
@@ -302,6 +321,20 @@ const MemoContent: React.FC<MemoContentProps> = ({
     }
   };
 
+  // 아이디어 맵 JSON 파싱 헬퍼 함수
+  const parseIdeaMap = (content: any) => {
+    try {
+      if (typeof content === 'string' && content.trim().startsWith('{')) {
+        return JSON.parse(content);
+      } else if (typeof content === 'object' && content !== null) {
+        return content;
+      }
+    } catch (error) {
+      console.error('JSON 파싱 오류:', error);
+    }
+    return { sections: [] };
+  };
+
   // 슬라이드 애니메이션 variants - 수정됨
   const slideVariants = {
     enter: (direction: number) => ({
@@ -349,20 +382,6 @@ const MemoContent: React.FC<MemoContentProps> = ({
       x: e.touches[0].clientX,
       y: e.touches[0].clientY,
     };
-  };
-
-  // 아이디어 맵 JSON 파싱 헬퍼 함수
-  const parseIdeaMap = (content: any) => {
-    try {
-      if (typeof content === 'string' && content.trim().startsWith('{')) {
-        return JSON.parse(content);
-      } else if (typeof content === 'object' && content !== null) {
-        return content;
-      }
-    } catch (error) {
-      console.error('JSON 파싱 오류:', error);
-    }
-    return { sections: [] };
   };
 
   // 선택된 탭 컨텐츠 렌더링
@@ -560,7 +579,64 @@ const MemoContent: React.FC<MemoContentProps> = ({
                           </div>
 
                           {/* 하위 섹션 생략 - 구조는 동일함 */}
-                          {/* 생략된 코드... */}
+                          {/* 하위 섹션 */}
+                          {subSections.length > 0 && (
+                            <div className="mt-4 ml-4 pl-4 border-l-2 border-gray-400">
+                              {subSections.map((subSection: any, ssidx: number) => {
+                                if (!subSection || typeof subSection !== 'object') return null;
+
+                                const subHeading = subSection.sub_heading || '하위 섹션';
+                                const subPoints = Array.isArray(subSection.sub_points)
+                                  ? subSection.sub_points
+                                  : [];
+
+                                return (
+                                  <div key={ssidx} className="mb-3">
+                                    {/* 하위 섹션 제목 */}
+                                    <h4 className="text-lg font-bold text-gray-900 mb-2">
+                                      <span className="test-base text-gray-600">※ </span>
+                                      {renderHTML(subHeading)}
+                                    </h4>
+
+                                    {/* 하위 섹션 포인트 */}
+                                    {subPoints.length > 0 && (
+                                      <div className="space-y-2">
+                                        {subPoints.map((subPoint: any, spidx: number) => {
+                                          const cleanPoint = subPoint.replace(/^◦\s?/, '');
+                                          const colonIndex = cleanPoint.indexOf(': ');
+
+                                          let title = cleanPoint;
+                                          let content = '';
+
+                                          if (colonIndex !== -1) {
+                                            title = cleanPoint.substring(0, colonIndex);
+                                            content = cleanPoint.substring(colonIndex + 2);
+                                          }
+
+                                          return (
+                                            <div
+                                              key={spidx}
+                                              className="p-3 py-6 rounded-lg border border-gray-200 bg-white shadow-sm"
+                                            >
+                                              <div className="font-medium text-gray-800">
+                                                <span className="text-sm text-gray-600">- </span>
+                                                {title}
+                                              </div>
+                                              {content && (
+                                                <div className="text-gray-600 text-sm">
+                                                  <span className="text-xs">▷</span> {content}
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
