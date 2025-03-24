@@ -7,7 +7,7 @@ import Link from 'next/link';
 import MemoContent from '@/app/ui/MemoContent';
 import createSupabaseBrowserClient from '@/lib/supabse/client';
 import { BlogPost, ContentSource, ContentSummary, Memo } from '@/app/utils/types';
-import { MoveLeft } from 'lucide-react';
+import { MoveLeft, Notebook, Quote } from 'lucide-react';
 
 export default function BlogPostPage() {
   const { slug } = useParams();
@@ -139,19 +139,28 @@ export default function BlogPostPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 tracking-tighter">
       {/* 헤더 */}
-      <div className="bg-emerald-600 text-white py-6">
-        <div className="max-w-4xl mx-auto px-4">
-          <Link href="/blog" className="text-white hover:text-emerald-100 inline-flex items-center">
+      <div className="bg-emerald-600 text-white py-4">
+        <div className="max-w-2xl mx-auto px-4 flex items-center justify-between">
+          <Link
+            href="/blog"
+            className="text-white hover:text-emerald-100 inline-flex items-center gap-2"
+          >
             <MoveLeft />
-            블로그로 돌아가기
+            리스트
+          </Link>
+          <Link href="/memo" className="text-emerald-800 hover:text-emerald-100 flex items-center">
+            <div className="px-4 py-2 bg-white/75 flex items-center rounded-full gap-2">
+              <Notebook />
+              <p className=" rounded-xl">나만의 요약 만들기</p>
+            </div>
           </Link>
         </div>
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="max-w-4xl mx-auto  lg:p-4">
+      <div className="max-w-2xl mx-auto  ">
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 md:p-8">
             {/* 카테고리 */}
@@ -162,12 +171,23 @@ export default function BlogPostPage() {
             </div>
 
             {/* 제목 */}
-            <h1 className="text-3xl font-bold mb-6">{formattedMemo.title}</h1>
+            <h1 className="text-2xl font-bold mb-6">{formattedMemo.title}</h1>
 
             {/* 원본 링크 */}
             {formattedMemo.original_url && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-500 mb-2">원본 출처:</p>
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg w-full aspect-video ">
+                <Link href={formattedMemo.original_url} target="_blank" rel="noopener noreferrer">
+                  {source?.image_url ? (
+                    <img src={source?.image_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className=" w-full aspect-video  flex flex-col items-center justify-center gap-4 p-4 border-4 border-gray-200">
+                      <Quote size={16} className="text-gray-400" />
+                      <p className="text-center">{formattedMemo?.title || '제목 없음'}</p>
+                      <Quote size={16} className="text-gray-400" />
+                    </div>
+                  )}
+                </Link>
+                {/* <p className="text-sm text-gray-500 mb-2">원본 출처:</p>
                 <a
                   href={formattedMemo.original_url}
                   target="_blank"
@@ -175,12 +195,14 @@ export default function BlogPostPage() {
                   className="text-blue-600 hover:underline break-all"
                 >
                   {formattedMemo.original_url}
-                </a>
+                </a> */}
               </div>
             )}
 
+            {/* <hr className="border border-gray-600" /> */}
+
             {/* MemoContent 컴포넌트 사용 */}
-            <div className="mt-8">
+            <div className=" pb-4 border-y-2 border-gray-600">
               <MemoContent
                 memo={formattedMemo}
                 expanded={true}
@@ -192,9 +214,9 @@ export default function BlogPostPage() {
                 isVisible={true}
               />
             </div>
-
+            {/* <hr className="border border-emerald-600/25 my-12" /> */}
             {/* 서비스 안내 */}
-            <div className="mt-10 p-6 bg-emerald-50 rounded-lg border border-emerald-100">
+            <div className="mt-8 p-6 bg-emerald-50 rounded-lg border border-emerald-100">
               <h3 className="text-xl font-semibold text-emerald-800 mb-3">
                 직접 콘텐츠를 요약해보세요
               </h3>
@@ -202,7 +224,7 @@ export default function BlogPostPage() {
                 Brain Labeling을 사용하면 복잡한 웹 콘텐츠와 영상을 AI가 자동으로 요약해줍니다.
               </p>
               <Link
-                href="/"
+                href="/memo"
                 className="inline-block bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700"
               >
                 지금 시작하기
