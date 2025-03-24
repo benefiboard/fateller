@@ -5,7 +5,7 @@ import { PWAProviders } from '@/app/layout-component/PWAProviders';
 import { redirect } from 'next/navigation';
 
 // 관리자 이메일 목록
-const ADMIN_EMAILS = ['benefiboard@gmail.com']; // 여기에 실제 관리자 이메일을 넣으세요
+const ADMIN_EMAILS = ['benefiboard@gmail.com', 'hjdh59@gmail.com']; // 여기에 실제 관리자 이메일을 넣으세요
 
 /**
  * 관리자 레이아웃

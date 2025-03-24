@@ -24,6 +24,13 @@ interface SourceWithSummaries extends ContentSource {
   summaries: ContentSummary[];
 }
 
+// 선택된 항목 타입 정의
+interface SelectedItem {
+  sourceId: string;
+  summaryId: string;
+  title: string;
+}
+
 export default function AdminBlogPage() {
   // 상태 관리 - 타입 추가
   const { currentUser } = useUserStore();
@@ -34,8 +41,12 @@ export default function AdminBlogPage() {
   // 검색 필터 상태
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [sourceSearchTerm, setSourceSearchTerm] = useState<string>('');
+  const [userIdSearch, setUserIdSearch] = useState<string>(''); // 사용자 ID 검색 추가
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
+
+  // 다중 선택 상태
+  const [selectedSourceItems, setSelectedSourceItems] = useState<SelectedItem[]>([]);
 
   // 로딩 상태
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -117,6 +128,100 @@ export default function AdminBlogPage() {
     }
   };
 
+  // 사용자 ID로 콘텐츠 소스 검색 (NEW)
+  const searchContentSourcesByUserId = async () => {
+    if (!userIdSearch.trim()) {
+      alert('사용자 ID를 입력해주세요.');
+      return;
+    }
+
+    setSourcesLoading(true);
+    try {
+      // 1. 먼저 user_id로 memos 테이블에서 source_id 목록 조회
+      const { data: memoData, error: memoError } = await supabase
+        .from('memos')
+        .select('source_id')
+        .eq('user_id', userIdSearch)
+        .not('source_id', 'is', null);
+
+      if (memoError) throw memoError;
+
+      // 추출한 source_id가 없으면 빈 결과 반환
+      if (!memoData || memoData.length === 0) {
+        setSources([]);
+        setSourcesLoading(false);
+        return;
+      }
+
+      // 2. source_id 목록 추출 (중복 제거)
+      const sourceIds = Array.from(new Set(memoData.map((memo) => memo.source_id)));
+
+      // 3. 추출한 source_id로 content_sources 검색
+      let query = supabase
+        .from('content_sources')
+        .select(
+          `
+          *,
+          summaries:content_summaries(id, title, category, key_sentence, keywords, purpose)
+        `
+        )
+        .in('id', sourceIds)
+        .order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setSources((data as SourceWithSummaries[]) || []);
+    } catch (error) {
+      console.error('사용자 ID로 콘텐츠 검색 오류:', error);
+      alert('사용자 ID로 콘텐츠를 검색하는 중 오류가 발생했습니다.');
+    } finally {
+      setSourcesLoading(false);
+    }
+  };
+
+  // 항목 선택 토글 (NEW)
+  const toggleSourceSelection = (sourceId: string, summaryId: string, title: string) => {
+    const itemIndex = selectedSourceItems.findIndex(
+      (item) => item.sourceId === sourceId && item.summaryId === summaryId
+    );
+
+    if (itemIndex === -1) {
+      // 항목 추가
+      setSelectedSourceItems([...selectedSourceItems, { sourceId, summaryId, title }]);
+    } else {
+      // 항목 제거
+      setSelectedSourceItems(
+        selectedSourceItems.filter(
+          (item) => !(item.sourceId === sourceId && item.summaryId === summaryId)
+        )
+      );
+    }
+  };
+
+  // 전체 선택/해제 (NEW)
+  const toggleSelectAll = () => {
+    if (selectedSourceItems.length === 0) {
+      // 모든 항목 선택
+      const allItems: SelectedItem[] = [];
+      sources.forEach((source) => {
+        if (source.summaries && source.summaries.length > 0) {
+          source.summaries.forEach((summary) => {
+            allItems.push({
+              sourceId: source.id,
+              summaryId: summary.id,
+              title: summary.title,
+            });
+          });
+        }
+      });
+      setSelectedSourceItems(allItems);
+    } else {
+      // 모두 해제
+      setSelectedSourceItems([]);
+    }
+  };
+
   // 블로그에 게시물 추가
   const addToBlog = async (source: ContentSource, summary: ContentSummary) => {
     try {
@@ -154,6 +259,55 @@ export default function AdminBlogPage() {
     }
   };
 
+  // 여러 항목을 블로그에 추가 (NEW)
+  const addMultipleToBlog = async () => {
+    if (selectedSourceItems.length === 0) {
+      alert('선택된 항목이 없습니다.');
+      return;
+    }
+
+    if (!confirm(`${selectedSourceItems.length}개의 항목을 블로그에 추가하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      const blogPosts = selectedSourceItems.map((item) => {
+        // 슬러그 생성
+        const slug =
+          item.title
+            .toLowerCase()
+            .replace(/[^\w\s]/gi, '')
+            .replace(/\s+/g, '-')
+            .substring(0, 60) +
+          '-' +
+          Date.now().toString(36) +
+          '-' +
+          Math.floor(Math.random() * 1000); // 중복 방지를 위한 랜덤값 추가
+
+        return {
+          source_id: item.sourceId,
+          summary_id: item.summaryId,
+          slug,
+          published: true,
+          featured: false,
+          published_at: new Date().toISOString(),
+        };
+      });
+
+      const { data, error } = await supabase.from('blog_posts').insert(blogPosts).select();
+
+      if (error) throw error;
+
+      alert(`${selectedSourceItems.length}개의 게시물이 블로그에 추가되었습니다!`);
+      setSelectedSourceItems([]);
+      loadBlogPosts();
+      setActiveTab('posts');
+    } catch (error) {
+      console.error('블로그 게시물 일괄 추가 오류:', error);
+      alert('블로그에 게시물을 추가하는 중 오류가 발생했습니다.');
+    }
+  };
+
   // 블로그에서 게시물 삭제
   const removeFromBlog = async (id: string) => {
     if (!confirm('정말로 이 게시물을 블로그에서 삭제하시겠습니까?')) return;
@@ -182,6 +336,9 @@ export default function AdminBlogPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">블로그 관리</h1>
+            <p>d5cc7e8c-5dda-4260-be11-8e0776dc66b1</p>
+            <p>bf412c68-4b94-44af-b043-e1213c327638</p>
+            <p></p>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">{currentUser?.email}</span>
               <Link
@@ -357,32 +514,93 @@ export default function AdminBlogPage() {
         {/* 콘텐츠 추가 탭 */}
         {activeTab === 'sources' && (
           <div className="bg-white p-6 rounded-lg shadow-sm">
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="flex-1 relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </span>
-                <input
-                  type="text"
-                  value={sourceSearchTerm}
-                  onChange={(e) => setSourceSearchTerm(e.target.value)}
-                  placeholder="원본 콘텐츠 검색..."
-                  className="pl-10 w-full p-2 border border-gray-300 rounded-md"
-                />
+            {/* 검색 옵션 */}
+            <div className="flex flex-col gap-4 mb-6">
+              {/* 키워드 검색 */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400" />
+                  </span>
+                  <input
+                    type="text"
+                    value={sourceSearchTerm}
+                    onChange={(e) => setSourceSearchTerm(e.target.value)}
+                    placeholder="원본 콘텐츠 검색..."
+                    className="pl-10 w-full p-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <button
+                  onClick={searchContentSources}
+                  className="bg-emerald-500 text-white px-4 py-2 rounded-md hover:bg-emerald-600 transition-colors"
+                >
+                  키워드 검색
+                </button>
               </div>
-              <button
-                onClick={searchContentSources}
-                className="bg-emerald-500 text-white px-4 py-2 rounded-md hover:bg-emerald-600 transition-colors"
-              >
-                검색
-              </button>
+
+              {/* 사용자 ID 검색 - NEW */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400" />
+                  </span>
+                  <input
+                    type="text"
+                    value={userIdSearch}
+                    onChange={(e) => setUserIdSearch(e.target.value)}
+                    placeholder="사용자 ID로 검색..."
+                    className="pl-10 w-full p-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <button
+                  onClick={searchContentSourcesByUserId}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+                >
+                  사용자 ID로 검색
+                </button>
+              </div>
             </div>
+
+            {/* 선택된 항목 관리 및 일괄 추가 버튼 - NEW */}
+            {selectedSourceItems.length > 0 && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm">
+                    <span className="font-medium">{selectedSourceItems.length}개</span> 항목 선택됨
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedSourceItems([])}
+                      className="px-3 py-1 text-xs text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                      선택 해제
+                    </button>
+                    <button
+                      onClick={addMultipleToBlog}
+                      className="px-3 py-1 text-xs text-white bg-emerald-600 rounded hover:bg-emerald-700"
+                    >
+                      <PlusCircle className="h-3 w-3 mr-1 inline" />
+                      선택한 항목 추가하기
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 검색 결과 테이블 */}
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    {/* 체크박스 열 추가 - NEW */}
+                    <th className="px-2 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedSourceItems.length > 0 && sources.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4"
+                      />
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       원본 제목
                     </th>
@@ -403,7 +621,7 @@ export default function AdminBlogPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {sourcesLoading ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-4 text-center">
+                      <td colSpan={6} className="px-6 py-4 text-center">
                         <div className="flex justify-center">
                           <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                         </div>
@@ -411,8 +629,8 @@ export default function AdminBlogPage() {
                     </tr>
                   ) : sources.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                        {sourceSearchTerm
+                      <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                        {sourceSearchTerm || userIdSearch
                           ? '검색 결과가 없습니다'
                           : '검색어를 입력하여 원본 콘텐츠를 검색하세요'}
                       </td>
@@ -423,6 +641,20 @@ export default function AdminBlogPage() {
                         {source.summaries && source.summaries.length > 0 ? (
                           source.summaries.map((summary: ContentSummary, index: number) => (
                             <tr key={`${source.id}-${summary.id}`}>
+                              {/* 체크박스 셀 추가 - NEW */}
+                              <td className="px-2 py-4 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedSourceItems.some(
+                                    (item) =>
+                                      item.sourceId === source.id && item.summaryId === summary.id
+                                  )}
+                                  onChange={() =>
+                                    toggleSourceSelection(source.id, summary.id, summary.title)
+                                  }
+                                  className="w-4 h-4"
+                                />
+                              </td>
                               {index === 0 && (
                                 <>
                                   <td className="px-6 py-4" rowSpan={source.summaries.length}>
@@ -468,6 +700,9 @@ export default function AdminBlogPage() {
                           ))
                         ) : (
                           <tr>
+                            <td className="px-2 py-4 text-center">
+                              <input type="checkbox" disabled className="w-4 h-4 opacity-50" />
+                            </td>
                             <td className="px-6 py-4">
                               <div className="text-sm font-medium text-gray-900">
                                 {source.title || '제목 없음'}
