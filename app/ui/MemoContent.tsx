@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Memo } from '../utils/types';
+import { Memo, MemoContentProps } from '../utils/types';
 import {
   Sparkle,
   ChevronDown,
@@ -17,17 +17,6 @@ import ShareButton from './ShareButton';
 
 // 탭 인덱스 타입 정의
 type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 아이디어 맵, 2: 주요 내용, 3: 원문
-
-interface MemoContentProps {
-  memo: Memo;
-  expanded: boolean;
-  showLabeling: boolean;
-  showOriginal: boolean;
-  onToggleThread: () => void;
-  onToggleLabeling: () => void;
-  onToggleOriginal: () => void;
-  isVisible?: boolean; // 메모가 화면에 보이는지 여부
-}
 
 const MemoContent: React.FC<MemoContentProps> = ({
   memo,

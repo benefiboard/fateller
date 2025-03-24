@@ -1,4 +1,4 @@
-//app/memo/utils/types.ts
+//app/utils/types.ts
 // 타입 정의
 
 export interface MemoLabeling {
@@ -75,4 +75,83 @@ export interface MemoEmbedding {
   embedding: number[];
   created_at: string;
   updated_at: string;
+}
+
+export interface MemoContentProps {
+  memo: Memo;
+  expanded: boolean;
+  showLabeling: boolean;
+  showOriginal: boolean;
+  onToggleThread: () => void;
+  onToggleLabeling: () => void;
+  onToggleOriginal: () => void;
+  isVisible?: boolean; // 메모가 화면에 보이는지 여부
+}
+
+export interface MemoItemProps {
+  memo: Memo;
+  profile: Profile;
+  memoState: {
+    expanded: boolean;
+    showLabeling: boolean;
+    showOriginal: boolean;
+  };
+  onToggleThread: (id: string) => void;
+  onToggleLabeling: (id: string) => void;
+  onToggleOriginal: (id: string) => void;
+  onEdit: (memo: Memo) => void;
+  onAnalyze: (memo: Memo) => void;
+  onDelete: (id: string) => void;
+  onShare?: (memo: Memo) => void; // 공유 기능 추가
+  onFindRelated?: (id: string) => void; // 관련 메모 찾기 기능 추가
+  onGenerateInsight?: (id: string) => void; // 인사이트 생성 기능 추가
+}
+
+// 블로그 게시물 관련 타입
+export interface BlogPost {
+  category: string;
+  id: string;
+  source_id: string;
+  summary_id: string;
+  slug: string;
+  published: boolean;
+  featured: boolean;
+  view_count: number;
+  created_at: string;
+  published_at: string;
+  source?: ContentSource;
+  summary?: ContentSummary;
+}
+
+// 원본 콘텐츠 타입
+export interface ContentSource {
+  id: string;
+  title: string | null;
+  canonical_url: string | null;
+  source_type: string | null;
+  image_url: string | null;
+  content: string;
+  created_at: string;
+  access_count?: number;
+}
+
+// 요약 콘텐츠 타입
+export interface ContentSummary {
+  id: string;
+  source_id: string;
+  title: string;
+  category: string;
+  key_sentence: string;
+  keywords: string[];
+  purpose: string;
+  tweet_main: any;
+  thread: string[];
+  created_at: string;
+  embedding_id?: string | null;
+}
+
+// 블로그 카테고리 타입
+export interface BlogCategory {
+  category: string;
+  count: number;
 }

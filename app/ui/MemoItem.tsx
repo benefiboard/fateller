@@ -27,27 +27,8 @@ import {
   Hourglass,
   Share2, // 문학/창작
 } from 'lucide-react';
-import { Memo, Profile } from '../utils/types';
+import { Memo, MemoItemProps, Profile } from '../utils/types';
 import MemoContent from './MemoContent';
-
-interface MemoItemProps {
-  memo: Memo;
-  profile: Profile;
-  memoState: {
-    expanded: boolean;
-    showLabeling: boolean;
-    showOriginal: boolean;
-  };
-  onToggleThread: (id: string) => void;
-  onToggleLabeling: (id: string) => void;
-  onToggleOriginal: (id: string) => void;
-  onEdit: (memo: Memo) => void;
-  onAnalyze: (memo: Memo) => void;
-  onDelete: (id: string) => void;
-  onShare?: (memo: Memo) => void; // 공유 기능 추가
-  onFindRelated?: (id: string) => void; // 관련 메모 찾기 기능 추가
-  onGenerateInsight?: (id: string) => void; // 인사이트 생성 기능 추가
-}
 
 const MemoItem: React.FC<MemoItemProps> = ({
   memo,
