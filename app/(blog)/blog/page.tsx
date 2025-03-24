@@ -3,7 +3,17 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Search, Calendar, Tag, ArrowRight, X, RefreshCw, ChevronDown, Filter } from 'lucide-react';
+import {
+  Search,
+  Calendar,
+  Tag,
+  ArrowRight,
+  X,
+  RefreshCw,
+  ChevronDown,
+  Filter,
+  Quote,
+} from 'lucide-react';
 import createSupabaseBrowserClient from '@/lib/supabse/client';
 import { BlogPost, BlogCategory } from '@/app/utils/types';
 
@@ -396,47 +406,70 @@ export default function BlogPage() {
                 {posts.map((post) => (
                   <div
                     key={post.id}
-                    className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                    className="border-2 border-gray-200 sm:bg-white rounded-lg shadow-md overflow-hidden hover:shadow-md transition-shadow"
                   >
-                    <div className="p-6">
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        <span className="inline-block px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 rounded-full">
-                          {post.category || post.summary?.category || '미분류'}
-                        </span>
-                        <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                          {post.source?.source_type || '웹 콘텐츠'}
-                        </span>
+                    <div className=" sm:p-6  sm:h-52 flex flex-col  sm:flex-row sm:items-center gap-4 ">
+                      {/* 이미지 좌측 */}
+                      <div className="h-60 aspect-video sm:w-auto sm:h-full">
+                        {post.source?.image_url ? (
+                          <img
+                            src={post.source?.image_url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className=" w-full aspect-video  flex flex-col items-center justify-center gap-4 p-4 border-4 border-gray-200">
+                            <Quote size={16} className="text-gray-400" />
+                            <p className="text-center">{post.summary?.title || '제목 없음'}</p>
+                            <Quote size={16} className="text-gray-400" />
+                          </div>
+                        )}
                       </div>
 
-                      <h3 className="text-xl font-bold mb-3">
-                        <Link href={`/blog/post/${post.slug}`} className="hover:text-emerald-600">
-                          {post.summary?.title || post.source?.title || '제목 없음'}
-                        </Link>
-                      </h3>
-
-                      <p className="text-gray-600 mb-4">
-                        {post.summary?.key_sentence || '내용 없음'}
-                      </p>
-
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {post.summary?.keywords?.map((keyword, idx) => (
-                          <span key={idx} className="text-sm text-gray-500">
-                            #{keyword}
+                      {/* 우측 텍스트 */}
+                      <div className="flex-1 h-full flex flex-col justify-between px-4">
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <span className="inline-block px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 rounded-full">
+                            {post.category || post.summary?.category || '미분류'}
                           </span>
-                        ))}
-                      </div>
+                          <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                            {post.source?.source_type || '웹 콘텐츠'}
+                          </span>
+                        </div>
 
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">
-                          {new Date(post.published_at).toLocaleDateString()}
-                        </span>
-                        <Link
-                          href={`/blog/post/${post.slug}`}
-                          className="inline-flex items-center text-sm text-emerald-600 hover:text-emerald-700"
-                        >
-                          자세히 보기
-                          <ArrowRight className="h-4 w-4 ml-1" />
-                        </Link>
+                        <h3 className="text-xl font-bold mb-3">
+                          <Link
+                            href={`/blog/post/${post.slug}`}
+                            className="line-clamp-3 hover:text-emerald-600"
+                          >
+                            {post.summary?.title || post.source?.title || '제목 없음'}
+                          </Link>
+                        </h3>
+
+                        <p className="hidden text-gray-600 mb-4 ">
+                          {post.summary?.key_sentence || '내용 없음'}
+                        </p>
+
+                        <div className="hidden  flex-wrap gap-2 sm:mb-4">
+                          {post.summary?.keywords?.slice(0, 5).map((keyword, idx) => (
+                            <span key={idx} className="text-sm text-gray-500">
+                              #{keyword}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="flex justify-between items-center mb-4 sm:mb-0">
+                          <span className="text-sm text-gray-500">
+                            {new Date(post.published_at).toLocaleDateString()}
+                          </span>
+                          <Link
+                            href={`/blog/post/${post.slug}`}
+                            className="inline-flex items-center px-4 py-2 font-semibold bg-gray-800  text-gray-100 rounded-full  hover:text-gray-400"
+                          >
+                            요약 내용 보기
+                            <ArrowRight className="h-4 w-4 ml-1" />
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -446,7 +479,7 @@ export default function BlogPage() {
           </div>
 
           {/* 사이드바 (데스크톱에서만 표시) */}
-          <div className="hidden lg:block lg:w-72 space-y-6">
+          <div className="hidden xl:block xl:w-72 space-y-6">
             {/* 서비스 소개 */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-bold mb-3">Brain Labeling이란?</h3>
