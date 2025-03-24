@@ -151,7 +151,7 @@ export default function BlogPostPage() {
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto  lg:p-4">
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 md:p-8">
             {/* 카테고리 */}
