@@ -189,7 +189,7 @@ export default function BlogPage() {
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 sm:py-12">
           <div className="flex flex-col items-center text-center">
             <h1 className="text-2xl sm:text-4xl font-bold mb-4">Brain Labeling 블로그</h1>
-            <p className="text-base sm:text-lg max-w-2xl">
+            <p className="text-sm sm:text-base max-w-2xl">
               AI 요약 기술로 정리된 유용한 콘텐츠를 만나보세요.
               <br />
               복잡한 원문과 요약을 함께 제공합니다.

@@ -178,7 +178,11 @@ export default function BlogPostPage() {
               <div className="mb-6 p-4 bg-gray-50 rounded-lg w-full aspect-video ">
                 <Link href={formattedMemo.original_url} target="_blank" rel="noopener noreferrer">
                   {source?.image_url ? (
-                    <img src={source?.image_url} alt="" className="w-full h-full object-cover" />
+                    <img
+                      src={source?.image_url}
+                      alt="url_link"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className=" w-full aspect-video  flex flex-col items-center justify-center gap-4 p-4 border-4 border-gray-200">
                       <Quote size={16} className="text-gray-400" />
@@ -202,17 +206,25 @@ export default function BlogPostPage() {
             {/* <hr className="border border-gray-600" /> */}
 
             {/* MemoContent 컴포넌트 사용 */}
-            <div className=" pb-4 border-y-2 border-gray-600">
-              <MemoContent
-                memo={formattedMemo}
-                expanded={true}
-                showLabeling={true}
-                showOriginal={true}
-                onToggleThread={() => {}}
-                onToggleLabeling={() => {}}
-                onToggleOriginal={() => {}}
-                isVisible={true}
-              />
+            <div className=" pb-4  flex flex-col ">
+              <div className="flex items-center gap-2">
+                <Notebook className="text-emerald-600 w-4 h-4" />
+                <p className="text-sm text-emerald-600">요약내용</p>
+                <hr className="flex-1 border-emerald-600/25" />
+              </div>
+
+              <div className="my-2 border-y border-gray-300">
+                <MemoContent
+                  memo={formattedMemo}
+                  expanded={true}
+                  showLabeling={true}
+                  showOriginal={true}
+                  onToggleThread={() => {}}
+                  onToggleLabeling={() => {}}
+                  onToggleOriginal={() => {}}
+                  isVisible={true}
+                />
+              </div>
             </div>
             {/* <hr className="border border-emerald-600/25 my-12" /> */}
             {/* 서비스 안내 */}
