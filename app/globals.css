@@ -211,3 +211,12 @@ body {
 .animate-gradient {
   animation: gradient-shift 15s ease infinite;
 }
+
+.no-mobile-show {
+  display: none;
+}
+@media (min-width: 412px) {
+  .no-mobile-show {
+    display: inline;
+  }
+}

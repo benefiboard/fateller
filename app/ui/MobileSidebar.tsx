@@ -4,7 +4,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, Bell, Mail, User, X, BookUser } from 'lucide-react';
+import { Home, Search, Bell, Mail, User, X, BookUser, PanelsTopLeft } from 'lucide-react';
 import { useSearchStore } from '../store/searchStore';
 
 const MobileSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
@@ -77,6 +77,13 @@ const MobileSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
               className={pathname === '/auth' ? 'text-emerald-500' : 'text-gray-800'}
             />
             <span className="ml-4 text-gray-900">프로필</span>
+          </Link>
+          <Link href="/blog" className="block py-3 flex items-center">
+            <PanelsTopLeft
+              size={24}
+              className={pathname === '/blog' ? 'text-emerald-500' : 'text-gray-800'}
+            />
+            <span className="ml-4 text-gray-900">블로그</span>
           </Link>
           <Link href="/introduce" className="block py-3 flex items-center">
             <BookUser

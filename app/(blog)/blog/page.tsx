@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Filter,
   Quote,
+  Notebook,
 } from 'lucide-react';
 import createSupabaseBrowserClient from '@/lib/supabse/client';
 import { BlogPost, BlogCategory } from '@/app/utils/types';
@@ -186,7 +187,7 @@ export default function BlogPage() {
     <div className="min-h-screen bg-gray-50 tracking-tighter">
       {/* 헤더 */}
       <header className="bg-emerald-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 sm:py-12">
+        <div className="max-w-7xl mx-auto p-4 sm:px-6 lg:px-8 sm:py-8">
           <div className="flex flex-col items-center text-center">
             <h1 className="text-2xl sm:text-4xl font-bold mb-4">Brain Labeling 블로그</h1>
             <p className="text-sm sm:text-base max-w-2xl">
@@ -334,7 +335,7 @@ export default function BlogPage() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 sm:py-12">
+      <main className="max-w-7xl mx-auto p-4 sm:px-6 lg:px-8 sm:py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* 메인 콘텐츠 */}
           <div className="flex-1">
@@ -384,7 +385,18 @@ export default function BlogPage() {
             )}
 
             {/* 게시물 목록 */}
-            <h2 className="text-2xl font-bold mb-6">{getSearchModeText()}</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold ">{getSearchModeText()}</h2>
+              <Link
+                href="/"
+                className="xl:hidden inline-block bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Notebook />
+                  <p>서비스 시작하기</p>
+                </div>
+              </Link>
+            </div>
 
             {isLoading ? (
               <div className="flex justify-center py-20">
@@ -492,9 +504,12 @@ export default function BlogPage() {
               </p>
               <Link
                 href="/"
-                className="inline-block bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
+                className="inline-block bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
               >
-                서비스 시작하기
+                <div className="flex items-center gap-2">
+                  <Notebook />
+                  <p>서비스 시작하기</p>
+                </div>
               </Link>
             </div>
 

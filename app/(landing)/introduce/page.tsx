@@ -29,11 +29,14 @@ export default function LandingAuthUserPage() {
                   className="object-cover"
                 />
               </div>
-              <span className=" ml-2 text-lg sm:text-xl font-bold text-gray-900">
+              <span className="no-mobile-show ml-2 text-lg sm:text-xl font-bold text-gray-900">
                 Brain Labeling
               </span>
             </div>
             <div className="flex items-center space-x-4 md:space-x-6">
+              <Link href="/blog" className="text-gray-800 font-semibold hover:text-gray-900">
+                블로그
+              </Link>
               {!currentUser && (
                 <Link href="/auth" className="hidden sm:block text-gray-600 hover:text-gray-900">
                   로그인

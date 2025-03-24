@@ -3,7 +3,16 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, Bell, Mail, BookmarkIcon, User, BookUser } from 'lucide-react';
+import {
+  Home,
+  Search,
+  Bell,
+  Mail,
+  BookmarkIcon,
+  User,
+  BookUser,
+  PanelsTopLeft,
+} from 'lucide-react';
 import { useSearchStore } from '../store/searchStore';
 
 // 일반 링크용 컴포넌트
@@ -123,6 +132,13 @@ const LeftSidebar: React.FC<{ minimized?: boolean }> = ({ minimized = false }) =
           icon={<User size={26} />}
           label="프로필"
           active={pathname === '/profile'}
+          minimized={minimized}
+        />
+        <SidebarLink
+          href="/blog"
+          icon={<PanelsTopLeft size={26} />}
+          label="블로그"
+          active={pathname === '/blog'}
           minimized={minimized}
         />
         <SidebarLink

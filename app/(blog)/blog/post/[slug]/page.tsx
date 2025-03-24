@@ -150,10 +150,13 @@ export default function BlogPostPage() {
             <MoveLeft />
             리스트
           </Link>
-          <Link href="/memo" className="text-emerald-800 hover:text-emerald-100 flex items-center">
-            <div className="px-4 py-2 bg-white/75 flex items-center rounded-full gap-2">
+          <Link
+            href="/memo"
+            className="text-emerald-800 hover:text-emerald-100   flex items-center"
+          >
+            <div className="px-4 py-2 bg-white/75 hover:bg-gray-800 flex items-center rounded-lg gap-2">
               <Notebook />
-              <p className=" rounded-xl">나만의 요약 만들기</p>
+              <p className=" rounded-xl">서비스 시작하기</p>
             </div>
           </Link>
         </div>
