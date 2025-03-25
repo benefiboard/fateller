@@ -419,7 +419,7 @@ export default function BlogPage() {
                   <>
                     <div
                       key={post.id}
-                      className="border border-gray-300 sm:bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                      className="border border-gray-300 bg-gradient-to-r from-emerald-50/50 to-yellow-50/50 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                     >
                       <div className=" sm:p-6  sm:h-52 flex flex-col  sm:flex-row sm:items-center gap-4 ">
                         {/* 이미지 좌측 */}

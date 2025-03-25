@@ -163,8 +163,8 @@ export default function BlogPostPage() {
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="max-w-2xl mx-auto  ">
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="max-w-2xl mx-auto bg-gray-50 ">
+        <div className="border border-gray-300 bg-gradient-to-r from-emerald-50/50 to-yellow-50/50 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow ">
           <div className="p-6 md:p-8">
             {/* 카테고리 */}
             <div className="mb-4">

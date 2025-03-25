@@ -436,7 +436,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 parsedContent.sections.length > 0
               ) {
                 return (
-                  <div className="space-y-16 pt-4 pb-8 pl-4 ">
+                  <div className="space-y-16 pt-4 pb-8  ">
                     {parsedContent.sections.map((section: any, idx: number) => {
                       if (!section || typeof section !== 'object') return null;
 
@@ -629,7 +629,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 const content = tweet.replace(/^\d+\.\s/, '');
 
                 return (
-                  <div key={tweetIndex} className="flex px-3 py-1 ">
+                  <div key={tweetIndex} className="flex  py-1 ">
                     <div className="w-6 h-6 rounded-full border border-gray-400 flex items-center justify-center mt-1 mr-3 text-xs font-medium text-gray-600">
                       {tweetIndex + 1}
                     </div>
