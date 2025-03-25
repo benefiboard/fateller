@@ -27,6 +27,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
   onToggleLabeling,
   onToggleOriginal,
   isVisible = false,
+  hideImageInBlog = false,
 }) => {
   // 탭 관리를 위한 상태
   const [activeTab, setActiveTab] = useState<TabIndex>(0);
@@ -383,10 +384,10 @@ const MemoContent: React.FC<MemoContentProps> = ({
               ))}
             </div>
 
-            {/* 원본이미지와 제목 */}
-            {memo.original_image && (
+            {/* 원본이미지와 제목 - hideImageInBlog prop을 확인하여 조건부 렌더링 */}
+            {memo.original_image && !hideImageInBlog && (
               <div className="flex flex-col gap-2 mt-2">
-                <hr className="w-full" />
+                {/* <hr className="w-full" /> */}
 
                 <div className="grid grid-cols-8 items-center gap-2 w-full bg-white mt-1">
                   <div className="h-16 col-span-3 relative">
@@ -460,7 +461,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                           </div>
 
                           {/* 섹션 포인트 */}
-                          <div className="space-y-4 ml-4 border-l-[3px] border-gray-800/50">
+                          <div className="space-y-4 ml-4 border-l-[3px] border-gray-600/50">
                             {points.map((point: any, pidx: number) => {
                               // 포인트 파싱 (불릿 제거)
                               const cleanPoint = point.replace(/^•\s?/, '');
@@ -514,14 +515,14 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                               return (
                                 <div key={pidx} className="px-4 rounded-lg ">
-                                  <div className="text-gray-800 font-semibold flex items-start gap-1">
+                                  <div className="text-gray-900  flex items-start gap-1">
                                     <div>({pidx + 1})</div> {renderHTML(title)}
                                   </div>
                                   {content && (
                                     <>
                                       <hr className="mb-1 border-gray-400" />
-                                      <div className="text-gray-600 font-medium mt-1 ml-1 flex gap-1">
-                                        <div className="text-gray-600 font-bold">: </div>
+                                      <div className="text-gray-600 italic mt-1 ml-1 flex gap-1">
+                                        <div className="font-bold">: </div>
                                         {renderHTML(content)}
                                       </div>
                                     </>
@@ -545,14 +546,14 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                 return (
                                   <div key={ssidx} className="mb-3">
                                     {/* 하위 섹션 제목 */}
-                                    <h4 className="text-lg font-bold text-gray-900 mb-2">
+                                    <h4 className="text-lg  text-gray-900 mb-2">
                                       <span className="test-base text-gray-600">※ </span>
                                       {renderHTML(subHeading)}
                                     </h4>
 
                                     {/* 하위 섹션 포인트 */}
                                     {subPoints.length > 0 && (
-                                      <div className="">
+                                      <div className=" space-y-2">
                                         {subPoints.map((subPoint: any, spidx: number) => {
                                           const cleanPoint = subPoint.replace(/^◦\s?/, '');
                                           const colonIndex = cleanPoint.indexOf(': ');
@@ -572,8 +573,8 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                                 {title}
                                               </div>
                                               {content && (
-                                                <div className="text-gray-600 text-sm">
-                                                  <span className="text-xs">: </span> {content}
+                                                <div className="text-gray-600 italic text-sm">
+                                                  <span className="text-xs ">: </span> {content}
                                                 </div>
                                               )}
                                             </div>

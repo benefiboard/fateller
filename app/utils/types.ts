@@ -86,6 +86,7 @@ export interface MemoContentProps {
   onToggleLabeling: () => void;
   onToggleOriginal: () => void;
   isVisible?: boolean; // 메모가 화면에 보이는지 여부
+  hideImageInBlog?: boolean;
 }
 
 export interface MemoItemProps {

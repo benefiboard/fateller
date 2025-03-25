@@ -209,14 +209,14 @@ export default function BlogPostPage() {
             {/* <hr className="border border-gray-600" /> */}
 
             {/* MemoContent 컴포넌트 사용 */}
-            <div className=" pb-4  flex flex-col ">
+            <div className=" pb-4  flex flex-col border-b border-emerald-200">
               <div className="flex items-center gap-2">
                 <Notebook className="text-emerald-600 w-4 h-4" />
                 <p className="text-sm text-emerald-600">요약내용</p>
                 <hr className="flex-1 border-emerald-600/25" />
               </div>
 
-              <div className="my-2 border-y border-gray-300">
+              <div className="my-2  border-t border-gray-300">
                 <MemoContent
                   memo={formattedMemo}
                   expanded={true}
@@ -226,6 +226,7 @@ export default function BlogPostPage() {
                   onToggleLabeling={() => {}}
                   onToggleOriginal={() => {}}
                   isVisible={true}
+                  hideImageInBlog={true}
                 />
               </div>
             </div>
