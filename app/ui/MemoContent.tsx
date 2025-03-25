@@ -353,7 +353,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
         return (
           <div className="pt-4 " ref={tabRefs.idea}>
             {/* 헤더 */}
-            <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
+            <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">{memo.title}</h2>
               <ShareButton
                 memo={memo}
@@ -415,7 +415,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
         return (
           <div className="pt-4 leading-relaxed" ref={tabRefs.key}>
             {/* 헤더 */}
-            <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
+            <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">아이디어 맵</h2>
               <ShareButton
                 memo={memo}
@@ -436,7 +436,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                 parsedContent.sections.length > 0
               ) {
                 return (
-                  <div className="space-y-6">
+                  <div className="space-y-16 pt-4 pb-8 pl-4 ">
                     {parsedContent.sections.map((section: any, idx: number) => {
                       if (!section || typeof section !== 'object') return null;
 
@@ -447,9 +447,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
                         : [];
 
                       return (
-                        <div key={idx} className="mb-4">
+                        <div key={idx} className="">
                           {/* 섹션 헤더 */}
-                          <div className="mb-3">
+                          <div className="mb-6">
                             <div className="text-xs font-medium text-gray-400 flex items-center gap-2 mb-2">
                               <p>Section {idx + 1}</p>
                               <hr className="flex-1 border-t border-gray-300" />
@@ -460,7 +460,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                           </div>
 
                           {/* 섹션 포인트 */}
-                          <div className="space-y-3">
+                          <div className="space-y-4 ml-4 border-l-[3px] border-gray-800/50">
                             {points.map((point: any, pidx: number) => {
                               // 포인트 파싱 (불릿 제거)
                               const cleanPoint = point.replace(/^•\s?/, '');
@@ -513,24 +513,15 @@ const MemoContent: React.FC<MemoContentProps> = ({
                               }
 
                               return (
-                                <div
-                                  key={pidx}
-                                  className="p-3 py-6 rounded-lg border border-gray-200 bg-white shadow-sm"
-                                >
-                                  <div
-                                    className={
-                                      content
-                                        ? 'text-gray-800 flex font-semibold items-start gap-1'
-                                        : 'text-gray-800 flex items-start gap-1'
-                                    }
-                                  >
+                                <div key={pidx} className="px-4 rounded-lg ">
+                                  <div className="text-gray-800 font-semibold flex items-start gap-1">
                                     <div>({pidx + 1})</div> {renderHTML(title)}
                                   </div>
                                   {content && (
                                     <>
-                                      <hr className="mb-1" />
-                                      <div className="text-gray-600 mt-1 ml-1 flex gap-1">
-                                        <div className="">▷</div>
+                                      <hr className="mb-1 border-gray-400" />
+                                      <div className="text-gray-600 font-medium mt-1 ml-1 flex gap-1">
+                                        <div className="text-gray-600 font-bold">: </div>
                                         {renderHTML(content)}
                                       </div>
                                     </>
@@ -542,7 +533,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                           {/* 하위 섹션 */}
                           {subSections.length > 0 && (
-                            <div className="mt-4 ml-4 pl-4 border-l-2 border-gray-400">
+                            <div className="mt-6 ml-8 pl-2 border-l-2 border-gray-600/50">
                               {subSections.map((subSection: any, ssidx: number) => {
                                 if (!subSection || typeof subSection !== 'object') return null;
 
@@ -561,7 +552,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
                                     {/* 하위 섹션 포인트 */}
                                     {subPoints.length > 0 && (
-                                      <div className="space-y-2">
+                                      <div className="">
                                         {subPoints.map((subPoint: any, spidx: number) => {
                                           const cleanPoint = subPoint.replace(/^◦\s?/, '');
                                           const colonIndex = cleanPoint.indexOf(': ');
@@ -575,17 +566,14 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                           }
 
                                           return (
-                                            <div
-                                              key={spidx}
-                                              className="p-3 py-6 rounded-lg border border-gray-200 bg-white shadow-sm"
-                                            >
-                                              <div className="font-medium text-gray-800">
-                                                <span className="text-sm text-gray-600">- </span>
+                                            <div key={spidx} className="px-3  rounded-lg ">
+                                              <div className="font-medium text-gray-600">
+                                                <span className="text-sm text-gray-800">- </span>
                                                 {title}
                                               </div>
                                               {content && (
                                                 <div className="text-gray-600 text-sm">
-                                                  <span className="text-xs">▷</span> {content}
+                                                  <span className="text-xs">: </span> {content}
                                                 </div>
                                               )}
                                             </div>
@@ -621,9 +609,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
       case 2: // 주요 내용
         return (
-          <div className="pt-4 leading-relaxed" ref={tabRefs.main}>
+          <div className="pt-4 pb-8 leading-relaxed " ref={tabRefs.main}>
             {/* 헤더 */}
-            <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
+            <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">주요 내용</h2>
               <ShareButton
                 memo={memo}
@@ -635,16 +623,13 @@ const MemoContent: React.FC<MemoContentProps> = ({
             </div>
 
             {/* 모든 항목 표시 */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               {memo.thread.map((tweet, tweetIndex) => {
                 // 번호 제거 (예: "1. ")
                 const content = tweet.replace(/^\d+\.\s/, '');
 
                 return (
-                  <div
-                    key={tweetIndex}
-                    className="flex p-3 py-6 rounded-lg border border-gray-200 bg-white shadow-sm"
-                  >
+                  <div key={tweetIndex} className="flex px-3 py-1 ">
                     <div className="w-6 h-6 rounded-full border border-gray-400 flex items-center justify-center mt-1 mr-3 text-xs font-medium text-gray-600">
                       {tweetIndex + 1}
                     </div>
@@ -660,7 +645,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
         return (
           <div className="pt-4 min-h-96 flex flex-col" ref={tabRefs.original}>
             {/* 헤더 */}
-            <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
+            <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">원문</h2>
               <ShareButton
                 memo={memo}

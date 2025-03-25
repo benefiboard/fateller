@@ -1,30 +1,22 @@
-// MemoContent.tsx - 타이핑 즉시 완료 기능 추가
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Memo } from '../utils/types';
-import { Sparkle, ChevronDown, ChevronUp, ExternalLink, Quote, Share } from 'lucide-react';
+import { Memo, MemoContentProps } from '../utils/types';
+import {
+  Sparkle,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Quote,
+  Share,
+  ChevronRight,
+} from 'lucide-react';
 import Link from 'next/link';
 import ShareButton from './ShareButton';
-import Typewriter from 'typewriter-effect'; // typewriter-effect 라이브러리 임포트
 
 // 탭 인덱스 타입 정의
-type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 아이디어 맵(이전 핵심 문장), 2: 주요 내용(이전 1), 3: 원문
-
-interface MemoContentProps {
-  memo: Memo;
-  expanded: boolean;
-  showLabeling: boolean;
-  showOriginal: boolean;
-  onToggleThread: () => void;
-  onToggleLabeling: () => void;
-  onToggleOriginal: () => void;
-  isVisible?: boolean; // 메모가 화면에 보이는지 여부 (새로 추가)
-}
-
-// 전역적으로 각 메모의 각 탭별 타이핑 완료 상태를 추적
-// Map<메모ID, Map<탭인덱스, boolean>>
-const typingCompletedMap = new Map<string, Map<number, boolean>>();
+type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 아이디어 맵, 2: 주요 내용, 3: 원문
 
 const MemoContent: React.FC<MemoContentProps> = ({
   memo,
@@ -34,33 +26,21 @@ const MemoContent: React.FC<MemoContentProps> = ({
   onToggleThread,
   onToggleLabeling,
   onToggleOriginal,
-  isVisible = false, // 기본값은 false
+  isVisible = false,
 }) => {
   // 탭 관리를 위한 상태
-  const [activeTab, setActiveTab] = useState<TabIndex>(0); // 기본값은 "아이디어" 탭
+  const [activeTab, setActiveTab] = useState<TabIndex>(0);
   const [direction, setDirection] = useState(0); // 슬라이드 방향 (-1: 왼쪽, 1: 오른쪽)
-  // 원문 내용 표시 여부를 관리하는 상태 추가
   const [showOriginalText, setShowOriginalText] = useState(false);
 
-  // 타이핑 효과 상태 관리
-  const [shouldStartTyping, setShouldStartTyping] = useState(false);
+  // 탭 변경 여부를 추적하는 상태 추가
+  const [isTabChanging, setIsTabChanging] = useState(false);
 
-  // 아이디어 맵(탭 1) 관련 상태
-  const [activeSection, setActiveSection] = useState(0);
-  const [activeSectionPoint, setActiveSectionPoint] = useState(-1);
-  const [activeSubSection, setActiveSubSection] = useState(-1);
-  const [activeSubSectionPoint, setActiveSubSectionPoint] = useState(-1);
-  const [completedSections, setCompletedSections] = useState<number[]>([]);
-  const [completedSubSections, setCompletedSubSections] = useState<{ [key: number]: number[] }>({});
+  // 현재 진행 중인 스크롤 작업이 있는지 추적
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 주요 내용(탭 2) 관련 상태
-  const [activeTweet, setActiveTweet] = useState(0);
-  const [completedTweets, setCompletedTweets] = useState<number[]>([]);
-
-  // 각 탭의 타이핑 완료 상태 (로컬)
-  const [tab0Completed, setTab0Completed] = useState(false);
-  const [tab1Completed, setTab1Completed] = useState(false);
-  const [tab2Completed, setTab2Completed] = useState(false);
+  // 컴포넌트 전체에 대한 ref 추가
+  const componentRef = useRef<HTMLDivElement>(null);
 
   // 각 탭에 대한 ref 추가
   const tabRefs = {
@@ -70,191 +50,29 @@ const MemoContent: React.FC<MemoContentProps> = ({
     original: useRef<HTMLDivElement>(null),
   };
 
-  // 탭 변경 추적용 ref
-  const prevActiveTabRef = useRef<TabIndex | null>(null);
+  // 이전 터치 위치 추적 (Y축 스와이프 방지용)
+  const touchStartRef = useRef({ x: 0, y: 0 });
 
-  // 메모 ID를 기반으로 타이핑 완료 상태 관리 초기화
-  useEffect(() => {
-    if (memo?.id) {
-      // 이 메모에 대한 타이핑 완료 상태가 없으면 초기화
-      if (!typingCompletedMap.has(memo.id)) {
-        typingCompletedMap.set(memo.id, new Map<number, boolean>());
-      }
-
-      // 이미 완료된 탭 상태 가져오기
-      const memoTypingMap = typingCompletedMap.get(memo.id);
-      if (memoTypingMap) {
-        setTab0Completed(memoTypingMap.get(0) || false);
-        setTab1Completed(memoTypingMap.get(1) || false);
-        setTab2Completed(memoTypingMap.get(2) || false);
-      }
-    }
-  }, [memo?.id]);
-
-  // 메모가 화면에 보이면 타이핑 시작
-  useEffect(() => {
-    if (isVisible) {
-      setShouldStartTyping(true);
-    }
-  }, [isVisible]);
-
-  // 활성 탭 변경 시 이전 탭 저장
-  useEffect(() => {
-    prevActiveTabRef.current = activeTab;
-  }, [activeTab]);
-
-  // 공유버튼 타입애니메이션 스톱!! completeAllTypingEffects 함수 추가
-  const completeAllTypingEffects = (e: React.MouseEvent<HTMLDivElement, MouseEvent> | null) => {
-    // 이벤트가 전달되면 전파 중지 (버블링 방지)
-    if (e) {
-      e.stopPropagation();
-      console.log('ShareButton 클릭 - 타이핑 효과 중단 실행');
+  // 탭 변경 시 컴포넌트 상단으로 스크롤하는 함수
+  const scrollToComponentTop = () => {
+    // 이미 진행 중인 스크롤 타임아웃이 있으면 취소
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
     }
 
-    // 모든 탭의 타이핑 완료 상태를 true로 설정
-    console.log('이전 상태:', { tab0: tab0Completed, tab1: tab1Completed, tab2: tab2Completed });
-
-    setTab0Completed(true);
-    setTab1Completed(true);
-    setTab2Completed(true);
-
-    // 타이머로 강제 리렌더링 확인용 로그
-    setTimeout(() => {
-      console.log('상태 업데이트 후:', {
-        tab0: tab0Completed,
-        tab1: tab1Completed,
-        tab2: tab2Completed,
+    // 탭 변경 중일 때만 스크롤 실행
+    if (isTabChanging && componentRef.current) {
+      const yOffset = componentRef.current.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({
+        top: yOffset - 64, // 약간의 여백 추가
+        behavior: 'smooth',
       });
-    }, 100);
 
-    // 전역 상태에도 저장
-    if (memo?.id) {
-      saveTypingCompletedState(0, true);
-      saveTypingCompletedState(1, true);
-      saveTypingCompletedState(2, true);
-      console.log('전역 타이핑 상태 저장 완료:', memo.id);
-    }
-
-    // 아이디어 맵 탭(탭 1)에 필요한 추가 상태 설정
-    if (memo.tweet_main) {
-      try {
-        const parsedContent = parseIdeaMap(memo.tweet_main);
-        if (parsedContent.sections && Array.isArray(parsedContent.sections)) {
-          // 모든 섹션을 완료 상태로 설정
-          const allSections = createRange(parsedContent.sections.length);
-          setCompletedSections(allSections);
-          console.log('모든 섹션 완료 설정:', allSections);
-
-          // 모든 하위 섹션도 완료 상태로 설정
-          const allSubSections: { [key: number]: number[] } = {};
-          parsedContent.sections.forEach((section: any, idx: number) => {
-            if (section.sub_sections && Array.isArray(section.sub_sections)) {
-              allSubSections[idx] = createRange(section.sub_sections.length);
-            }
-          });
-          setCompletedSubSections(allSubSections);
-          console.log('모든 하위섹션 완료 설정:', allSubSections);
-        }
-      } catch (error) {
-        console.error('아이디어 맵 파싱 오류:', error);
-      }
-    }
-
-    // 주요 내용 탭(탭 2)에 필요한 추가 상태 설정
-    if (memo.thread && Array.isArray(memo.thread)) {
-      // 모든 트윗을 완료 상태로 설정
-      const allTweets = createRange(memo.thread.length);
-      setCompletedTweets(allTweets);
-      console.log('모든 트윗 완료 설정:', allTweets);
-    }
-
-    // 강제 리렌더링을 위해 다른 상태 업데이트
-    setActiveSection(0);
-    setActiveSectionPoint(-1);
-    setActiveSubSection(-1);
-    setActiveSubSectionPoint(-1);
-    setActiveTweet(0);
-
-    // 리렌더링 확인
-    console.log('타이핑 효과 중단 함수 실행 완료');
-  };
-
-  // 각 탭의 타이핑 완료 상태 저장
-  const saveTypingCompletedState = (tabIndex: number, completed: boolean) => {
-    if (memo?.id) {
-      const memoTypingMap = typingCompletedMap.get(memo.id);
-      if (memoTypingMap) {
-        memoTypingMap.set(tabIndex, completed);
-      }
-    }
-  };
-
-  const createRange = (n: number): number[] => {
-    const result = [];
-    for (let i = 0; i < n; i++) {
-      result.push(i);
-    }
-    return result;
-  };
-
-  // 현재 탭의 타이핑 효과를 즉시 완료시키는 함수 (NEW)
-  const completeCurrentTabTyping = () => {
-    switch (activeTab) {
-      case 0:
-        if (!tab0Completed) {
-          setTab0Completed(true);
-          saveTypingCompletedState(0, true);
-        }
-        break;
-      case 1:
-        if (!tab1Completed) {
-          setTab1Completed(true);
-          saveTypingCompletedState(1, true);
-
-          // 아이디어 맵 관련 상태도 모두 완료 처리
-          const parsedContent = parseIdeaMap(memo.tweet_main);
-          if (parsedContent.sections && Array.isArray(parsedContent.sections)) {
-            const allSections = createRange(parsedContent.sections.length);
-            setCompletedSections(allSections);
-
-            // 모든 하위 섹션도 완료 처리
-            const allSubSections: { [key: number]: number[] } = {};
-            parsedContent.sections.forEach((section: any, idx: number) => {
-              if (section?.sub_sections && Array.isArray(section.sub_sections)) {
-                allSubSections[idx] = createRange(section.sub_sections.length);
-              }
-            });
-            setCompletedSubSections(allSubSections);
-          }
-        }
-        break;
-      case 2:
-        if (!tab2Completed) {
-          setTab2Completed(true);
-          saveTypingCompletedState(2, true);
-
-          // 주요 내용 관련 상태도 모두 완료 처리
-          if (memo.thread && Array.isArray(memo.thread)) {
-            setCompletedTweets(createRange(memo.thread.length));
-          }
-        }
-        break;
-    }
-  };
-
-  // 현재 활성 탭에 대한 ref 가져오기
-  const getActiveTabRef = () => {
-    switch (activeTab) {
-      case 0:
-        return tabRefs.idea;
-      case 1:
-        return tabRefs.key;
-      case 2:
-        return tabRefs.main;
-      case 3:
-        return tabRefs.original;
-      default:
-        return tabRefs.idea;
+      // 스크롤 작업 완료 후 탭 변경 상태 해제
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsTabChanging(false);
+        scrollTimeoutRef.current = null;
+      }, 500); // 스크롤 애니메이션이 끝날 때까지 대기
     }
   };
 
@@ -274,178 +92,132 @@ const MemoContent: React.FC<MemoContentProps> = ({
     }
   };
 
-  // 공유 성공 핸들러 - 타이핑 완료 처리 추가 (NEW)
+  // 공유 성공 핸들러
   const handleShareSuccess = (type: 'image' | 'text' | 'link') => {
-    // 타이핑 즉시 완료
-    completeCurrentTabTyping();
     console.log(`${getCurrentTabType()} 탭 ${type} 공유 성공`);
   };
 
-  // 공유 실패 핸들러 - 타이핑 완료 처리 추가 (NEW)
+  // 공유 실패 핸들러
   const handleShareError = (type: 'image' | 'text' | 'link', error: string) => {
-    // 타이핑 즉시 완료
-    completeCurrentTabTyping();
     console.error(`${getCurrentTabType()} 탭 ${type} 공유 실패:`, error);
   };
 
-  // HTML 태그를 처리하는 함수 추가
-  const processStrongTags = (text: string): string => {
+  // 텍스트 내의 문장 끝에만 줄바꿈 추가 (영문 약어 제외)
+  const addLineBreaksToSentences = (text: string): string => {
     if (!text) return '';
 
-    // <hi> 태그를 Tailwind CSS 클래스로 변환
-    if (typeof text !== 'string') {
-      return text || '';
-    }
-    return text.replace(
-      /<hi>(.*?)<\/hi>/g,
-      '<span class="font-bold underline underline-offset-4 px-[2px]">$1</span>'
-    );
+    // 일반적인 영문 약어 목록
+    const commonAbbreviations = [
+      'Mr',
+      'Mrs',
+      'Ms',
+      'Dr',
+      'Prof',
+      'St',
+      'Ave',
+      'Blvd',
+      'Rd',
+      'Ph.D',
+      'etc',
+      'i.e',
+      'e.g',
+      'vs',
+      'Fig',
+      'Inc',
+      'Corp',
+      'Ltd',
+      'Jr',
+      'Sr',
+    ];
+
+    // 약어 패턴 만들기 (각 약어 뒤에 .이 올 경우)
+    const abbreviationPattern = new RegExp(`\\b(${commonAbbreviations.join('|')})\\.`, 'g');
+
+    // 1단계: 약어를 임시 토큰으로 대체 (예: Mr. → Mr_ABV_)
+    let processedText = text.replace(abbreviationPattern, (match) => {
+      return match.replace('.', '_ABV_');
+    });
+
+    // 2단계: 소수점이 아닌 문장 끝 마침표를 찾아 줄바꿈 추가
+    // (?<!\d) - 숫자 뒤가 아님을 확인 (소수점 제외)
+    // \. - 마침표
+    // (?=\s|$) - 뒤에 공백이나 문장 끝이 옴을 확인
+    processedText = processedText.replace(/(?<!\d)\.(?=\s|$)/g, '.<br>');
+
+    // 3단계: 약어 토큰을 다시 마침표로 복원
+    processedText = processedText.replace(/_ABV_/g, '.');
+
+    return processedText;
   };
 
-  // renderHTML 함수 추가
+  // HTML 태그를 처리하는 함수 - 최적화된 버전
+  const processContentTags = (text: string): string => {
+    if (!text) return '';
+    if (typeof text !== 'string') return String(text || '');
+
+    let processedText = text;
+
+    // 태그가 있는 경우만 태그 처리 (성능 최적화)
+    const hasKeyTags = /<key>(.*?)<\/key>/g.test(text);
+    const hasTermTags = /<term>(.*?)<\/term>/g.test(text);
+    const hasExTags = /<ex>(.*?)<\/ex>/g.test(text);
+    const hasDataTags = /<data>(.*?)<\/data>/g.test(text);
+
+    if (hasKeyTags || hasTermTags || hasExTags || hasDataTags) {
+      // 핵심 내용 (key 태그) - 단순한 밑줄만 사용
+      if (hasKeyTags) {
+        processedText = processedText.replace(
+          /<key>(.*?)<\/key>/g,
+          '<span class="border-b-2 border-gray-400 font-extrabold">$1</span>'
+        );
+      }
+
+      // 중요 용어 (term 태그) - 점선 밑줄 사용
+      if (hasTermTags) {
+        processedText = processedText.replace(
+          /<term>(.*?)<\/term>/g,
+          '<span class="font-black text-emerald-800">$1</span>'
+        );
+      }
+
+      // 예시/사례 (ex 태그) - 괄호와 마커 사용
+      if (hasExTags) {
+        processedText = processedText.replace(
+          /<ex>(.*?)<\/ex>/g,
+          '<span class="italic font-bold">$1</span>'
+        );
+      }
+
+      // 데이터/수치 (data 태그) - 숫자 표시 기호 사용
+      if (hasDataTags) {
+        processedText = processedText.replace(
+          /<data>(.*?)<\/data>/g,
+          '<span class="text-red-900">$1</span>'
+        );
+      }
+    }
+
+    // 항상 줄바꿈 처리를 수행 (태그 유무와 관계없이)
+    return addLineBreaksToSentences(processedText);
+  };
+
+  // renderHTML 함수
   const renderHTML = (htmlString: string = '') => {
-    return <span dangerouslySetInnerHTML={{ __html: processStrongTags(htmlString) }} />;
-  };
-
-  // 타이핑 완료 핸들러 - 탭 0 (아이디어)
-  const handleTab0TypingComplete = () => {
-    setTab0Completed(true);
-    saveTypingCompletedState(0, true);
-  };
-
-  // 타이핑 완료 핸들러 - 탭 1 (아이디어 맵)의 마지막 항목
-  const handleTab1FinalTypingComplete = () => {
-    setTab1Completed(true);
-    saveTypingCompletedState(1, true);
-  };
-
-  // 타이핑 완료 핸들러 - 탭 2 (주요 내용)의 마지막 항목
-  const handleTab2FinalTypingComplete = () => {
-    setTab2Completed(true);
-    saveTypingCompletedState(2, true);
-  };
-
-  // 순차적 타이핑 핸들러 (아이디어 맵 - 섹션 제목)
-  const handleSectionHeadingTyped = (sectionIndex: number) => {
-    // 섹션 헤딩 타이핑 완료 시 해당 섹션의 첫 번째 포인트 활성화
-    setActiveSectionPoint(0);
-  };
-
-  // 순차적 타이핑 핸들러 (아이디어 맵 - 섹션 포인트)
-  const handleSectionPointTyped = (sectionIndex: number, pointIndex: number, points: any[]) => {
-    if (pointIndex < points.length - 1) {
-      // 다음 포인트 활성화
-      setActiveSectionPoint(pointIndex + 1);
-    } else {
-      // 포인트 모두 완료, 하위 섹션이 있는지 확인
-      const parsedContent =
-        typeof memo.tweet_main === 'string' && memo.tweet_main.trim().startsWith('{')
-          ? JSON.parse(memo.tweet_main)
-          : { sections: [] };
-
-      const currentSection = parsedContent.sections[sectionIndex] || {};
-      const subSections = currentSection.sub_sections || [];
-
-      // 현재 섹션의 모든 포인트 완료 상태 기록
-      setCompletedSections((prev) => [...prev, sectionIndex]);
-
-      if (subSections.length > 0) {
-        // 하위 섹션이 있으면 첫 번째 하위 섹션 활성화
-        setActiveSubSection(0);
-        setActiveSubSectionPoint(-1);
-      } else if (sectionIndex < parsedContent.sections.length - 1) {
-        // 하위 섹션이 없고 다음 섹션이 있으면 다음 섹션 활성화
-        setActiveSection(sectionIndex + 1);
-        setActiveSectionPoint(-1);
-        setActiveSubSection(-1);
-        setActiveSubSectionPoint(-1);
-      } else {
-        // 모든 섹션 완료, 타이핑 완료 상태 설정
-        console.log('모든 섹션 타이핑 완료');
-        handleTab1FinalTypingComplete();
-      }
-    }
-  };
-
-  // 순차적 타이핑 핸들러 (아이디어 맵 - 하위 섹션 제목)
-  const handleSubSectionHeadingTyped = (sectionIndex: number, subSectionIndex: number) => {
-    // 하위 섹션 제목 타이핑 완료 시 해당 하위 섹션의 첫 번째 포인트 활성화
-    setActiveSubSectionPoint(0);
-  };
-
-  // 순차적 타이핑 핸들러 (아이디어 맵 - 하위 섹션 포인트)
-  const handleSubSectionPointTyped = (
-    sectionIndex: number,
-    subSectionIndex: number,
-    pointIndex: number,
-    subPoints: any[]
-  ) => {
-    if (pointIndex < subPoints.length - 1) {
-      // 다음 하위 포인트 활성화
-      setActiveSubSectionPoint(pointIndex + 1);
-    } else {
-      // 현재 하위 섹션의 모든 포인트 완료 상태 기록
-      setCompletedSubSections((prev) => {
-        const sectionSubs = prev[sectionIndex] || [];
-        return {
-          ...prev,
-          [sectionIndex]: [...sectionSubs, subSectionIndex],
-        };
-      });
-
-      try {
-        const parsedContent =
-          typeof memo.tweet_main === 'string' && memo.tweet_main.trim().startsWith('{')
-            ? JSON.parse(memo.tweet_main)
-            : { sections: [] };
-
-        const currentSection = parsedContent.sections[sectionIndex] || {};
-        const subSections = currentSection.sub_sections || [];
-
-        if (subSectionIndex < subSections.length - 1) {
-          // 다음 하위 섹션 활성화
-          setActiveSubSection(subSectionIndex + 1);
-          setActiveSubSectionPoint(-1);
-        } else if (sectionIndex < parsedContent.sections.length - 1) {
-          // 모든 하위 섹션 완료, 다음 섹션 활성화
-          setActiveSection(sectionIndex + 1);
-          setActiveSectionPoint(-1);
-          setActiveSubSection(-1);
-          setActiveSubSectionPoint(-1);
-        } else {
-          // 모든 섹션과 하위 섹션 완료, 타이핑 완료 상태 설정
-          console.log('모든 콘텐츠 타이핑 완료');
-          handleTab1FinalTypingComplete();
-        }
-      } catch (error) {
-        console.error('하위 섹션 파싱 오류:', error);
-        // 오류가 발생해도 완료 처리 (방어 코드)
-        handleTab1FinalTypingComplete();
-      }
-    }
-  };
-
-  // 트윗 타이핑 완료 핸들러 (주요 내용용)
-  const handleTweetTyped = (tweetIndex: number) => {
-    // 완료된 트윗 상태 추가
-    setCompletedTweets((prev) => [...prev, tweetIndex]);
-
-    if (tweetIndex < (memo.thread?.length || 0) - 1) {
-      // 다음 트윗 활성화
-      setActiveTweet(tweetIndex + 1);
-    } else {
-      // 마지막 트윗까지 완료, 타이핑 완료 상태 설정
-      handleTab2FinalTypingComplete();
-    }
+    return <span dangerouslySetInnerHTML={{ __html: processContentTags(htmlString) }} />;
   };
 
   // 탭 변경 함수 - 수정된 버전
   const changeTab = (newTab: TabIndex) => {
-    // 순환 구조에서 방향 결정 (0과 3이 인접한 것처럼)
+    // 동일한 탭을 클릭한 경우 무시
+    if (newTab === activeTab) return;
+
+    // 탭 변경 상태 설정
+    setIsTabChanging(true);
+
+    // 방향 결정
     const currentIndex = activeTab;
     const targetIndex = newTab;
 
-    // 일반적인 경우 (0→1, 1→2, 2→3, 3→0, 0→3, 3→2, 2→1, 1→0)
     if (
       (currentIndex === 0 && targetIndex === 1) ||
       (currentIndex === 1 && targetIndex === 2) ||
@@ -461,14 +233,13 @@ const MemoContent: React.FC<MemoContentProps> = ({
     ) {
       setDirection(-1); // 왼쪽으로 이동
     } else {
-      // 특이 케이스 (0→2, 2→0, 1→3, 3→1) - 가장 가까운 방향 선택
+      // 특이 케이스
       const diff = targetIndex - currentIndex;
       if (Math.abs(diff) === 2) {
-        // 2칸 차이나는 경우, 방향 선택하기
         if (currentIndex < targetIndex) {
-          setDirection(1); // 오른쪽으로 이동
+          setDirection(1);
         } else {
-          setDirection(-1); // 왼쪽으로 이동
+          setDirection(-1);
         }
       }
     }
@@ -478,6 +249,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
   // 스와이프로 다음 탭으로 이동
   const goToNextTab = () => {
+    // 탭 변경 상태 설정
+    setIsTabChanging(true);
+
     const nextTab = (activeTab === 3 ? 0 : activeTab + 1) as TabIndex;
     setDirection(1); // 오른쪽으로 이동
     setActiveTab(nextTab);
@@ -485,6 +259,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
   // 스와이프로 이전 탭으로 이동
   const goToPrevTab = () => {
+    // 탭 변경 상태 설정
+    setIsTabChanging(true);
+
     const prevTab = (activeTab === 0 ? 3 : activeTab - 1) as TabIndex;
     setDirection(-1); // 왼쪽으로 이동
     setActiveTab(prevTab);
@@ -506,6 +283,20 @@ const MemoContent: React.FC<MemoContentProps> = ({
     }
   };
 
+  // 아이디어 맵 JSON 파싱 헬퍼 함수
+  const parseIdeaMap = (content: any) => {
+    try {
+      if (typeof content === 'string' && content.trim().startsWith('{')) {
+        return JSON.parse(content);
+      } else if (typeof content === 'object' && content !== null) {
+        return content;
+      }
+    } catch (error) {
+      console.error('JSON 파싱 오류:', error);
+    }
+    return { sections: [] };
+  };
+
   // 슬라이드 애니메이션 variants - 수정됨
   const slideVariants = {
     enter: (direction: number) => ({
@@ -522,18 +313,37 @@ const MemoContent: React.FC<MemoContentProps> = ({
     }),
   };
 
-  // 아이디어 맵 JSON 파싱 헬퍼 함수
-  const parseIdeaMap = (content: any) => {
-    try {
-      if (typeof content === 'string' && content.trim().startsWith('{')) {
-        return JSON.parse(content);
-      } else if (typeof content === 'object' && content !== null) {
-        return content;
-      }
-    } catch (error) {
-      console.error('JSON 파싱 오류:', error);
+  // 애니메이션 완료 후 실행할 핸들러
+  const handleAnimationComplete = () => {
+    // 탭 변경 중일 때만 스크롤 실행
+    if (isTabChanging) {
+      scrollToComponentTop();
     }
-    return { sections: [] };
+  };
+
+  // 탭 변경 효과 처리
+  useEffect(() => {
+    // 탭이 변경되었을 때만 스크롤 조정
+    if (isTabChanging) {
+      scrollToComponentTop();
+    }
+  }, [activeTab]);
+
+  // 컴포넌트 언마운트 시 타임아웃 정리
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // 터치 이벤트 핸들러 - Y축 스와이프와 X축 스와이프 구분
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
   };
 
   // 선택된 탭 컨텐츠 렌더링
@@ -541,62 +351,33 @@ const MemoContent: React.FC<MemoContentProps> = ({
     switch (tabIndex) {
       case 0: // 아이디어
         return (
-          <div className="pt-4" ref={tabRefs.idea}>
-            {/* 미니멀한 명함 스타일의 디자인 */}
-            <div className="border-l-2 border-gray-400 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
-              <h2 className="flex-1 tracking-tighter text-sm text-gray-800">{memo.title}</h2>
-              <div onClick={completeAllTypingEffects} style={{ cursor: 'pointer' }}>
-                <ShareButton
-                  memo={memo}
-                  tabType="idea"
-                  contentRef={tabRefs.idea}
-                  onShareSuccess={handleShareSuccess}
-                  onShareError={handleShareError}
-                />
+          <div className="pt-4 " ref={tabRefs.idea}>
+            {/* 헤더 */}
+            <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
+              <h2 className="tracking-tight text-base font-semibold text-gray-900">{memo.title}</h2>
+              <ShareButton
+                memo={memo}
+                tabType="idea"
+                contentRef={tabRefs.idea}
+                onShareSuccess={handleShareSuccess}
+                onShareError={handleShareError}
+              />
+            </div>
+
+            {/* 핵심 문장 - 애플 스타일 */}
+            <div className="p-4 py-8 my-4 rounded-lg border bg-white border-gray-300 shadow-sm">
+              <div className="font-medium text-gray-800 leading-relaxed">
+                {renderHTML(memo.labeling.key_sentence)}
               </div>
             </div>
 
-            {/* 핵심 문장을 강조 - 심플한 디자인 - 타이핑 효과 적용 + 클릭 효과 추가 */}
-            <div
-              className="p-4 py-8 my-4 rounded-lg border-2 bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-200 shadow-md animate-gradient cursor-pointer"
-              onClick={completeCurrentTabTyping} // 클릭 시 타이핑 완료 (NEW)
-            >
-              <div className="relative p-2">
-                <div className="text-lg font-medium text-gray-100">
-                  {shouldStartTyping && !tab0Completed ? (
-                    <Typewriter
-                      onInit={(typewriter) => {
-                        // HTML 태그 처리된 텍스트가 있는 경우
-                        const processedText = processStrongTags(memo.labeling.key_sentence);
-
-                        typewriter
-                          .typeString(processedText)
-                          .pauseFor(1000)
-                          .callFunction(handleTab0TypingComplete)
-                          .start();
-                      }}
-                      options={{
-                        cursor: '',
-                        delay: 80, // 타이핑 속도 조절
-                        wrapperClassName: 'text-lg font-medium text-gray-100',
-                      }}
-                    />
-                  ) : (
-                    // 타이핑 완료된 경우 또는 시작 전 상태
-                    <span
-                      className={shouldStartTyping || tab0Completed ? 'opacity-100' : 'opacity-0'}
-                    >
-                      {renderHTML(memo.labeling.key_sentence)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 키워드 - 심플한 디자인 */}
-            <div className="flex flex-wrap items-center mt-3">
+            {/* 키워드 - 애플 스타일 태그 */}
+            <div className="flex flex-wrap items-center mt-4 gap-2">
               {memo.labeling.keywords.map((keyword, keywordIndex) => (
-                <span key={keywordIndex} className="text-sm text-gray-800 px-1 rounded-full">
+                <span
+                  key={keywordIndex}
+                  className="px-4 py-1 text-sm border-2 border-emerald-600/50 text-gray-900 rounded-full"
+                >
                   #{keyword}
                 </span>
               ))}
@@ -607,7 +388,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
               <div className="flex flex-col gap-2 mt-2">
                 <hr className="w-full" />
 
-                <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50 mt-1">
+                <div className="grid grid-cols-8 items-center gap-2 w-full bg-white mt-1">
                   <div className="h-16 col-span-3 relative">
                     <img
                       src={memo.original_image}
@@ -629,166 +410,34 @@ const MemoContent: React.FC<MemoContentProps> = ({
             )}
           </div>
         );
-      case 1: // 아이디어 맵 - 이미 완료된 경우 바로 표시
-        if (tab1Completed) {
-          // 이미 타이핑이 완료된 경우 - 모든 내용 즉시 표시
-          return (
-            <div className="pt-4" ref={tabRefs.key}>
-              {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
-              <div className="border-l-2 border-gray-400 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
-                <h2 className="flex-1 tracking-tighter text-sm text-gray-800">아이디어 맵</h2>
-                <div onClick={completeAllTypingEffects} style={{ cursor: 'pointer' }}>
-                  <ShareButton
-                    memo={memo}
-                    tabType="key"
-                    contentRef={tabRefs.key}
-                    onShareSuccess={handleShareSuccess}
-                    onShareError={handleShareError}
-                  />
-                </div>
-              </div>
 
-              {/* 안전하게 모든 내용 즉시 렌더링 */}
-              {(() => {
-                const parsedContent = parseIdeaMap(memo.tweet_main);
-
-                if (
-                  parsedContent.sections &&
-                  Array.isArray(parsedContent.sections) &&
-                  parsedContent.sections.length > 0
-                ) {
-                  return (
-                    <div className="p-4 py-10 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md animate-gradient">
-                      {parsedContent.sections.map((section: any, idx: number) => {
-                        if (!section || typeof section !== 'object') return null;
-
-                        const heading = section.heading || '섹션';
-                        const points = Array.isArray(section.points) ? section.points : [];
-                        const subSections = Array.isArray(section.sub_sections)
-                          ? section.sub_sections
-                          : [];
-
-                        return (
-                          <div
-                            key={idx}
-                            className={`${idx > 0 ? 'mt-6 pt-6 border-t border-white/30' : ''}`}
-                          >
-                            {/* 섹션 제목 */}
-                            <h3 className="text-lg font-bold text-white mb-3 pb-2 tracking-tighter">
-                              {idx + 1}. {renderHTML(heading)}
-                            </h3>
-
-                            {/* 섹션 포인트 */}
-                            {points.length > 0 && (
-                              <div className="space-y-2 mb-3">
-                                {points.map((point: any, pidx: number) => (
-                                  <p key={pidx} className="text-gray-100 tracking-tighter">
-                                    {renderHTML(point || '')}
-                                  </p>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* 하위 섹션 */}
-                            {subSections.length > 0 && (
-                              <div className="mt-6 pl-3 border-l-2 border-white/30">
-                                {subSections.map((subSection: any, ssidx: number) => {
-                                  if (!subSection || typeof subSection !== 'object') return null;
-
-                                  const subHeading = subSection.sub_heading || '하위 섹션';
-                                  const subPoints = Array.isArray(subSection.sub_points)
-                                    ? subSection.sub_points
-                                    : [];
-
-                                  return (
-                                    <div key={ssidx} className="mb-2">
-                                      {/* 하위 섹션 제목 */}
-                                      <h4 className="font-semibold text-gray-100 mb-1">
-                                        <span className="text-xs">▷</span> {renderHTML(subHeading)}
-                                      </h4>
-
-                                      {/* 하위 섹션 포인트 */}
-                                      {subPoints.length > 0 && (
-                                        <div className="space-y-1 pl-2">
-                                          {subPoints.map((subPoint: any, spidx: number) => (
-                                            <p
-                                              key={spidx}
-                                              className="text-sm text-gray-100 leading-relaxed"
-                                            >
-                                              {renderHTML(subPoint || '')}
-                                            </p>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                } else {
-                  // 단순 텍스트 콘텐츠인 경우
-                  return (
-                    <div className="p-4 my-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md">
-                      <div className="relative px-2">
-                        <p className="text-lg font-medium text-gray-100 leading-tight py-4">
-                          {typeof memo.tweet_main === 'string'
-                            ? renderHTML(memo.tweet_main)
-                            : JSON.stringify(memo.tweet_main)}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                }
-              })()}
-            </div>
-          );
-        }
-
-        // 아직 타이핑 완료되지 않은 경우 - 순차적 타이핑 효과 적용
+      case 1: // 아이디어 맵
         return (
-          <div className="pt-4" ref={tabRefs.key}>
-            {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
-            <div className="border-l-2 border-gray-400 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
-              <h2 className="flex-1 tracking-tighter  text-sm text-gray-800">아이디어 맵</h2>
-              <div onClick={completeAllTypingEffects} style={{ cursor: 'pointer' }}>
-                <ShareButton
-                  memo={memo}
-                  tabType="key"
-                  contentRef={tabRefs.key}
-                  onShareSuccess={handleShareSuccess}
-                  onShareError={handleShareError}
-                />
-              </div>
+          <div className="pt-4 leading-relaxed" ref={tabRefs.key}>
+            {/* 헤더 */}
+            <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
+              <h2 className="tracking-tight text-base font-semibold text-gray-900">아이디어 맵</h2>
+              <ShareButton
+                memo={memo}
+                tabType="key"
+                contentRef={tabRefs.key}
+                onShareSuccess={handleShareSuccess}
+                onShareError={handleShareError}
+              />
             </div>
 
-            {/* 안전하게 내용 렌더링 - 순차적 타이핑 적용 */}
+            {/* 안전하게 모든 내용 즉시 렌더링 */}
             {(() => {
-              // 기본적으로 일반 문자열로 처리
-              let content = memo.tweet_main;
-              let parsedContent = parseIdeaMap(content);
+              const parsedContent = parseIdeaMap(memo.tweet_main);
 
-              // 파싱된 내용이 있고 sections 배열을 가지고 있는 경우
               if (
-                parsedContent &&
-                typeof parsedContent === 'object' &&
                 parsedContent.sections &&
-                Array.isArray(parsedContent.sections)
+                Array.isArray(parsedContent.sections) &&
+                parsedContent.sections.length > 0
               ) {
-                const sections = parsedContent.sections;
-
                 return (
-                  // 하나의 통합된 박스로 변경 + 클릭 효과 추가
-                  <div
-                    className="p-4 py-10 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md animate-gradient cursor-pointer"
-                    onClick={completeCurrentTabTyping} // 클릭 시 타이핑 완료 (NEW)
-                  >
-                    {sections.map((section: any, idx: number) => {
-                      // 섹션 유효성 검사
+                  <div className="space-y-6">
+                    {parsedContent.sections.map((section: any, idx: number) => {
                       if (!section || typeof section !== 'object') return null;
 
                       const heading = section.heading || '섹션';
@@ -797,103 +446,104 @@ const MemoContent: React.FC<MemoContentProps> = ({
                         ? section.sub_sections
                         : [];
 
-                      // 수정된 가시성 조건
-                      // 1. 이미 완료된 섹션은 항상 표시
-                      // 2. 현재 활성화된 섹션 또는 그 이전 섹션만 표시
-                      const isSectionVisible =
-                        completedSections.includes(idx) || idx <= activeSection;
-
                       return (
-                        <div
-                          key={idx}
-                          className={`${idx > 0 ? 'mt-6 pt-6 border-t border-white/30' : ''} 
-                                      ${isSectionVisible ? '' : 'hidden'}`}
-                        >
-                          {/* 섹션 제목 - 타이핑 효과 적용 */}
-                          <h3 className="text-lg font-bold text-white mb-3 pb-2 tracking-tighter">
-                            {idx + 1}.{' '}
-                            {shouldStartTyping &&
-                            idx === activeSection &&
-                            activeSectionPoint === -1 ? (
-                              <Typewriter
-                                onInit={(typewriter) => {
-                                  typewriter
-                                    .typeString(processStrongTags(heading))
-                                    .callFunction(() => {
-                                      // 섹션 제목 타이핑 완료 시 포인트 활성화
-                                      handleSectionHeadingTyped(idx);
-                                    })
-                                    .start();
-                                }}
-                                options={{
-                                  cursor: '',
-                                  delay: 40,
-                                  wrapperClassName: 'text-lg font-bold text-white inline',
-                                }}
-                              />
-                            ) : (
-                              <span className={isSectionVisible ? 'opacity-100' : 'opacity-0'}>
-                                {renderHTML(heading)}
-                              </span>
-                            )}
-                          </h3>
-
-                          {/* 섹션 포인트 - 타이핑 효과 적용 */}
-                          {points.length > 0 && (
-                            <div className="space-y-2 mb-3">
-                              {points.map((point: any, pidx: number) => {
-                                // 수정된 포인트 가시성 조건
-                                // 1. 이전 섹션은 모든 포인트 표시
-                                // 2. 현재 섹션은 활성화된 포인트까지만 표시
-                                const isPointVisible =
-                                  completedSections.includes(idx) || // 완료된 섹션의 모든 포인트
-                                  idx < activeSection || // 이전 섹션의 모든 포인트
-                                  (idx === activeSection && pidx <= activeSectionPoint); // 현재 섹션의 활성화된 포인트까지
-
-                                return (
-                                  <p
-                                    key={pidx}
-                                    className={`text-gray-100 tracking-tighter ${
-                                      isPointVisible ? '' : 'hidden'
-                                    }`}
-                                  >
-                                    {shouldStartTyping &&
-                                    idx === activeSection &&
-                                    pidx === activeSectionPoint ? (
-                                      <Typewriter
-                                        onInit={(typewriter) => {
-                                          typewriter
-                                            .typeString(processStrongTags(point || ''))
-                                            .callFunction(() => {
-                                              // 포인트 타이핑 완료 시 다음 포인트 또는 다음 섹션 활성화
-                                              handleSectionPointTyped(idx, pidx, points);
-                                            })
-                                            .start();
-                                        }}
-                                        options={{
-                                          cursor: '',
-                                          delay: 30,
-                                          wrapperClassName: 'text-gray-100 tracking-tighter',
-                                        }}
-                                      />
-                                    ) : (
-                                      <span
-                                        className={isPointVisible ? 'opacity-100' : 'opacity-0'}
-                                      >
-                                        {renderHTML(point || '')}
-                                      </span>
-                                    )}
-                                  </p>
-                                );
-                              })}
+                        <div key={idx} className="mb-4">
+                          {/* 섹션 헤더 */}
+                          <div className="mb-3">
+                            <div className="text-xs font-medium text-gray-400 flex items-center gap-2 mb-2">
+                              <p>Section {idx + 1}</p>
+                              <hr className="flex-1 border-t border-gray-300" />
                             </div>
-                          )}
+                            <h3 className="text-lg font-bold text-gray-900">
+                              {idx + 1}. {renderHTML(heading)}
+                            </h3>
+                          </div>
 
-                          {/* 하위 섹션 - 서브섹션 가시성 문제 수정 */}
+                          {/* 섹션 포인트 */}
+                          <div className="space-y-3">
+                            {points.map((point: any, pidx: number) => {
+                              // 포인트 파싱 (불릿 제거)
+                              const cleanPoint = point.replace(/^•\s?/, '');
+                              let title = cleanPoint;
+                              let content = '';
+
+                              // 일반 콜론 형식 검사
+                              const colonIndex = cleanPoint.indexOf(': ');
+
+                              // 괄호+단어+콜론 패턴 검사 (예: (예시: , (사례: , (참고: 등)
+                              const parenthesisPattern = /\([^)]*?:\s/;
+                              const parenthesisMatch = cleanPoint.match(parenthesisPattern);
+                              const parenthesisIndex = parenthesisMatch
+                                ? cleanPoint.indexOf(parenthesisMatch[0])
+                                : -1;
+
+                              if (
+                                colonIndex !== -1 &&
+                                (parenthesisIndex === -1 || colonIndex < parenthesisIndex)
+                              ) {
+                                // 일반 콜론 형식
+                                title = cleanPoint.substring(0, colonIndex);
+                                content = cleanPoint.substring(colonIndex + 2);
+                              } else if (parenthesisIndex !== -1) {
+                                // 괄호+단어+콜론 형식
+                                // 괄호 시작 위치까지를 제목으로, 괄호 안의 콜론 이후를 내용으로
+                                title = cleanPoint.substring(0, parenthesisIndex).trim();
+
+                                // 괄호 시작부터 끝까지 찾기
+                                const bracketContent = cleanPoint.substring(parenthesisIndex);
+                                const closingBracketIndex = bracketContent.indexOf(')');
+
+                                if (closingBracketIndex !== -1) {
+                                  // 닫는 괄호가 있는 경우
+                                  const colonInBracketIndex = bracketContent.indexOf(':');
+                                  if (
+                                    colonInBracketIndex !== -1 &&
+                                    colonInBracketIndex < closingBracketIndex
+                                  ) {
+                                    // 괄호 안에 콜론이 있는 경우, 콜론 이후부터 내용으로
+                                    content = cleanPoint.substring(parenthesisIndex);
+                                  } else {
+                                    // 괄호 안에 콜론이 없는 경우, 괄호 전체를 포함하여 내용으로
+                                    content = cleanPoint.substring(parenthesisIndex);
+                                  }
+                                } else {
+                                  // 닫는 괄호가 없는 경우, 괄호 이후를 모두 내용으로
+                                  content = cleanPoint.substring(parenthesisIndex);
+                                }
+                              }
+
+                              return (
+                                <div
+                                  key={pidx}
+                                  className="p-3 py-6 border border-gray-200 bg-white rounded-lg  shadow-sm"
+                                >
+                                  <div
+                                    className={
+                                      content
+                                        ? 'text-gray-800 flex font-semibold items-start gap-1'
+                                        : 'text-gray-800 flex items-start gap-1'
+                                    }
+                                  >
+                                    <div>({pidx + 1})</div> {renderHTML(title)}
+                                  </div>
+                                  {content && (
+                                    <>
+                                      {/* <hr className="mb-1" /> */}
+                                      <div className="text-gray-600 mt-1 ml-1 flex gap-1">
+                                        <div className="">▷</div>
+                                        {renderHTML(content)}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* 하위 섹션 */}
                           {subSections.length > 0 && (
-                            <div className="mt-6 pl-3 border-l-2 border-white/30">
+                            <div className="mt-4 ml-4 pl-4 border-l-2 border-gray-400">
                               {subSections.map((subSection: any, ssidx: number) => {
-                                // 하위 섹션 유효성 검사
                                 if (!subSection || typeof subSection !== 'object') return null;
 
                                 const subHeading = subSection.sub_heading || '하위 섹션';
@@ -901,126 +551,44 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                   ? subSection.sub_points
                                   : [];
 
-                                // 수정된 하위 섹션 가시성 조건
-                                const completedSubsForSection = completedSubSections[idx] || [];
-
-                                // 개선된 하위 섹션 가시성 로직
-                                const isSubSectionVisible =
-                                  // 완료된 섹션의 모든 하위 섹션 표시
-                                  completedSections.includes(idx) ||
-                                  // 이전 섹션의 모든 하위 섹션 표시
-                                  idx < activeSection ||
-                                  // 현재 섹션에서:
-                                  (idx === activeSection &&
-                                    // 1. 모든 포인트가 타이핑된 상태이고
-                                    (completedSections.includes(idx) ||
-                                      activeSectionPoint === points.length - 1 ||
-                                      activeSectionPoint === -1) &&
-                                    // 2. 이미 타이핑 완료된 하위 섹션이거나 현재 활성화된 하위 섹션까지만 표시
-                                    (completedSubsForSection.includes(ssidx) ||
-                                      ssidx === activeSubSection));
-
                                 return (
-                                  <div
-                                    key={ssidx}
-                                    className={`mb-2 ${isSubSectionVisible ? '' : 'hidden'}`}
-                                  >
-                                    {/* 하위 섹션 제목 - 타이핑 효과 적용 */}
-                                    <h4 className="font-semibold text-gray-100 mb-1">
-                                      <span className="text-xs">▷</span>{' '}
-                                      {shouldStartTyping &&
-                                      idx === activeSection &&
-                                      ssidx === activeSubSection &&
-                                      activeSubSectionPoint === -1 ? (
-                                        <Typewriter
-                                          onInit={(typewriter) => {
-                                            typewriter
-                                              .typeString(processStrongTags(subHeading))
-                                              .callFunction(() => {
-                                                // 하위 섹션 제목 타이핑 완료 시 하위 포인트 활성화
-                                                handleSubSectionHeadingTyped(idx, ssidx);
-                                              })
-                                              .start();
-                                          }}
-                                          options={{
-                                            cursor: '',
-                                            delay: 30,
-                                            wrapperClassName: 'inline',
-                                          }}
-                                        />
-                                      ) : (
-                                        // isSubSectionVisible이 true인 경우에만 내용이 보이도록 조정
-                                        <span
-                                          className={
-                                            isSubSectionVisible ? 'opacity-100' : 'opacity-0'
-                                          }
-                                        >
-                                          {renderHTML(subHeading)}
-                                        </span>
-                                      )}
+                                  <div key={ssidx} className="mb-3">
+                                    {/* 하위 섹션 제목 */}
+                                    <h4 className="text-lg font-bold text-gray-900 mb-2">
+                                      <span className="test-base text-gray-600">※ </span>
+                                      {renderHTML(subHeading)}
                                     </h4>
 
-                                    {/* 하위 섹션 포인트 - 타이핑 효과 적용 */}
+                                    {/* 하위 섹션 포인트 */}
                                     {subPoints.length > 0 && (
-                                      <div className="space-y-1 pl-2">
+                                      <div className="space-y-2">
                                         {subPoints.map((subPoint: any, spidx: number) => {
-                                          // 수정된 하위 포인트 가시성 조건 - 훨씬 제한적
-                                          const isSubPointVisible =
-                                            // 이미 완료된 섹션의 모든 하위 포인트
-                                            completedSections.includes(idx) ||
-                                            // 이전 섹션의 모든 하위 포인트
-                                            idx < activeSection ||
-                                            // 현재 섹션에서:
-                                            (idx === activeSection &&
-                                              // 완료된 하위 섹션의 모든 포인트
-                                              (completedSubsForSection.includes(ssidx) ||
-                                                // 현재 타이핑 중인 하위 섹션에서 현재 활성화된 포인트까지만 표시
-                                                (ssidx === activeSubSection &&
-                                                  spidx <= activeSubSectionPoint)));
+                                          const cleanPoint = subPoint.replace(/^◦\s?/, '');
+                                          const colonIndex = cleanPoint.indexOf(': ');
+
+                                          let title = cleanPoint;
+                                          let content = '';
+
+                                          if (colonIndex !== -1) {
+                                            title = cleanPoint.substring(0, colonIndex);
+                                            content = cleanPoint.substring(colonIndex + 2);
+                                          }
 
                                           return (
-                                            <p
+                                            <div
                                               key={spidx}
-                                              className={`text-sm text-gray-100 leading-relaxed ${
-                                                isSubPointVisible ? '' : 'hidden'
-                                              }`}
+                                              className="p-3 py-6 rounded-lg border border-gray-200 bg-white shadow-sm"
                                             >
-                                              {shouldStartTyping &&
-                                              idx === activeSection &&
-                                              ssidx === activeSubSection &&
-                                              spidx === activeSubSectionPoint ? (
-                                                <Typewriter
-                                                  onInit={(typewriter) => {
-                                                    typewriter
-                                                      .typeString(processStrongTags(subPoint || ''))
-                                                      .callFunction(() => {
-                                                        // 하위 포인트 타이핑 완료 시 다음 하위 포인트 또는 다음 하위 섹션 활성화
-                                                        handleSubSectionPointTyped(
-                                                          idx,
-                                                          ssidx,
-                                                          spidx,
-                                                          subPoints
-                                                        );
-                                                      })
-                                                      .start();
-                                                  }}
-                                                  options={{
-                                                    cursor: '',
-                                                    delay: 20,
-                                                    wrapperClassName:
-                                                      'text-sm text-gray-100 leading-relaxed',
-                                                  }}
-                                                />
-                                              ) : (
-                                                <span
-                                                  className={
-                                                    isSubPointVisible ? 'opacity-100' : 'opacity-0'
-                                                  }
-                                                >
-                                                  {renderHTML(subPoint || '')}
-                                                </span>
+                                              <div className="font-medium text-gray-800">
+                                                <span className="text-sm text-gray-600">- </span>
+                                                {title}
+                                              </div>
+                                              {content && (
+                                                <div className="text-gray-600 text-sm">
+                                                  <span className="text-xs">▷</span> {content}
+                                                </div>
                                               )}
-                                            </p>
+                                            </div>
                                           );
                                         })}
                                       </div>
@@ -1035,305 +603,215 @@ const MemoContent: React.FC<MemoContentProps> = ({
                     })}
                   </div>
                 );
-              }
-
-              // 기존 문자열 형식으로 표시 - 폴백 처리 + 클릭 효과 추가
-              return (
-                <div
-                  className="p-4 my-4 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-md cursor-pointer"
-                  onClick={completeCurrentTabTyping} // 클릭 시 타이핑 완료 (NEW)
-                >
-                  <div className="relative px-2">
-                    <p className="text-lg font-medium text-gray-100 leading-tight py-4">
-                      {shouldStartTyping ? (
-                        <Typewriter
-                          onInit={(typewriter) => {
-                            typewriter
-                              .typeString(
-                                typeof content === 'string'
-                                  ? processStrongTags(content)
-                                  : JSON.stringify(content)
-                              )
-                              .callFunction(handleTab1FinalTypingComplete)
-                              .start();
-                          }}
-                          options={{
-                            cursor: '',
-                            delay: 30,
-                            wrapperClassName: 'text-lg font-medium text-gray-100',
-                          }}
-                        />
-                      ) : (
-                        <span className={shouldStartTyping ? 'opacity-100' : 'opacity-0'}>
-                          {typeof content === 'string'
-                            ? renderHTML(content)
-                            : JSON.stringify(content)}
-                        </span>
-                      )}
+              } else {
+                // 단순 텍스트 콘텐츠인 경우
+                return (
+                  <div className="p-4 my-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+                    <p className="text-base text-gray-800 leading-relaxed">
+                      {typeof memo.tweet_main === 'string'
+                        ? renderHTML(memo.tweet_main)
+                        : JSON.stringify(memo.tweet_main)}
                     </p>
                   </div>
-                </div>
-              );
+                );
+              }
             })()}
           </div>
         );
-      case 2: // 주요 내용 (이전의 1번 탭) - 이미 완료된 경우 바로 표시
-        if (tab2Completed) {
-          // 이미 타이핑이 완료된 경우 - 모든 내용 즉시 표시
-          return (
-            <div className="pt-4" ref={tabRefs.main}>
-              {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
-              <div className="border-l-2 border-gray-400 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
-                <h2 className="flex-1 tracking-tighter  text-sm text-gray-800">주요 내용</h2>
-                <div onClick={completeAllTypingEffects} style={{ cursor: 'pointer' }}>
-                  <ShareButton
-                    memo={memo}
-                    tabType="main"
-                    contentRef={tabRefs.main}
-                    onShareSuccess={handleShareSuccess}
-                    onShareError={handleShareError}
-                  />
-                </div>
-              </div>
 
-              {/* 즉시 모든 트윗 표시 */}
-              <div className="space-y-2">
-                {memo.thread.map((tweet, tweetIndex) => (
-                  <div
-                    key={tweetIndex}
-                    className="p-4 py-6 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-sm"
-                  >
-                    <p className="text-gray-100 tracking-tighter">{renderHTML(tweet)}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        }
-
-        // 아직 타이핑 완료되지 않은 경우 - 순차적 타이핑 효과 적용
+      case 2: // 주요 내용
         return (
-          <div className="pt-4" ref={tabRefs.main}>
-            {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
-            <div className="border-l-2 border-gray-400 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
-              <h2 className="flex-1 tracking-tighter  text-sm text-gray-800">주요 내용</h2>
-              <div onClick={completeAllTypingEffects} style={{ cursor: 'pointer' }}>
-                <ShareButton
-                  memo={memo}
-                  tabType="main"
-                  contentRef={tabRefs.main}
-                  onShareSuccess={handleShareSuccess}
-                  onShareError={handleShareError}
-                />
-              </div>
+          <div className="pt-4 leading-relaxed" ref={tabRefs.main}>
+            {/* 헤더 */}
+            <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
+              <h2 className="tracking-tight text-base font-semibold text-gray-900">주요 내용</h2>
+              <ShareButton
+                memo={memo}
+                tabType="main"
+                contentRef={tabRefs.main}
+                onShareSuccess={handleShareSuccess}
+                onShareError={handleShareError}
+              />
             </div>
 
-            {/* 주요 내용 - 순차적 타이핑 효과 적용 - 완료된 트윗 추적 */}
-            <div className="space-y-2">
+            {/* 모든 항목 표시 */}
+            <div className="space-y-3">
               {memo.thread.map((tweet, tweetIndex) => {
-                // 트윗 표시 여부 확인 - 이미 완료된 트윗도 표시하도록 수정
-                const isTweetVisible =
-                  completedTweets.includes(tweetIndex) || tweetIndex <= activeTweet;
+                // 번호 제거 (예: "1. ")
+                const content = tweet.replace(/^\d+\.\s/, '');
 
                 return (
                   <div
                     key={tweetIndex}
-                    className={`p-4 py-6 rounded-lg border bg-gradient-to-r from-emerald-800 to-emerald-600 border-gray-100 shadow-sm cursor-pointer ${
-                      isTweetVisible ? '' : 'hidden'
-                    }`}
-                    onClick={completeCurrentTabTyping} // 클릭 시 타이핑 완료 (NEW)
+                    className="flex p-3 py-6 rounded-lg border border-gray-200 bg-white shadow-sm"
                   >
-                    <p className="text-gray-100 tracking-tighter">
-                      {shouldStartTyping &&
-                      tweetIndex === activeTweet &&
-                      !completedTweets.includes(tweetIndex) ? (
-                        <Typewriter
-                          onInit={(typewriter) => {
-                            typewriter
-                              .typeString(processStrongTags(tweet))
-                              .callFunction(() => {
-                                // 트윗 타이핑 완료 시 다음 트윗 활성화
-                                handleTweetTyped(tweetIndex);
-                              })
-                              .start();
-                          }}
-                          options={{
-                            cursor: '',
-                            delay: 30,
-                            wrapperClassName: 'text-gray-100 tracking-tighter',
-                          }}
-                        />
-                      ) : (
-                        <span className={isTweetVisible ? 'opacity-100' : 'opacity-0'}>
-                          {renderHTML(tweet)}
-                        </span>
-                      )}
-                    </p>
+                    <div className="w-6 h-6 rounded-full border border-gray-400 flex items-center justify-center mt-1 mr-3 text-xs font-medium text-gray-600">
+                      {tweetIndex + 1}
+                    </div>
+                    <div className="flex-1 text-gray-800">{renderHTML(content)}</div>
                   </div>
                 );
               })}
             </div>
           </div>
         );
-      case 3:
+
+      case 3: // 원문
         return (
-          <div className="pt-4" ref={tabRefs.original}>
-            {/* 미니멀한 명함 스타일의 디자인 - 공유 아이콘 추가 */}
-            <div className="border-l-2 border-gray-400 pl-2 py-1 mb-3 flex items-center justify-between gap-1">
-              <h2 className="flex-1 tracking-tighter  text-sm text-gray-800">원문</h2>
-              <div onClick={completeAllTypingEffects} style={{ cursor: 'pointer' }}>
-                <ShareButton
-                  memo={memo}
-                  tabType="original"
-                  contentRef={tabRefs.original}
-                  onShareSuccess={handleShareSuccess}
-                  onShareError={handleShareError}
-                />
-              </div>
+          <div className="pt-4 min-h-96 flex flex-col" ref={tabRefs.original}>
+            {/* 헤더 */}
+            <div className="border-l-4 border-gray-300 pl-3 py-1 mb-3 flex items-center justify-between">
+              <h2 className="tracking-tight text-base font-semibold text-gray-900">원문</h2>
+              <ShareButton
+                memo={memo}
+                tabType="original"
+                contentRef={tabRefs.original}
+                onShareSuccess={handleShareSuccess}
+                onShareError={handleShareError}
+              />
             </div>
-
-            {memo.original_url ? (
-              // URL인 경우 링크와 원문 내용 토글 버튼 표시
-              <div className="">
-                {/* URL을 일반 텍스트로 표시 */}
-                <p className="text-sm text-gray-700 break-all">{memo.original_url}</p>
-
-                {/* 원문으로 이동 버튼 추가 */}
-                <div className="flex flex-col gap-1 mt-2">
-                  <Link
-                    href={memo.original_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center text-sm text-emerald-700 hover:text-emerald-800"
-                  >
-                    <ExternalLink size={16} className="mr-2" /> 원문으로 이동
-                  </Link>
-
-                  {/* 원문 내용보기 버튼 추가 */}
-                  {memo.original_text && (
-                    <button
-                      onClick={toggleOriginalText}
-                      className="flex items-center text-sm text-emerald-700 hover:text-emerald-800"
-                    >
-                      {showOriginalText ? (
-                        <>
-                          <ChevronUp size={16} className="mr-2" /> 원문 내용접기
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown size={16} className="mr-2" /> 원문 내용보기
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-
-                {/* 원문 내용이 있고 보기 상태일 때만 표시 */}
-                {showOriginalText && memo.original_text && (
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    {memo.original_text}
-                  </p>
-                )}
-
-                {/* 원본이미지와 제목 */}
-                {memo.original_image && (
-                  <div className="flex flex-col gap-2 mt-2">
-                    <hr className="w-full" />
-
-                    <div className="grid grid-cols-8 items-center gap-2 w-full bg-gray-50 mt-1">
-                      <div className="h-16 col-span-3 relative">
-                        <img
-                          src={memo.original_image}
-                          alt="Original Image"
-                          className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            // 이미지 로드 실패 시 대체 이미지나 에러 처리
-                            console.log('이미지 로드 실패:', e);
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                      <p className="col-span-5 text-sm leading-tight text-gray-600 flex-grow overflow-hidden">
-                        {memo.original_title || 'no title'}
-                      </p>
+            {/* 원본 콘텐츠 */}
+            <div className="flex-1 flex flex-col ">
+              {memo.original_url ? (
+                <>
+                  {/* 텍스트 */}
+                  <div className="flex-1 flex flex-col gap-2 justify-center">
+                    <div>
+                      <Link
+                        href={memo.original_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block"
+                      >
+                        <p className=" text-gray-600 break-all">{memo.original_url}</p>
+                      </Link>
                     </div>
+
+                    <div className="flex flex-col gap-1 mt-2">
+                      <div>
+                        <Link
+                          href={memo.original_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-sm text-gray-800 hover:text-gray-900"
+                        >
+                          <ExternalLink size={16} className="mr-2" /> 원문으로 이동
+                        </Link>
+                      </div>
+
+                      {/* 원문 내용보기 버튼 추가 */}
+                      {memo.original_text && (
+                        <div>
+                          <button
+                            onClick={toggleOriginalText}
+                            className="inline-flex items-center text-sm text-gray-800 hover:text-gray-900"
+                          >
+                            {showOriginalText ? (
+                              <>
+                                <ChevronUp size={16} className="mr-2" /> 원문 내용접기
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown size={16} className="mr-2" /> 원문 내용보기
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 원문 내용이 있고 보기 상태일 때만 표시 */}
+                    {showOriginalText && memo.original_text && (
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap mt-2 p-4 bg-white rounded-lg border border-gray-200">
+                        {memo.original_text}
+                      </p>
+                    )}
                   </div>
-                )}
-              </div>
-            ) : (
-              // 일반 텍스트인 경우 기존처럼 표시
-              <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 shadow-sm">
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                  {memo.original_text || '원문이 없습니다.'}
-                </p>
-              </div>
-            )}
+
+                  {/* 이미지 */}
+                  {memo.original_image ? (
+                    <div className="w-full aspect-video  flex  gap-4 p-4 border-4 border-gray-200 relative">
+                      <img
+                        src={memo.original_image}
+                        alt="Original Image"
+                        className="absolute inset-0 w-full h-full object-cover rounded-lg "
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          console.log('이미지 로드 실패:', e);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-video  flex flex-col items-center justify-center gap-4 p-4 border-4 border-gray-200">
+                      <Quote size={16} className="text-gray-400" />
+                      <p>{memo.original_title}</p>
+                      <Quote size={16} className="text-gray-400" />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="p-4 rounded-lg border border-gray-200 bg-white shadow-sm">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {memo.original_text || '원문이 없습니다.'}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         );
+
       default:
         return null;
     }
   };
 
   return (
-    <>
-      {/* 개선된 탭 네비게이션 - 탭 순서 변경 */}
-      <div className="mt-2 border-y border-gray-200">
+    <div ref={componentRef} onTouchStart={handleTouchStart}>
+      {/* 탭 네비게이션 - 애플 스타일 */}
+      <div className="mt-2 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <button
             onClick={() => changeTab(0)}
-            className={`relative p-2 text-sm transition-colors ${
+            className={`relative px-3 py-2 text-sm transition-colors ${
               activeTab === 0
-                ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
-                : 'text-gray-400 hover:text-gray-600'
+                ? 'font-bold text-gray-900 border-b-2 border-gray-900'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {activeTab === 0 && (
-              <Sparkle size={14} className="absolute top-0.5 -right-1 text-emerald-800" />
-            )}
             아이디어
           </button>
 
           <button
             onClick={() => changeTab(1)}
-            className={`relative p-2 text-sm transition-colors ${
+            className={`relative px-3 py-2 text-sm transition-colors ${
               activeTab === 1
-                ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
-                : 'text-gray-400 hover:text-gray-600'
+                ? 'font-bold text-gray-900 border-b-2 border-gray-900'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {activeTab === 1 && (
-              <Sparkle size={14} className="absolute top-0.5 -right-1 text-emerald-800" />
-            )}
             아이디어 맵
           </button>
 
           <button
             onClick={() => changeTab(2)}
-            className={`relative p-2 text-sm transition-colors ${
+            className={`relative px-3 py-2 text-sm transition-colors ${
               activeTab === 2
-                ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
-                : 'text-gray-400 hover:text-gray-600'
+                ? 'font-bold text-gray-900 border-b-2 border-gray-900'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {activeTab === 2 && (
-              <Sparkle size={14} className="absolute top-0.5 -right-1 text-emerald-800" />
-            )}
             주요 내용
           </button>
 
           <button
             onClick={() => changeTab(3)}
-            className={`relative p-2 text-sm transition-colors ${
+            className={`relative px-3 py-2 text-sm transition-colors ${
               activeTab === 3
-                ? 'font-bold text-emerald-800 border-b-2 border-emerald-800'
-                : 'text-gray-400 hover:text-gray-600'
+                ? 'font-bold text-gray-900 border-b-2 border-gray-900'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {activeTab === 3 && (
-              <Sparkle size={14} className="absolute top-0.5 -right-1 text-emerald-800" />
-            )}
             원문
           </button>
         </div>
@@ -1355,18 +833,20 @@ const MemoContent: React.FC<MemoContentProps> = ({
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.7}
             onDragEnd={(_, info) => {
+              // X축 스와이프 거리가 충분히 크면 탭 변경
               if (info.offset.x > 100) {
                 goToPrevTab();
               } else if (info.offset.x < -100) {
                 goToNextTab();
               }
             }}
+            onAnimationComplete={handleAnimationComplete}
           >
             {renderTabContent(activeTab)}
           </motion.div>
         </AnimatePresence>
       </div>
-    </>
+    </div>
   );
 };
 

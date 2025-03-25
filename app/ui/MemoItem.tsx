@@ -181,62 +181,62 @@ const MemoItem: React.FC<MemoItemProps> = ({
   return (
     <article
       ref={memoRef}
-      className="p-4 pl-2 border-b bg-gray-100 border-emerald-600 hover:bg-gradient-to-r from-emerald-50/50 to-yellow-50/50   hover:shadow-lg transition-all duration-150 ease-in-out"
+      className="p-4  border-b bg-gray-100 border-emerald-600 hover:bg-gradient-to-r from-emerald-50/50 to-yellow-50/50   hover:shadow-lg transition-all duration-150 ease-in-out"
     >
-      <div className=" flex">
-        {/* 카테고리 아이콘 (각 카테고리에 맞게 변경) */}
-        <div className="mr-1 flex-shrink-0">
+      {/* 카테고리 아이콘 (각 카테고리에 맞게 변경) */}
+      {/* <div className="mr-1 flex-shrink-0">
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center border border-emerald-800 text-emerald-800`}
           >
             {getCategoryIcon()}
           </div>
-        </div>
+        </div> */}
 
-        {/* 메모 내용 */}
-        <div className="flex-1 min-w-0">
-          {/* 헤더 - 카테고리, 시간 및 옵션 */}
-          <div className="flex items-start justify-between">
-            <div className="flex items-center">
-              {/* <span
+      {/* 메모 내용 */}
+      <div className="w-full min-w-0">
+        {/* 헤더 - 카테고리, 시간 및 옵션 */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center">
+            {/* 카테고리 아이콘 (각 카테고리에 맞게 변경) */}
+            <div className="mr-1 flex-shrink-0">
+              <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center border border-emerald-800 text-emerald-800`}
               >
                 {getCategoryIcon()}
-              </span> */}
-              <span
-                className={` text-sm px-1 py-0.5 rounded-full  font-semibold b text-emerald-800`}
-              >
-                {memo.labeling?.category || '미분류'}
-              </span>
-              <span className="text-gray-400 text-sm ml-1 mr-2">|</span>
-              <span className="text-gray-400 text-sm">{memo.time || '방금 전'}</span>
+              </div>
             </div>
+            <span className={` text-sm px-1 py-0.5 rounded-full  font-semibold b text-emerald-800`}>
+              {memo.labeling?.category || '미분류'}
+            </span>
+            <span className="text-gray-400 text-sm ml-1 mr-2">|</span>
+            <span className="text-gray-400 text-sm">{memo.time || '방금 전'}</span>
+          </div>
 
-            {/* 옵션 메뉴 */}
-            <div className="relative ">
-              <button
-                onClick={toggleOptions}
-                className="text-gray-500 hover:text-emerald-400 p-1 rounded-full hover:bg-emerald-50"
-              >
-                <MoreHorizontal size={18} />
-              </button>
+          {/* 옵션 메뉴 */}
+          <div className="relative ">
+            <button
+              onClick={toggleOptions}
+              className="text-gray-500 hover:text-emerald-400 p-1 rounded-full hover:bg-emerald-50"
+            >
+              <MoreHorizontal size={18} />
+            </button>
 
-              {/* 드롭다운 메뉴 - 지식 관리 시스템에 맞게 수정 */}
-              {showOptions && (
-                <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 w-52 z-10">
-                  <div className="py-1">
-                    <button
-                      onClick={() => {
-                        onEdit(memo);
-                        setShowOptions(false);
-                      }}
-                      className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <Pencil size={16} className="text-gray-600" />
-                      <p>메모수정</p>
-                    </button>
+            {/* 드롭다운 메뉴 - 지식 관리 시스템에 맞게 수정 */}
+            {showOptions && (
+              <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 w-52 z-10">
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      onEdit(memo);
+                      setShowOptions(false);
+                    }}
+                    className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <Pencil size={16} className="text-gray-600" />
+                    <p>메모수정</p>
+                  </button>
 
-                    {/* <button
+                  {/* <button
                       onClick={handleShare}
                       className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
@@ -244,8 +244,8 @@ const MemoItem: React.FC<MemoItemProps> = ({
                       <p>공유하기</p>
                     </button> */}
 
-                    {/* 추후 추가 버튼들 삭제금지 */}
-                    {/* <button
+                  {/* 추후 추가 버튼들 삭제금지 */}
+                  {/* <button
                       onClick={() => {
                         onAnalyze(memo);
                         setShowOptions(false);
@@ -272,34 +272,33 @@ const MemoItem: React.FC<MemoItemProps> = ({
                       <p>인사이트 생성</p>
                     </button> */}
 
-                    <button
-                      onClick={() => {
-                        memo.id && onDelete(memo.id);
-                        setShowOptions(false);
-                      }}
-                      className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 size={16} className="text-red-600" />
-                      <p>삭제하기</p>
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      memo.id && onDelete(memo.id);
+                      setShowOptions(false);
+                    }}
+                    className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 size={16} className="text-red-600" />
+                    <p>삭제하기</p>
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-
-          {/* 메모 내용 */}
-          <MemoContent
-            memo={memo}
-            expanded={memoState.expanded}
-            showLabeling={memoState.showLabeling}
-            showOriginal={memoState.showOriginal}
-            onToggleThread={() => memo.id && onToggleThread(memo.id)}
-            onToggleLabeling={() => memo.id && onToggleLabeling(memo.id)}
-            onToggleOriginal={() => memo.id && onToggleOriginal(memo.id)}
-            isVisible={isVisible}
-          />
         </div>
+
+        {/* 메모 내용 */}
+        <MemoContent
+          memo={memo}
+          expanded={memoState.expanded}
+          showLabeling={memoState.showLabeling}
+          showOriginal={memoState.showOriginal}
+          onToggleThread={() => memo.id && onToggleThread(memo.id)}
+          onToggleLabeling={() => memo.id && onToggleLabeling(memo.id)}
+          onToggleOriginal={() => memo.id && onToggleOriginal(memo.id)}
+          isVisible={isVisible}
+        />
       </div>
     </article>
   );
