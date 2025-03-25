@@ -38,9 +38,14 @@ const nextConfig = {
   },
   images: {
     domains: [
+      'i.ytimg.com', // YouTube 썸네일
+      'storage.googleapis.com', // Google Storage (가능한 Supabase 저장소)
+      'lh3.googleusercontent.com', // Google 관련 이미지
+      'images.unsplash.com',
       'lh3.googleusercontent.com',
       'avatars.githubusercontent.com',
       'platform-lookaside.fbsbx.com',
+      'contents.kyobobook.co.kr',
     ],
     remotePatterns: [
       {

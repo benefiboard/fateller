@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Brain, ArrowRight, Check, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/app/store/userStore';
+import { Button } from '@/components/ui/button';
 
 export default function LandingAuthUserPage() {
   const router = useRouter();
@@ -32,6 +33,9 @@ export default function LandingAuthUserPage() {
               <span className="no-mobile-show ml-2 text-lg sm:text-xl font-bold text-gray-900">
                 Brain Labeling
               </span>
+              <Link href="/tts">
+                <Button>꼬 tts</Button>
+              </Link>
             </div>
             <div className="flex items-center space-x-4 md:space-x-6">
               <Link href="/blog" className="text-gray-800 font-semibold hover:text-gray-900">
