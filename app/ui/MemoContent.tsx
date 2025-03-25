@@ -14,9 +14,32 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import ShareButton from './ShareButton';
+import TTSButton from '../tts/TTSButton';
 
 // 탭 인덱스 타입 정의
 type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 아이디어 맵, 2: 주요 내용, 3: 원문
+
+interface IdeaPoint {
+  [key: string]: any;
+}
+
+interface SubSection {
+  sub_heading?: string;
+  sub_points?: string[];
+  [key: string]: any;
+}
+
+interface Section {
+  heading?: string;
+  points?: string[];
+  sub_sections?: SubSection[];
+  [key: string]: any;
+}
+
+interface IdeaMap {
+  sections?: Section[];
+  [key: string]: any;
+}
 
 const MemoContent: React.FC<MemoContentProps> = ({
   memo,
@@ -298,6 +321,89 @@ const MemoContent: React.FC<MemoContentProps> = ({
     return { sections: [] };
   };
 
+  // 아이디어 맵 텍스트 가져오기 함수 - TTS 표시용으로 개선
+  const getIdeaMapText = () => {
+    const parsedContent = parseIdeaMap(memo.tweet_main) as IdeaMap;
+    let text = '';
+
+    if (parsedContent.sections && Array.isArray(parsedContent.sections)) {
+      parsedContent.sections.forEach((section: Section, idx: number) => {
+        if (!section || typeof section !== 'object') return;
+
+        // 섹션 제목을 더 눈에 띄게 표시
+        text += `[섹션 ${idx + 1}] \n${section.heading || '섹션'}\n\n`;
+
+        const points = Array.isArray(section.points) ? section.points : [];
+        points.forEach((point: string, pidx: number) => {
+          text += `(${pidx + 1}) ${point}\n`;
+        });
+
+        text += '\n';
+
+        const subSections = Array.isArray(section.sub_sections) ? section.sub_sections : [];
+        if (subSections.length > 0) {
+          subSections.forEach((subSection: SubSection, ssidx: number) => {
+            if (!subSection || typeof subSection !== 'object') return;
+            text += `※ ${subSection.sub_heading || '하위 섹션'}\n`;
+
+            const subPoints = Array.isArray(subSection.sub_points) ? subSection.sub_points : [];
+            subPoints.forEach((subPoint: string) => {
+              text += `  - ${subPoint}\n`;
+            });
+
+            text += '\n';
+          });
+        }
+
+        text += '\n\n';
+      });
+    } else if (typeof memo.tweet_main === 'string') {
+      text = memo.tweet_main;
+    }
+
+    return text;
+  };
+
+  // 아이디어 탭 텍스트 가져오기
+  const getIdeaText = () => {
+    let text = '';
+
+    // 제목
+    text += `[제목]\n${memo.title}\n\n`;
+
+    // 핵심 문장
+    text += `[핵심 내용]\n${memo.labeling.key_sentence}\n\n`;
+
+    return text;
+  };
+
+  // 주요 내용 탭 텍스트 가져오기
+  const getMainContentText = () => {
+    let text = '';
+
+    memo.thread.forEach((tweet, idx) => {
+      // 원본 숫자 유지하여 더 명확하게 표시
+      text += `${tweet}\n\n`;
+    });
+
+    return text;
+  };
+
+  // 전체 텍스트를 가져오는 함수 추가 - 개선된 버전
+  const getAllContentText = () => {
+    // 1. 구분선과 아이디어 탭 내용
+    const ideaText = `\n [ 아이디어 ] \n\n\n${getIdeaText()}\n\n`;
+
+    // 2. 구분선과 아이디어 맵 탭 내용
+    const ideaMapText = `\n [ 아이디어 맵 ] \n\n\n${getIdeaMapText()}\n\n`;
+
+    // 3. 구분선과 주요 내용 탭 내용
+    const mainText = `\n [ 주요 내용 ] \n\n\n${getMainContentText()}`;
+
+    // 모든 내용 합치기
+    return ideaText + ideaMapText + mainText;
+  };
+
   // 슬라이드 애니메이션 variants - 수정됨
   const slideVariants = {
     enter: (direction: number) => ({
@@ -354,15 +460,19 @@ const MemoContent: React.FC<MemoContentProps> = ({
         return (
           <div className="pt-4 " ref={tabRefs.idea}>
             {/* 헤더 */}
-            <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between">
+            <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between gap-2">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">{memo.title}</h2>
-              <ShareButton
-                memo={memo}
-                tabType="idea"
-                contentRef={tabRefs.idea}
-                onShareSuccess={handleShareSuccess}
-                onShareError={handleShareError}
-              />
+              <div className="flex items-center gap-1 text-gray-400 ">
+                {/* <TTSButton text={getIdeaText()} />
+                <p>|</p> */}
+                <ShareButton
+                  memo={memo}
+                  tabType="idea"
+                  contentRef={tabRefs.idea}
+                  onShareSuccess={handleShareSuccess}
+                  onShareError={handleShareError}
+                />
+              </div>
             </div>
 
             {/* 핵심 문장 - 애플 스타일 */}
@@ -418,13 +528,17 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {/* 헤더 */}
             <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">아이디어 맵</h2>
-              <ShareButton
-                memo={memo}
-                tabType="key"
-                contentRef={tabRefs.key}
-                onShareSuccess={handleShareSuccess}
-                onShareError={handleShareError}
-              />
+              <div className="flex items-center gap-1 text-gray-400 ">
+                {/* <TTSButton text={getIdeaMapText()} />
+                <p>|</p> */}
+                <ShareButton
+                  memo={memo}
+                  tabType="key"
+                  contentRef={tabRefs.key}
+                  onShareSuccess={handleShareSuccess}
+                  onShareError={handleShareError}
+                />
+              </div>
             </div>
 
             {/* 안전하게 모든 내용 즉시 렌더링 */}
@@ -614,13 +728,17 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {/* 헤더 */}
             <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">주요 내용</h2>
-              <ShareButton
-                memo={memo}
-                tabType="main"
-                contentRef={tabRefs.main}
-                onShareSuccess={handleShareSuccess}
-                onShareError={handleShareError}
-              />
+              <div className="flex items-center gap-1 text-gray-400 ">
+                {/* <TTSButton text={getMainContentText()} />
+                <p>|</p> */}
+                <ShareButton
+                  memo={memo}
+                  tabType="main"
+                  contentRef={tabRefs.main}
+                  onShareSuccess={handleShareSuccess}
+                  onShareError={handleShareError}
+                />
+              </div>
             </div>
 
             {/* 모든 항목 표시 */}
@@ -753,7 +871,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
   };
 
   return (
-    <div ref={componentRef} onTouchStart={handleTouchStart}>
+    <div ref={componentRef} onTouchStart={handleTouchStart} className="">
+      {/* 전체듣기 */}
+      <div className="w-full flex justify-end items-center gap-2 ">
+        <p className="text-gray-400 text-sm">듣기 </p>
+        <TTSButton text={getAllContentText()} />
+      </div>
       {/* 탭 네비게이션 - 애플 스타일 */}
       <div className="mt-2 border-b border-gray-200">
         <div className="flex items-center justify-between">
