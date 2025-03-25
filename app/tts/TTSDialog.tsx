@@ -286,7 +286,7 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
       }
 
       // 짧은 줄은 바로 추가
-      if (line.length <= 50) {
+      if (line.length <= 100) {
         chunks.push(line);
         continue;
       }

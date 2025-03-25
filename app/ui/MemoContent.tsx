@@ -487,7 +487,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
               {memo.labeling.keywords.map((keyword, keywordIndex) => (
                 <span
                   key={keywordIndex}
-                  className="px-4 py-1 text-sm border-2 border-emerald-600/50 text-gray-900 rounded-full"
+                  className="px-4 py-1 text-sm border-2 border-gray-300 text-gray-600 rounded-full"
                 >
                   #{keyword}
                 </span>

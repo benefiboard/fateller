@@ -1,3 +1,5 @@
+//app/store/creditStore.ts
+
 import { create } from 'zustand';
 
 type CreditListener = (credits: number) => void;
