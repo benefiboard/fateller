@@ -15,9 +15,12 @@ import {
   Tag,
   CheckCircle,
   XCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import createSupabaseBrowserClient from '@/lib/supabse/client';
 import { BlogPost, ContentSource, ContentSummary, BlogCategory } from '@/app/utils/types';
+import ScrollbarVisible from './ScrollbarVisible';
 
 // 소스 데이터 타입 정의
 interface SourceWithSummaries extends ContentSource {
@@ -32,6 +35,16 @@ interface SelectedItem {
 }
 
 export default function AdminBlogPage() {
+  // 이메일 기반 사용자 ID 매핑 함수
+  const getUserIdForEmail = (email: string | null | undefined): string => {
+    if (email === 'hjdh59@gmail.com') {
+      return 'd5cc7e8c-5dda-4260-be11-8e0776dc66b1';
+    } else if (email === 'benefiboard@gmail.com') {
+      return 'bf412c68-4b94-44af-b043-e1213c327638';
+    }
+    return '';
+  };
+
   // 상태 관리 - 타입 추가
   const { currentUser } = useUserStore();
   const [activeTab, setActiveTab] = useState<'posts' | 'sources'>('posts');
@@ -51,6 +64,13 @@ export default function AdminBlogPage() {
   // 로딩 상태
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [sourcesLoading, setSourcesLoading] = useState<boolean>(false);
+
+  // 페이지네이션 상태
+  const [currentBlogPage, setCurrentBlogPage] = useState<number>(1);
+  const [currentSourcePage, setCurrentSourcePage] = useState<number>(1);
+  const [totalBlogPosts, setTotalBlogPosts] = useState<number>(0);
+  const [totalSources, setTotalSources] = useState<number>(0);
+  const itemsPerPage = 15; // 페이지당 15개 항목
 
   const supabase = createSupabaseBrowserClient();
 
@@ -79,6 +99,19 @@ export default function AdminBlogPage() {
         query = query.eq('summary.category', selectedCategory);
       }
 
+      // 먼저 전체 데이터 카운트를 얻기 위한 쿼리 실행
+      const { count } = await supabase
+        .from('blog_posts')
+        .select('id', { count: 'exact', head: true });
+
+      setTotalBlogPosts(count || 0);
+
+      // 페이지네이션 범위 계산
+      const from = (currentBlogPage - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
+      // 범위로 제한된 데이터 가져오기
+      query = query.range(from, to);
       const { data, error } = await query;
 
       if (error) throw error;
@@ -109,13 +142,25 @@ export default function AdminBlogPage() {
           summaries:content_summaries(id, title, category, key_sentence, keywords, purpose)
         `
         )
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
 
       if (sourceSearchTerm) {
         query = query.or(`title.ilike.%${sourceSearchTerm}%,content.ilike.%${sourceSearchTerm}%`);
       }
 
+      // 먼저 전체 카운트 가져오기
+      const { count } = await supabase
+        .from('content_sources')
+        .select('id', { count: 'exact', head: true });
+
+      setTotalSources(count || 0);
+
+      // 페이지네이션 범위 계산
+      const from = (currentSourcePage - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
+      // 범위로 제한된 데이터 가져오기
+      query = query.range(from, to);
       const { data, error } = await query;
 
       if (error) throw error;
@@ -128,9 +173,11 @@ export default function AdminBlogPage() {
     }
   };
 
-  // 사용자 ID로 콘텐츠 소스 검색 (NEW)
-  const searchContentSourcesByUserId = async () => {
-    if (!userIdSearch.trim()) {
+  // 사용자 ID로 콘텐츠 소스 검색 (수정됨)
+  const searchContentSourcesByUserId = async (providedUserId: string | null = null) => {
+    const idToSearch = providedUserId || userIdSearch.trim();
+
+    if (!idToSearch) {
       alert('사용자 ID를 입력해주세요.');
       return;
     }
@@ -141,7 +188,7 @@ export default function AdminBlogPage() {
       const { data: memoData, error: memoError } = await supabase
         .from('memos')
         .select('source_id')
-        .eq('user_id', userIdSearch)
+        .eq('user_id', idToSearch)
         .not('source_id', 'is', null);
 
       if (memoError) throw memoError;
@@ -156,8 +203,20 @@ export default function AdminBlogPage() {
       // 2. source_id 목록 추출 (중복 제거)
       const sourceIds = Array.from(new Set(memoData.map((memo) => memo.source_id)));
 
-      // 3. 추출한 source_id로 content_sources 검색
-      let query = supabase
+      // 페이지당 15개씩 나누기 위한 총 소스 수 계산
+      const { count } = await supabase
+        .from('content_sources')
+        .select('id', { count: 'exact', head: true })
+        .in('id', sourceIds);
+
+      setTotalSources(count || 0);
+
+      // 페이지네이션 범위 계산
+      const from = (currentSourcePage - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
+      // 3. 추출한 source_id로 content_sources 검색 (페이지네이션 적용)
+      const { data, error } = await supabase
         .from('content_sources')
         .select(
           `
@@ -166,9 +225,8 @@ export default function AdminBlogPage() {
         `
         )
         .in('id', sourceIds)
-        .order('created_at', { ascending: false });
-
-      const { data, error } = await query;
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
       setSources((data as SourceWithSummaries[]) || []);
@@ -325,6 +383,137 @@ export default function AdminBlogPage() {
     }
   };
 
+  // 페이지네이션 컴포넌트
+  const Pagination = ({
+    currentPage,
+    totalItems,
+    onPageChange,
+  }: {
+    currentPage: number;
+    totalItems: number;
+    onPageChange: (page: number) => void;
+  }) => {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    if (totalPages <= 1) return null;
+
+    // 페이지 버튼 생성 (최대 5개)
+    const pageNumbers = [];
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+
+    if (endPage - startPage < 4) {
+      startPage = Math.max(1, endPage - 4);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+
+    return (
+      <div className="flex justify-center items-center mt-6 space-x-2">
+        <button
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className={`px-3 py-1 rounded ${
+            currentPage === 1
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+
+        {startPage > 1 && (
+          <>
+            <button
+              onClick={() => onPageChange(1)}
+              className={`px-3 py-1 rounded ${
+                currentPage === 1
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              1
+            </button>
+            {startPage > 2 && <span className="px-1">...</span>}
+          </>
+        )}
+
+        {pageNumbers.map((page) => (
+          <button
+            key={page}
+            onClick={() => onPageChange(page)}
+            className={`px-3 py-1 rounded ${
+              currentPage === page
+                ? 'bg-emerald-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+
+        {endPage < totalPages && (
+          <>
+            {endPage < totalPages - 1 && <span className="px-1">...</span>}
+            <button
+              onClick={() => onPageChange(totalPages)}
+              className={`px-3 py-1 rounded ${
+                currentPage === totalPages
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {totalPages}
+            </button>
+          </>
+        )}
+
+        <button
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className={`px-3 py-1 rounded ${
+            currentPage === totalPages
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  };
+
+  // 이메일 기반으로 사용자 ID 자동 설정 및 검색 수행
+  useEffect(() => {
+    // 콘텐츠 추가 탭이 활성화되고 사용자 이메일이 있는 경우
+    if (activeTab === 'sources' && currentUser?.email) {
+      const userId = getUserIdForEmail(currentUser.email);
+      if (userId) {
+        setUserIdSearch(userId);
+        searchContentSourcesByUserId(userId);
+      }
+    }
+  }, [activeTab, currentUser?.email]);
+
+  // 페이지 변경시 데이터 로드
+  useEffect(() => {
+    if (activeTab === 'posts') {
+      loadBlogPosts();
+    }
+  }, [currentBlogPage]);
+
+  useEffect(() => {
+    if (activeTab === 'sources') {
+      if (userIdSearch) {
+        searchContentSourcesByUserId();
+      } else if (sourceSearchTerm) {
+        searchContentSources();
+      }
+    }
+  }, [currentSourcePage]);
+
   // 초기 데이터 로드
   useEffect(() => {
     loadBlogPosts();
@@ -336,9 +525,6 @@ export default function AdminBlogPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">블로그 관리</h1>
-            <p>d5cc7e8c-5dda-4260-be11-8e0776dc66b1</p>
-            <p>bf412c68-4b94-44af-b043-e1213c327638</p>
-            <p></p>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">{currentUser?.email}</span>
               <Link
@@ -360,6 +546,7 @@ export default function AdminBlogPage() {
             <button
               onClick={() => {
                 setActiveTab('posts');
+                setCurrentBlogPage(1);
                 loadBlogPosts();
               }}
               className={`px-4 py-2 font-medium text-sm rounded-t-lg ${
@@ -371,7 +558,17 @@ export default function AdminBlogPage() {
               블로그 게시물
             </button>
             <button
-              onClick={() => setActiveTab('sources')}
+              onClick={() => {
+                setActiveTab('sources');
+                setCurrentSourcePage(1);
+                // 이메일 기반으로 사용자 ID 자동 설정
+                const userId = getUserIdForEmail(currentUser?.email);
+                if (userId) {
+                  setUserIdSearch(userId);
+                  // 검색 자동 실행
+                  searchContentSourcesByUserId(userId);
+                }
+              }}
               className={`px-4 py-2 font-medium text-sm rounded-t-lg ${
                 activeTab === 'sources'
                   ? 'bg-white text-emerald-600 border-t border-l border-r border-gray-200'
@@ -394,7 +591,10 @@ export default function AdminBlogPage() {
                 <input
                   type="text"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentBlogPage(1);
+                  }}
                   placeholder="게시물 검색..."
                   className="pl-10 w-full p-2 border border-gray-300 rounded-md"
                 />
@@ -402,7 +602,10 @@ export default function AdminBlogPage() {
 
               <select
                 value={selectedCategory || ''}
-                onChange={(e) => setSelectedCategory(e.target.value || null)}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value || null);
+                  setCurrentBlogPage(1);
+                }}
                 className="p-2 border border-gray-300 rounded-md"
               >
                 <option value="">모든 카테고리</option>
@@ -414,7 +617,10 @@ export default function AdminBlogPage() {
               </select>
 
               <button
-                onClick={loadBlogPosts}
+                onClick={() => {
+                  setCurrentBlogPage(1);
+                  loadBlogPosts();
+                }}
                 className="px-4 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors"
               >
                 <RefreshCcw className="h-5 w-5" />
@@ -508,6 +714,13 @@ export default function AdminBlogPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* 페이지네이션 */}
+            <Pagination
+              currentPage={currentBlogPage}
+              totalItems={totalBlogPosts}
+              onPageChange={(page) => setCurrentBlogPage(page)}
+            />
           </div>
         )}
 
@@ -531,7 +744,10 @@ export default function AdminBlogPage() {
                   />
                 </div>
                 <button
-                  onClick={searchContentSources}
+                  onClick={() => {
+                    setCurrentSourcePage(1);
+                    searchContentSources();
+                  }}
                   className="bg-emerald-500 text-white px-4 py-2 rounded-md hover:bg-emerald-600 transition-colors"
                 >
                   키워드 검색
@@ -553,7 +769,10 @@ export default function AdminBlogPage() {
                   />
                 </div>
                 <button
-                  onClick={searchContentSourcesByUserId}
+                  onClick={() => {
+                    setCurrentSourcePage(1);
+                    searchContentSourcesByUserId();
+                  }}
                   className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
                 >
                   사용자 ID로 검색
@@ -724,6 +943,13 @@ export default function AdminBlogPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* 소스 검색 결과 페이지네이션 */}
+            <Pagination
+              currentPage={currentSourcePage}
+              totalItems={totalSources}
+              onPageChange={(page) => setCurrentSourcePage(page)}
+            />
           </div>
         )}
       </main>
