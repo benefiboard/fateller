@@ -248,7 +248,7 @@ const RightSidebar = () => {
         <a href="#" className="hover:underline">
           도움말
         </a>
-        <span>© 2025 BrainLabel</span>
+        <span>© 2025 BrainLabeling</span>
       </div>
     </div>
   );

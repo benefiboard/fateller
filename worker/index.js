@@ -20,7 +20,7 @@ async function syncMemos() {
 // 푸시 알림 수신 처리
 self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {};
-  const title = data.title || 'BrainLabel 알림';
+  const title = data.title || 'BrainLabeling 알림';
   const options = {
     body: data.body || '새로운 인사이트가 발견되었습니다.',
     icon: '/icons/icon-192x192.png',
@@ -70,9 +70,9 @@ self.addEventListener('message', (event) => {
 
 // 특정 URL 패턴에 대한 맞춤형 캐싱 전략
 self.addEventListener('fetch', (event) => {
-  // BrainLabel 이미지 관련 요청을 위한 커스텀 캐싱
+  // BrainLabeling 이미지 관련 요청을 위한 커스텀 캐싱
   if (event.request.url.match(/\.(jpe?g|png|gif|svg)$/)) {
-    const cacheName = 'brainlabel-images';
+    const cacheName = 'BrainLabeling-images';
     event.respondWith(
       caches
         .open(cacheName)

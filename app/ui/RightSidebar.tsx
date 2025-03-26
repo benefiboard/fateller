@@ -287,8 +287,10 @@ const RightSidebar = () => {
       )}
 
       {/* 푸터 정보 */}
-      <div className="text-xs text-gray-500 flex flex-wrap gap-2 mt-6">
-        <a href="#" className="hover:underline">
+      <div className="text-sm text-gray-500 flex flex-wrap mt-6 gap-2">
+        <span>benefiboard@gmail.com</span>
+        <span> / </span>
+        {/* <a href="#" className="hover:underline">
           이용약관
         </a>
         <a href="#" className="hover:underline">
@@ -296,8 +298,8 @@ const RightSidebar = () => {
         </a>
         <a href="#" className="hover:underline">
           도움말
-        </a>
-        <span>© 2025 BrainLabel</span>
+        </a> */}
+        <span>© 2025 BrainLabeling</span>
       </div>
     </div>
   );

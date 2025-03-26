@@ -108,7 +108,7 @@ export default function InstallPrompt() {
             <div className="w-12 h-12 bg-white rounded-xl mr-3 flex items-center justify-center overflow-hidden shadow-md">
               <img
                 src="/icons/icon-192x192.png"
-                alt="BrainLabel 아이콘"
+                alt="BrainLabeling 아이콘"
                 className="w-10 h-10 object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
@@ -116,7 +116,7 @@ export default function InstallPrompt() {
               />
             </div>
             <div>
-              <h3 className="font-bold text-xl">BrainLabel</h3>
+              <h3 className="font-bold text-xl">BrainLabeling</h3>
               <p className="text-xs text-white/80">아이디어 AI 분석 및 관리</p>
             </div>
           </div>
@@ -126,7 +126,7 @@ export default function InstallPrompt() {
         <div className="p-5">
           <h4 className="font-medium text-lg text-gray-800 dark:text-white mb-2">앱 설치하기</h4>
           <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-            BrainLabel을 홈 화면에 추가하면 더 빠르게 접근하고 오프라인에서도 사용할 수 있습니다.
+            BrainLabeling을 홈 화면에 추가하면 더 빠르게 접근하고 오프라인에서도 사용할 수 있습니다.
           </p>
 
           {/* 앱 설치 이점 리스트 */}

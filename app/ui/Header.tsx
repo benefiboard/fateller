@@ -39,12 +39,12 @@ const Header = () => {
   const currentUser = useUserStore((state) => state.currentUser);
 
   const profile = {
-    name: currentUser?.email ? currentUser.email.split('@')[0] : 'BrainLabel',
+    name: currentUser?.email ? currentUser.email.split('@')[0] : 'BrainLabeling',
     username: currentUser?.username
       ? `@${currentUser.username}`
       : currentUser?.email
       ? `@${currentUser.email.split('@')[0]}`
-      : '@brainlabel_ai',
+      : '@BrainLabeling_ai',
     avatar: currentUser?.avatar_url || '/avatar_base.svg',
   };
 

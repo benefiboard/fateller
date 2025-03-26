@@ -479,7 +479,7 @@ export const formatMemoAsMarkdown = (memo: any, tabType: string): string => {
   }
 
   // 공통 푸터
-  text += `---\nBrainLabel에서 공유됨 | ${new Date().toLocaleDateString('ko-KR')}`;
+  text += `---\nBrainLabeling에서 공유됨 | ${new Date().toLocaleDateString('ko-KR')}`;
 
   return text;
 };

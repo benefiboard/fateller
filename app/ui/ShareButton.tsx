@@ -88,7 +88,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({
     }
 
     try {
-      const fileName = `brainlabel_${tabType}_${memo.id || new Date().getTime()}`;
+      const fileName = `BrainLabeling_${tabType}_${memo.id || new Date().getTime()}`;
       const success = await captureElementAsImage(contentRef.current, fileName);
 
       if (success) {
@@ -185,7 +185,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({
       const shareUrl = memo.original_url || undefined;
 
       const success = await useNativeShare(
-        memo.title || 'BrainLabel 공유',
+        memo.title || 'BrainLabeling 공유',
         formattedText,
         shareUrl
       );

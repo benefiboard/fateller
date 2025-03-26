@@ -98,7 +98,7 @@ export default function Home() {
               {/* 이미지 위에 오버레이 텍스트 추가 - 고객 중심 메시지 */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
                 <p className="text-white text-lg md:text-xl font-medium">
-                  "하루에 읽는 콘텐츠 중 정말 가치 있는 것은 몇 개인가요?"
+                  "하루에 보는 콘텐츠 중 정말 가치 있는 것은 몇 개인가요?"
                 </p>
               </div>
             </div>
@@ -755,7 +755,7 @@ export default function Home() {
             AI 기반의 메모 정리 서비스로 콘텐츠 과잉 시대의 지식 관리 문제를 해결합니다.
           </p>
           <div className="flex flex-wrap justify-center space-x-4 md:space-x-8 mb-6">
-            <a href="#" className="hover:text-white my-2">
+            {/* <a href="#" className="hover:text-white my-2">
               이용약관
             </a>
             <a href="#" className="hover:text-white my-2">
@@ -766,7 +766,8 @@ export default function Home() {
             </a>
             <a href="#" className="hover:text-white my-2">
               문의하기
-            </a>
+            </a> */}
+            contact : benefoboard@gmail.com
           </div>
           <p>© 2025 Brain Labeling. All rights reserved.</p>
         </div>

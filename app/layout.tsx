@@ -29,11 +29,11 @@ export const viewport: Viewport = {
 };
 
 // 공통 메타데이터
-const APP_NAME = 'BrainLabel';
+const APP_NAME = 'BrainLabeling';
 const APP_DESCRIPTION = '아이디어 관리, AI가 자동으로 분석하고 연결합니다';
 
 export const metadata: Metadata = {
-  title: 'BrainLabel',
+  title: 'BrainLabeling',
   description: APP_DESCRIPTION,
   manifest: '/manifest.json',
   icons: {

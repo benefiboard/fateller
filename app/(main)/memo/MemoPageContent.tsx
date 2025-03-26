@@ -96,12 +96,12 @@ const MemoPageContent: React.FC = () => {
   // profile 객체 동적 생성 - 메모이제이션 적용
   const profile = useMemo(
     () => ({
-      name: currentUser?.email ? currentUser.email.split('@')[0] : 'BrainLabel',
+      name: currentUser?.email ? currentUser.email.split('@')[0] : 'BrainLabeling',
       username: currentUser?.username
         ? `@${currentUser.username}`
         : currentUser?.email
         ? `@${currentUser.email.split('@')[0]}`
-        : '@brainlabel_ai',
+        : '@BrainLabeling_ai',
       avatar: currentUser?.avatar_url || '/avatar_base.svg',
     }),
     [currentUser]

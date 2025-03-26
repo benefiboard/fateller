@@ -16,8 +16,8 @@ export default function GlobalComposer(): JSX.Element {
 
   // 프로필 정보
   const profile: Profile = {
-    name: 'BrainLabel',
-    username: '@brainlabel_ai',
+    name: 'BrainLabeling',
+    username: '@BrainLabeling_ai',
     avatar: '/avatar_base.svg',
   };
 

@@ -27,7 +27,7 @@ export default function LandingPage() {
           <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold">
             B
           </div>
-          <span className="text-xl font-bold text-gray-900">BrainLabel</span>
+          <span className="text-xl font-bold text-gray-900">BrainLabeling</span>
         </div>
         <div className="flex items-center space-x-4">
           {!currentUser && (
@@ -223,7 +223,7 @@ export default function LandingPage() {
               </div>
 
               <div>
-                <h3 className="text-2xl font-bold text-emerald-700 mb-4">BrainLabel</h3>
+                <h3 className="text-2xl font-bold text-emerald-700 mb-4">BrainLabeling</h3>
                 <div className="space-y-4">
                   <div className="flex items-start">
                     <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center mr-3 mt-0.5">
@@ -256,7 +256,7 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">주요 기능</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              BrainLabel은 강력한 AI 기술을 활용하여 메모와 정보 관리를 혁신적으로 개선합니다.
+              BrainLabeling은 강력한 AI 기술을 활용하여 메모와 정보 관리를 혁신적으로 개선합니다.
             </p>
           </div>
 
@@ -375,7 +375,7 @@ export default function LandingPage() {
       <section className="py-20 bg-emerald-700 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-6">
-            지금 바로 BrainLabel을 시작해보세요
+            지금 바로 BrainLabeling을 시작해보세요
           </h2>
           <p className="text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
             가입 후 무료로 10개의 메모를 분석해볼 수 있습니다
@@ -406,7 +406,7 @@ export default function LandingPage() {
                 <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold">
                   B
                 </div>
-                <span className="text-xl font-bold text-white">BrainLabel</span>
+                <span className="text-xl font-bold text-white">BrainLabeling</span>
               </div>
               <p className="text-gray-400">
                 AI가 자동으로 정리해주는 메모 서비스. 복잡한 정보도 쉽게 관리하세요.
@@ -477,7 +477,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-400">
-            &copy; 2025 BrainLabel. All rights reserved.
+            &copy; 2025 BrainLabeling. All rights reserved.
           </div>
         </div>
       </footer>

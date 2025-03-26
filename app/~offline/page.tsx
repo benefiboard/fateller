@@ -40,8 +40,8 @@ export default function OfflinePage() {
 
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6 max-w-md">
         <p className="text-sm">
-          BrainLabel은 오프라인 모드에서도 이전에 저장한 콘텐츠를 확인할 수 있습니다. 하지만 새로운
-          콘텐츠를 추가하거나 분석하려면 인터넷 연결이 필요합니다.
+          BrainLabeling은 오프라인 모드에서도 이전에 저장한 콘텐츠를 확인할 수 있습니다. 하지만
+          새로운 콘텐츠를 추가하거나 분석하려면 인터넷 연결이 필요합니다.
         </p>
       </div>
 
