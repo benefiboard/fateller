@@ -1,5 +1,3 @@
-//app/auth/components/OAuthForm_Google.tsx
-
 'use client';
 
 import { createBrowserClient } from '@supabase/ssr';
@@ -7,20 +5,33 @@ import React, { useCallback } from 'react';
 import { FaGoogle } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 
-export default function GoogleButton() {
+interface GoogleButtonProps {
+  referralCode?: string;
+}
+
+export default function GoogleButton({ referralCode = '' }: GoogleButtonProps) {
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
   const loginWithGoogle = useCallback(async () => {
+    // 추천인 코드가 있으면 쿠키에 저장
+    if (referralCode) {
+      document.cookie = `referral_code=${referralCode}; path=/; max-age=3600`; // 1시간 유효
+    }
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${location.origin}/auth/callback`,
+        queryParams: {
+          // 추천인 코드가 있으면 쿼리 파라미터로도 전달
+          ...(referralCode ? { ref_code: referralCode } : {}),
+        },
       },
     });
-  }, [supabase.auth]);
+  }, [supabase.auth, referralCode]);
 
   return (
     <Button onClick={loginWithGoogle} className="w-full flex gap-2 bg-emerald-800">

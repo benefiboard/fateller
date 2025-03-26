@@ -183,6 +183,31 @@ export default function BlogPage() {
     return '최신 콘텐츠';
   };
 
+  const extractDomain = (url: string) => {
+    if (!url) return '웹 콘텐츠';
+
+    try {
+      // URL이 http나 https로 시작하지 않으면 추가
+      if (!url.match(/^https?:\/\//i)) {
+        url = 'https://' + url;
+      }
+
+      // URL 객체 생성
+      const urlObj = new URL(url);
+
+      // 호스트명에서 www. 제거(있는 경우)
+      return urlObj.hostname.replace(/^www\./i, '');
+    } catch (error) {
+      // URL 파싱에 실패한 경우 원래 문자열 반환
+      // 기본 정규식으로 도메인 추출 시도
+      const domainMatch = url.match(/^(?:https?:\/\/)?(?:www\.)?([^\/]+)/i);
+      if (domainMatch && domainMatch[1]) {
+        return domainMatch[1];
+      }
+      return url;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 tracking-tighter">
       {/* 헤더 */}
@@ -441,12 +466,17 @@ export default function BlogPage() {
 
                         {/* 우측 텍스트 */}
                         <div className="flex-1 h-full flex flex-col justify-between px-4">
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            <span className="inline-block px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 rounded-full">
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            <span className="inline-block px-2 py-1 text-sm font-medium bg-emerald-100 text-emerald-800 rounded-full">
                               {post.category || post.summary?.category || '미분류'}
                             </span>
-                            <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                            {/* <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                               {post.source?.source_type || '웹 콘텐츠'}
+                            </span> */}
+                            <span className="inline-block px-2 py-1 text-sm font-semibold text-gray-400 rounded-full italic">
+                              {post.source?.canonical_url
+                                ? extractDomain(post.source.canonical_url)
+                                : '웹 콘텐츠'}
                             </span>
                           </div>
 

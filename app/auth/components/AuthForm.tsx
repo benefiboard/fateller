@@ -4,8 +4,10 @@ import { useSearchParams } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useEffect, useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
-// 지연 로딩 구현
+// 지연 로딩 유지
 const SignInForm = dynamic(() => import('./SignInForm'), {
   loading: () => <p>Login is loading...</p>,
 });
@@ -28,6 +30,7 @@ export function AuthForm() {
     null
   );
   const [error, setError] = useState<string | null>(null);
+  const [referralCode, setReferralCode] = useState<string>('');
 
   useEffect(() => {
     const success = searchParams.get('success');
@@ -38,12 +41,27 @@ export function AuthForm() {
     } else if (errorParam) {
       setMessage({ type: 'error', content: decodeURIComponent(errorParam) });
     }
+
+    // URL에서 referralCode가 있으면 자동으로 채움
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setReferralCode(refCode);
+    }
   }, [searchParams]);
 
-  // 메모이제이션 사용
-  const memoizedGoogleButton = useMemo(() => <GoogleButton />, []);
-  const memoizedGithubButton = useMemo(() => <GithubButton />, []);
-  const memoizedKakaoButton = useMemo(() => <KakaoButton />, []);
+  // 메모이제이션은 referralCode를 props로 전달하도록 수정
+  const memoizedGoogleButton = useMemo(
+    () => <GoogleButton referralCode={referralCode} />,
+    [referralCode]
+  );
+  const memoizedGithubButton = useMemo(
+    () => <GithubButton referralCode={referralCode} />,
+    [referralCode]
+  );
+  const memoizedKakaoButton = useMemo(
+    () => <KakaoButton referralCode={referralCode} />,
+    [referralCode]
+  );
 
   return (
     <div className="w-full space-y-6">
@@ -59,19 +77,18 @@ export function AuthForm() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      {/* <Tabs defaultValue="signin" className="w-full space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="signin">로그인</TabsTrigger>
-          <TabsTrigger value="register">회원가입</TabsTrigger>
-        </TabsList>
-        <TabsContent value="signin">
-          <SignInForm />
-        </TabsContent>
-        <TabsContent value="register">
-          <RegisterForm />
-        </TabsContent>
-      </Tabs>
-      <hr /> */}
+
+      {/* 추천인 코드 입력 필드 추가 */}
+      <div className="space-y-2">
+        <Label htmlFor="referralCode">추천인 코드 (선택사항)</Label>
+        <Input
+          id="referralCode"
+          placeholder="추천인 코드를 입력하세요"
+          value={referralCode}
+          onChange={(e) => setReferralCode(e.target.value)}
+        />
+      </div>
+
       <div className="flex flex-col gap-4">
         {memoizedKakaoButton}
         {memoizedGoogleButton}
