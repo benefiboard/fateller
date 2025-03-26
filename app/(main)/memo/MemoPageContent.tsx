@@ -649,7 +649,7 @@ const MemoPageContent: React.FC = () => {
   const searchVisible = useSearchStore((state) => state.searchVisible);
 
   return (
-    <div className="max-w-md mx-auto bg-white overflow-hidden shadow-md min-h-screen tracking-tighter leading-snug">
+    <div className="max-w-2xl mx-auto bg-white overflow-hidden shadow-md min-h-screen tracking-tighter leading-snug">
       {/* 상단 알림 */}
       {topAlert.show && (
         <div
@@ -714,7 +714,7 @@ const MemoPageContent: React.FC = () => {
 
       {/* 메모 작성 버튼 */}
       {!showComposer && (
-        <div className="max-w-md mx-auto w-full fixed bottom-8 right-0 left-0 md:-right-16 lg:right-16 flex justify-end pr-4 z-10">
+        <div className="max-w-2xl mx-auto w-full fixed bottom-8 right-0 left-0 md:-right-16 lg:right-32 flex justify-end pr-4 z-10">
           <div className="flex flex-col gap-2">
             <button
               onClick={handleScrollToTop}

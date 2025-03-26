@@ -22,15 +22,15 @@ const CreditDisplay = React.memo(function CreditDisplay() {
   }, [currentUser, fetchCredits]);
 
   // 강제 업데이트를 위한 이벤트 리스너
-  useEffect(() => {
-    const handleForceUpdate = () => {
-      console.log('크레딧 강제 업데이트 트리거됨');
-      setForceUpdate((prev) => prev + 1);
-    };
+  // useEffect(() => {
+  //   const handleForceUpdate = () => {
+  //     console.log('크레딧 강제 업데이트 트리거됨');
+  //     setForceUpdate((prev) => prev + 1);
+  //   };
 
-    window.addEventListener('credit-force-update', handleForceUpdate);
-    return () => window.removeEventListener('credit-force-update', handleForceUpdate);
-  }, []);
+  //   window.addEventListener('credit-force-update', handleForceUpdate);
+  //   return () => window.removeEventListener('credit-force-update', handleForceUpdate);
+  // }, []);
 
   // 개발 환경에서만 로그 출력하도록 제한
   if (process.env.NODE_ENV === 'development') {

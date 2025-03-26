@@ -4,12 +4,25 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, Bell, Mail, User, X, BookUser, PanelsTopLeft } from 'lucide-react';
+import {
+  Home,
+  Search,
+  Bell,
+  Mail,
+  User,
+  X,
+  BookUser,
+  PanelsTopLeft,
+  ShieldPlus,
+} from 'lucide-react';
 import { useSearchStore } from '../store/searchStore';
+import { useUserStore } from '../store/userStore';
 
 const MobileSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
   const toggleSearch = useSearchStore((state) => state.toggleSearch);
+
+  const { currentUser, isInitialized } = useUserStore();
 
   const handleSearchClick = () => {
     toggleSearch();
@@ -92,6 +105,17 @@ const MobileSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
             />
             <span className="ml-4 text-gray-900">서비스 소개</span>
           </Link>
+
+          {(currentUser?.email === 'hjdh59@gmail.com' ||
+            currentUser?.email === 'benefiboard@gmail.com') && (
+            <Link href="/admin/blog" className="block py-3 flex items-center">
+              <ShieldPlus
+                size={24}
+                className={pathname === '/admin/blog' ? 'text-emerald-500' : 'text-gray-800'}
+              />
+              <span className="ml-4 text-gray-900">관리자 모드</span>
+            </Link>
+          )}
         </nav>
       </div>
     </>

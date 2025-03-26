@@ -104,8 +104,11 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
   // 컴포넌트 마운트 시 크레딧 정보 가져오기
   useEffect(() => {
-    fetchCredits();
-  }, [fetchCredits]);
+    if (isOpen) {
+      // 모달이 열릴 때만 크레딧 정보를 가져옴
+      fetchCredits();
+    }
+  }, [isOpen]);
 
   // 목적 선택 핸들러 추가
   const handlePurposeSelect = (purpose: string) => {
@@ -143,7 +146,10 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
   // 모달이 열릴 때 초기 데이터 설정
   useEffect(() => {
-    if (isOpen && editingMemo) {
+    // 모달이 열린 상태일 때만 실행
+    if (!isOpen) return;
+
+    if (editingMemo) {
       if (mode === 'direct') {
         // 직접 수정 모드일 때
         setEditFormData({
@@ -153,28 +159,32 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
           category: editingMemo.labeling.category,
           keywords: [...editingMemo.labeling.keywords],
           key_sentence: editingMemo.labeling.key_sentence,
-          purpose: editingMemo.purpose || '일반', // purpose 추가
+          purpose: editingMemo.purpose || '일반',
         });
         setSelectedPurpose(editingMemo.purpose || '일반');
         setKeywordsInput(editingMemo.labeling.keywords.join(', '));
 
-        // 아이디어 맵 파싱
-        const parsedSections = parseIdeaMap(editingMemo.tweet_main);
-        setStructuredMap(parsedSections);
+        // 아이디어 맵 파싱 - 함수 호출 최소화
+        try {
+          const parsedSections = parseIdeaMap(editingMemo.tweet_main);
+          setStructuredMap(parsedSections);
+        } catch (error) {
+          console.error('맵 파싱 오류:', error);
+          // 기본 섹션으로 대체
+          setStructuredMap([{ heading: '', points: [''], sub_sections: [] }]);
+        }
       } else {
         // AI 분석 모드일 때
+        const text = editingMemo.original_text || editingMemo.thread.join('\n\n');
         setSelectedPurpose(editingMemo.purpose || '일반');
-        setInputText(editingMemo.original_text || editingMemo.thread.join('\n\n'));
-        setCharacterCount((editingMemo.original_text || editingMemo.thread.join('\n\n')).length);
+        setInputText(text);
+        setCharacterCount(text.length);
 
         // 필요 크레딧 계산
-        const required = Math.max(
-          1,
-          Math.ceil((editingMemo.original_text || editingMemo.thread.join('\n\n')).length / 10000)
-        );
+        const required = Math.max(1, Math.ceil(text.length / 10000));
         setRequiredCredits(required);
       }
-    } else if (isOpen) {
+    } else {
       // 새 메모 작성 모드
       resetForm();
       // 기본 섹션 설정
@@ -183,7 +193,12 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
 
     // 모달이 열릴 때마다 취소 상태 초기화
     setIsCancelled(false);
-  }, [isOpen, editingMemo, mode]);
+
+    // 모달이 닫힐 때 정리 로직
+    return () => {
+      // 모달이 닫힐 때 실행할 정리 로직 (필요시)
+    };
+  }, [isOpen, editingMemo, mode]); // 동일한 의존성 유지
 
   // 폼 리셋
   const resetForm = () => {

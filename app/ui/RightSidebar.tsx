@@ -77,7 +77,7 @@ const RightSidebar = () => {
   };
 
   return (
-    <div className="w-full pt-2 px-4 space-y-4 h-screen overflow-y-auto pb-20">
+    <div className="w-full pt-2 px-4 space-y-4 h-screen overflow-y-auto pb-20 tracking-tighter">
       {/* 1. 지식 통계 카드 */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="flex justify-between items-center p-3 border-b border-gray-200">
@@ -91,7 +91,7 @@ const RightSidebar = () => {
         </div>
 
         {expandedSections.stats && (
-          <div className="p-4 border bg-gradient-to-r from-emerald-600 to-emerald-500 border-gray-100 shadow-md text-gray-100">
+          <div className="p-4 border bg-gradient-to-r from-gray-50 to-gray-50/25 border-gray-100 shadow-md text-gray-600">
             {isLoading ? (
               <div className="flex justify-center items-center py-4">
                 <Loader2 className="animate-spin h-6 w-6 text-white mr-2" />
@@ -125,13 +125,16 @@ const RightSidebar = () => {
                         <div key={index} className="w-full">
                           <div className="flex justify-between text-xs mb-1">
                             <span>{stat.category}</span>
-                            <span>{stat.count}개</span>
+                            <div className="flex items-center gap-1">
+                              <span>{stat.count}개 </span>
+                              <span>({((stat.count / totalMemos) * 100).toFixed(1)}%)</span>
+                            </div>
                           </div>
-                          <div className="w-full bg-white/20 rounded-full h-2">
+                          <div className="w-full bg-white/20 rounded-full h-2 border border-gray-200">
                             <div
-                              className="bg-white rounded-full h-2"
+                              className="bg-gradient-to-r from-emerald-600/75 to-emerald-400/50 rounded-full h-2"
                               style={{
-                                width: `${(stat.count / categoryStats[0].count) * 100}%`,
+                                width: `${(stat.count / totalMemos) * 100}%`,
                               }}
                             ></div>
                           </div>

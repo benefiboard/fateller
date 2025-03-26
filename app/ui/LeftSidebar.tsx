@@ -12,8 +12,10 @@ import {
   User,
   BookUser,
   PanelsTopLeft,
+  ShieldPlus,
 } from 'lucide-react';
 import { useSearchStore } from '../store/searchStore';
+import { useUserStore } from '../store/userStore';
 
 // 일반 링크용 컴포넌트
 interface SidebarLinkProps {
@@ -70,6 +72,9 @@ const SidebarButton: React.FC<SidebarButtonProps> = ({
 const LeftSidebar: React.FC<{ minimized?: boolean }> = ({ minimized = false }) => {
   const pathname = usePathname();
   const toggleSearch = useSearchStore((state) => state.toggleSearch);
+
+  const { currentUser, isInitialized } = useUserStore();
+  //console.log('currentUser sidebar', currentUser?.email);
 
   // auth 경로에서는 사이드바를 표시하지 않음
   if (pathname?.startsWith('/auth')) {
@@ -148,6 +153,17 @@ const LeftSidebar: React.FC<{ minimized?: boolean }> = ({ minimized = false }) =
           active={pathname === '/introduce'}
           minimized={minimized}
         />
+
+        {(currentUser?.email === 'hjdh59@gmail.com' ||
+          currentUser?.email === 'benefiboard@gmail.com') && (
+          <SidebarLink
+            href="/admin/blog"
+            icon={<ShieldPlus size={26} />}
+            label="관리자모드"
+            active={pathname === '/admin/blog'}
+            minimized={minimized}
+          />
+        )}
       </nav>
     </div>
   );

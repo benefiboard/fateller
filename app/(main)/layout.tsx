@@ -33,7 +33,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
 
           {/* 메인 컨텐츠 영역 */}
-          <main className="flex-1 min-h-screen max-w-md w-full mx-auto border-x border-gray-200 relative">
+          <main className="flex-1 min-h-screen max-w-2xl w-full mx-auto border-x border-gray-200 relative">
             {/* 메인 컨텐츠 */}
             {children}
 

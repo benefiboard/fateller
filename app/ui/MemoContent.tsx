@@ -873,12 +873,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
   return (
     <div ref={componentRef} onTouchStart={handleTouchStart} className="">
       {/* 전체듣기 */}
-      <div className="w-full flex justify-end items-center gap-2 ">
-        <p className="text-gray-400 text-sm">듣기 </p>
-        <TTSButton text={getAllContentText()} />
+      <div className="w-full flex justify-end items-center">
+        <TTSButton text={getAllContentText()} showLabel={true} />
       </div>
       {/* 탭 네비게이션 - 애플 스타일 */}
-      <div className="mt-2 border-b border-gray-200">
+      <div className="mt-2 border-y border-gray-200">
         <div className="flex items-center justify-between">
           <button
             onClick={() => changeTab(0)}

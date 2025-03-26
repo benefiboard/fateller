@@ -216,7 +216,7 @@ export default function BlogPostPage() {
                 <hr className="flex-1 border-emerald-600/25" />
               </div>
 
-              <div className="my-2  border-t border-gray-300">
+              <div className="my-2">
                 <MemoContent
                   memo={formattedMemo}
                   expanded={true}
