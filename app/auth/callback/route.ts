@@ -128,7 +128,7 @@ export async function GET(request: Request) {
 
       // 사용자 데이터를 쿠키에 저장 - sameSite 속성 추가
       cookieStore.set('currentUser', JSON.stringify(userData), {
-        httpOnly: true,
+        httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 60 * 60 * 24 * 7, // 7 days
         path: '/',
