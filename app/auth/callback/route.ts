@@ -1,5 +1,3 @@
-// app/auth/callback/route.ts
-
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { type CookieOptions, createServerClient } from '@supabase/ssr';
@@ -39,12 +37,13 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && data.session) {
-      // 세션 데이터를 쿠키에 저장
+      // 세션 데이터를 쿠키에 저장 - sameSite 속성 추가
       cookieStore.set('access_token', data.session.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: data.session.expires_in,
         path: '/',
+        sameSite: 'lax', // 추가: 익스텐션에서 접근 가능하도록
       });
 
       // userdata 테이블의 사용자 정보 확인
@@ -127,12 +126,13 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/auth/auth-code-error`);
       }
 
-      // 사용자 데이터를 쿠키에 저장
+      // 사용자 데이터를 쿠키에 저장 - sameSite 속성 추가
       cookieStore.set('currentUser', JSON.stringify(userData), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 60 * 60 * 24 * 7, // 7 days
         path: '/',
+        sameSite: 'lax', // 추가: 익스텐션에서 접근 가능하도록
       });
 
       // 추천인 코드 쿠키 삭제 (처리 완료)

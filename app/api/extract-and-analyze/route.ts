@@ -1321,7 +1321,7 @@ export async function POST(request: NextRequest) {
     console.log(`새 콘텐츠 소스 저장 완료 (ID: ${newSource.id})`);
 
     // 6. 결과 반환 (sourceId 포함)
-    return NextResponse.json({
+    const response = NextResponse.json({
       content: extractedContent,
       sourceUrl: text,
       title: extractedTitle || '',
@@ -1329,7 +1329,17 @@ export async function POST(request: NextRequest) {
       isExtracted: true,
       type: urlType,
       sourceId: newSource.id, // 중요: 소스 ID 클라이언트에 전달
+      fromExtension: request.headers.get('origin')?.startsWith('chrome-extension://') || false,
     });
+
+    // 익스텐션에서의 요청인 경우 CORS 헤더 추가
+    const origin = request.headers.get('origin');
+    if (origin?.startsWith('chrome-extension://')) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+    }
+
+    return response;
   } catch (error: any) {
     console.error('처리 오류:', error);
     return NextResponse.json(
