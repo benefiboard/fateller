@@ -19,6 +19,21 @@ export default function InstallPrompt() {
       return;
     }
 
+    // 로컬 스토리지에서 마지막으로 프롬프트를 닫은 날짜 확인
+    const dismissedAt = localStorage.getItem('installPromptDismissedAt');
+    if (dismissedAt) {
+      const dismissedDate = new Date(dismissedAt);
+      const currentDate = new Date();
+
+      // 일주일(7일) 계산 (밀리초로 변환)
+      const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+
+      // 일주일이 지나지 않았으면 프롬프트를 표시하지 않음
+      if (currentDate.getTime() - dismissedDate.getTime() < oneWeekInMs) {
+        return;
+      }
+    }
+
     const handleBeforeInstallPrompt = (e: Event) => {
       // 브라우저 기본 설치 프롬프트 방지
       e.preventDefault();
@@ -63,8 +78,11 @@ export default function InstallPrompt() {
     setIsVisible(false);
   };
 
-  // 프롬프트 숨기기
+  // 프롬프트 숨기기 - 현재 날짜를 로컬 스토리지에 저장
   const hidePrompt = () => {
+    // 현재 날짜를 로컬 스토리지에 저장 (일주일간 표시하지 않음)
+    const currentDate = new Date().toISOString();
+    localStorage.setItem('installPromptDismissedAt', currentDate);
     setIsVisible(false);
   };
 

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useSearchStore } from '../store/searchStore';
 import { useUserStore } from '../store/userStore';
+import InstallButton from './InstallButton';
 
 const MobileSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
@@ -105,6 +106,8 @@ const MobileSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
             />
             <span className="ml-4 text-gray-900">서비스 소개</span>
           </Link>
+
+          <InstallButton />
 
           {(currentUser?.email === 'hjdh59@gmail.com' ||
             currentUser?.email === 'benefiboard@gmail.com') && (

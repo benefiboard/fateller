@@ -208,7 +208,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
       if (hasExTags) {
         processedText = processedText.replace(
           /<ex>(.*?)<\/ex>/g,
-          '<span class="italic font-bold">$1</span>'
+          '<span class="italic123 font-bold">$1</span>'
         );
       }
 
@@ -635,7 +635,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                   {content && (
                                     <>
                                       <hr className="mb-1 border-gray-400" />
-                                      <div className="text-gray-600 italic mt-1 ml-1 flex gap-1">
+                                      <div className="text-gray-600 italic123 mt-1 ml-1 flex gap-1">
                                         <div className="font-bold">: </div>
                                         {renderHTML(content)}
                                       </div>
@@ -687,7 +687,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
                                                 {title}
                                               </div>
                                               {content && (
-                                                <div className="text-gray-600 italic text-sm">
+                                                <div className="text-gray-600 italic123 text-sm">
                                                   <span className="text-xs ">: </span> {content}
                                                 </div>
                                               )}
