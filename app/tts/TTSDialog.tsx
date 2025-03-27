@@ -27,10 +27,10 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
   const dialogRef = useRef<HTMLDivElement>(null);
   const textDisplayRef = useRef<HTMLDivElement>(null);
   // 속도 관련 상태
-  const [rate, setRate] = useState<number>(1.1); // 기본 속도 1.1
-  const [selectedRate, setSelectedRate] = useState<string>('보통');
+  const [rate, setRate] = useState<number>(1.0); // 기본 속도 1.1
+  const [selectedRate, setSelectedRate] = useState<string>('1.0');
 
-  // 초기 로딩 시 텍스트를 청크로 미리 분할
+  // 초기 로딩 시 텍스트를 청크로 미리 분할하기
   useEffect(() => {
     if (text && isOpen) {
       textChunksRef.current = splitTextIntoSafeChunks(text);
@@ -639,58 +639,27 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
               </div>
 
               {/* 속도 조절 버튼 */}
-              <div className="mt-4 flex flex-wrap gap-1 border-t border-gray-200 pt-2">
-                <span className="text-sm self-center text-gray-600">재생 속도:</span>
-                <button
-                  onClick={() => handleRateChange(0.9, '느림')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium ${
-                    selectedRate === '느림'
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  느림
-                </button>
-                <button
-                  onClick={() => handleRateChange(1.0, '조금 느림')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium ${
-                    selectedRate === '조금 느림'
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  조금 느림
-                </button>
-                <button
-                  onClick={() => handleRateChange(1.1, '보통')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium ${
-                    selectedRate === '보통'
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  보통
-                </button>
-                <button
-                  onClick={() => handleRateChange(1.2, '조금 빠름')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium ${
-                    selectedRate === '조금 빠름'
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  조금 빠름
-                </button>
-                <button
-                  onClick={() => handleRateChange(1.3, '빠름')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium ${
-                    selectedRate === '빠름'
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  빠름
-                </button>
+              <div className="mt-4 flex items-center">
+                <span className="text-sm mr-3 text-gray-600">재생 속도:</span>
+
+                <div className="flex-1 flex items-center">
+                  <input
+                    type="range"
+                    min="0.8"
+                    max="1.8"
+                    step="0.1"
+                    value={rate}
+                    onChange={(e) => {
+                      const newRate = parseFloat(e.target.value);
+                      handleRateChange(newRate, newRate.toString());
+                    }}
+                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                  />
+
+                  <span className="ml-3 text-sm font-medium text-emerald-600 min-w-[40px] text-right">
+                    {rate.toFixed(1)}x
+                  </span>
+                </div>
               </div>
 
               {statusMessage && (
