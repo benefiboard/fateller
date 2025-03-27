@@ -28,7 +28,10 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
   const dialogRef = useRef<HTMLDivElement>(null);
   const textDisplayRef = useRef<HTMLDivElement>(null);
   // 속도 관련 상태
-  const [rate, setRate] = useState<number>(1.0); // 기본 속도 1.1
+  const [rate, setRate] = useState<number>(() => {
+    const savedRate = localStorage.getItem('tts-rate');
+    return savedRate ? parseFloat(savedRate) : 1.0;
+  });
   const [selectedRate, setSelectedRate] = useState<string>('1.0');
   // 창닫아도 재생
   const noSleepRef = useRef<NoSleep | null>(null);
@@ -466,6 +469,7 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
   };
 
   // 속도 변경 버튼 클릭 핸들러
+  // 속도 변경 버튼 클릭 핸들러
   const handleRateChange = (newRate: number, rateName: string) => {
     // 이전 속도와 동일하면 작업 중단
     if (newRate === rate) return;
@@ -473,6 +477,9 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
     // 상태 업데이트
     setRate(newRate);
     setSelectedRate(rateName);
+
+    // localStorage에 속도 저장 - 다음에 앱을 열 때도 기억하기 위함
+    localStorage.setItem('tts-rate', newRate.toString());
 
     // 재생 중인 경우
     if (isSpeaking) {
