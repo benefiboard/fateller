@@ -26,6 +26,9 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
   const shouldStopRef = useRef<boolean>(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const textDisplayRef = useRef<HTMLDivElement>(null);
+  // 속도 관련 상태
+  const [rate, setRate] = useState<number>(1.1); // 기본 속도 1.1
+  const [selectedRate, setSelectedRate] = useState<string>('보통');
 
   // 초기 로딩 시 텍스트를 청크로 미리 분할
   useEffect(() => {
@@ -145,7 +148,15 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
   };
 
   // 다음 청크 읽기 함수
-  const speakNextChunk = () => {
+  // 다음 청크 읽기 함수 (매개변수로 현재 속도를 받을 수 있도록 수정)
+  const speakNextChunk = (currentRate = rate) => {
+    // speechSynthesis가 누적된 발화가 있다면 모두 취소
+    try {
+      window.speechSynthesis.cancel();
+    } catch (error) {
+      console.error('Speech synthesis cancel error:', error);
+    }
+
     const chunks = textChunksRef.current;
     const currentIndex = currentChunkRef.current;
 
@@ -155,12 +166,14 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
         setStatusMessage('읽기 완료');
       }
       setIsSpeaking(false);
+      setIsPaused(false);
       setCurrentChunkIndex(-1);
       return;
     }
 
-    const chunk = chunks[currentIndex];
+    // UI와 내부 상태 동기화 확실히 하기
     setCurrentChunkIndex(currentIndex);
+    const chunk = chunks[currentIndex];
     setStatusMessage(`읽는 중`);
 
     try {
@@ -173,9 +186,18 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
         utterance.lang = 'ko-KR';
       }
 
-      // 완료 이벤트 핸들러
+      // 매개변수로 받은 속도 사용
+      utterance.rate = currentRate;
+
+      // 완료 이벤트가 확실히 발생하게 처리
+      let onEndCalled = false;
+
       utterance.onend = () => {
+        if (onEndCalled) return;
+        onEndCalled = true;
+
         if (!shouldStopRef.current) {
+          // 다음 청크로 이동
           currentChunkRef.current = currentIndex + 1;
 
           // 문장 끝이나 숫자로 시작하는 항목 사이에 짧은 지연 추가
@@ -201,18 +223,23 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
           }
 
           setTimeout(() => {
-            speakNextChunk();
+            // 동일한 속도로 다음 청크 재생
+            speakNextChunk(currentRate);
           }, delay);
         }
       };
 
       utterance.onerror = (event) => {
         console.error('발화 오류:', event);
-        // 오류가 발생해도 다음 청크로 진행
+
+        if (onEndCalled) return;
+        onEndCalled = true;
+
         if (!shouldStopRef.current) {
           currentChunkRef.current = currentIndex + 1;
           setTimeout(() => {
-            speakNextChunk();
+            // 동일한 속도로 다음 청크 재생
+            speakNextChunk(currentRate);
           }, 100);
         }
       };
@@ -224,7 +251,8 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
       if (!shouldStopRef.current) {
         currentChunkRef.current = currentIndex + 1;
         setTimeout(() => {
-          speakNextChunk();
+          // 동일한 속도로 다음 청크 재생
+          speakNextChunk(currentRate);
         }, 100);
       }
     }
@@ -407,6 +435,53 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
     setStatusMessage('정지됨');
   };
 
+  // 속도 변경 버튼 클릭 핸들러
+  const handleRateChange = (newRate: number, rateName: string) => {
+    // 이전 속도와 동일하면 작업 중단
+    if (newRate === rate) return;
+
+    // 상태 업데이트
+    setRate(newRate);
+    setSelectedRate(rateName);
+
+    // 재생 중인 경우
+    if (isSpeaking) {
+      // 현재 상태 저장
+      const currentIndex = currentChunkRef.current;
+      const wasPaused = isPaused;
+
+      // Web Speech API 완전 정지
+      shouldStopRef.current = true;
+      window.speechSynthesis.cancel();
+
+      // 충분히 긴 지연 설정 (500ms)
+      setTimeout(() => {
+        // 정지 신호 해제
+        shouldStopRef.current = false;
+
+        // 재생 위치 복원 (UI와 실제 재생 위치 모두 동기화)
+        currentChunkRef.current = currentIndex;
+        setCurrentChunkIndex(currentIndex);
+
+        // 여기가 중요! - 참조 변수를 생성해서 현재 속도를 저장
+        const currentRate = newRate; // 클로저에서 현재 전달된 newRate 값 사용
+
+        // 재생 상태였을 경우에만 재개
+        if (!wasPaused) {
+          setIsSpeaking(true);
+          setTimeout(() => {
+            // 수정된 speakNextChunk 호출
+            speakNextChunk(currentRate);
+          }, 100);
+        } else {
+          // 일시정지 상태 복원
+          setIsSpeaking(true);
+          setIsPaused(true);
+        }
+      }, 500); // 충분히 긴 지연 시간
+    }
+  };
+
   // 다이얼로그 닫기 핸들러
   const handleClose = () => {
     if (isSpeaking) {
@@ -561,6 +636,61 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
                     </button>
                   </>
                 )}
+              </div>
+
+              {/* 속도 조절 버튼 */}
+              <div className="mt-4 flex flex-wrap gap-1 border-t border-gray-200 pt-2">
+                <span className="text-sm self-center text-gray-600">재생 속도:</span>
+                <button
+                  onClick={() => handleRateChange(0.9, '느림')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    selectedRate === '느림'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  느림
+                </button>
+                <button
+                  onClick={() => handleRateChange(1.0, '조금 느림')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    selectedRate === '조금 느림'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  조금 느림
+                </button>
+                <button
+                  onClick={() => handleRateChange(1.1, '보통')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    selectedRate === '보통'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  보통
+                </button>
+                <button
+                  onClick={() => handleRateChange(1.2, '조금 빠름')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    selectedRate === '조금 빠름'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  조금 빠름
+                </button>
+                <button
+                  onClick={() => handleRateChange(1.3, '빠름')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    selectedRate === '빠름'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  빠름
+                </button>
               </div>
 
               {statusMessage && (

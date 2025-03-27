@@ -8,6 +8,9 @@ import { extractAndAnalyze } from '../utils/apiClient';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreditStore } from '../store/creditStore';
 
+// Configuration constants
+const MAX_INPUT_LENGTH = 10000;
+
 // 처리 단계 타입 정의
 export type ProcessingStep = 'idle' | 'extracting' | 'analyzing';
 
@@ -181,7 +184,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
         setCharacterCount(text.length);
 
         // 필요 크레딧 계산
-        const required = Math.max(1, Math.ceil(text.length / 10000));
+        const required = Math.max(1, Math.ceil(text.length / MAX_INPUT_LENGTH));
         setRequiredCredits(required);
       }
     } else {
@@ -230,7 +233,7 @@ const ComposerModal: React.FC<ComposerModalProps> = ({
     setCharacterCount(text.length);
 
     // 필요 크레딧 계산
-    const required = Math.max(1, Math.ceil(text.length / 10000));
+    const required = Math.max(1, Math.ceil(text.length / MAX_INPUT_LENGTH));
     setRequiredCredits(required);
   };
 
@@ -924,7 +927,7 @@ YouTube 링크를 입력하세요...`;
                     value={inputText}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
-                    maxLength={10000}
+                    maxLength={MAX_INPUT_LENGTH}
                   ></textarea>
 
                   {error && (
@@ -983,10 +986,12 @@ YouTube 링크를 입력하세요...`;
                       <div className="mt-2 flex items-center justify-between ">
                         <div
                           className={` mr-3 flex flex-col items-end ${
-                            characterCount > 10000 ? 'text-red-500' : 'text-gray-500'
+                            characterCount > MAX_INPUT_LENGTH ? 'text-red-500' : 'text-gray-500'
                           }`}
                         >
-                          <div>{characterCount}/10000</div>
+                          <div>
+                            {characterCount}/{MAX_INPUT_LENGTH}
+                          </div>
                           {/* <div
                             className={`text-xs ${
                               requiredCredits > 1 ? 'text-amber-600 font-medium' : 'text-gray-500'
@@ -998,12 +1003,14 @@ YouTube 링크를 입력하세요...`;
                         <button
                           type="button"
                           className={`rounded-full px-8 py-2 text-white font-bold ${
-                            !inputText.trim() || isSubmitting || characterCount > 10000
+                            !inputText.trim() || isSubmitting || characterCount > MAX_INPUT_LENGTH
                               ? 'bg-emerald-400 cursor-not-allowed'
                               : 'bg-emerald-600 hover:bg-teal-600'
                           }`}
                           onClick={handleSubmit}
-                          disabled={!inputText.trim() || isSubmitting || characterCount > 10000}
+                          disabled={
+                            !inputText.trim() || isSubmitting || characterCount > MAX_INPUT_LENGTH
+                          }
                         >
                           {isSubmitting ? (
                             <Loader size={16} className="animate-spin" />
