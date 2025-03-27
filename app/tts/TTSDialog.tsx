@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { X, Volume2, PauseCircle, PlayCircle, CircleStop } from 'lucide-react';
 import React from 'react';
+import NoSleep from 'nosleep.js';
 
 interface TTSDialogProps {
   isOpen: boolean;
@@ -29,6 +30,8 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
   // 속도 관련 상태
   const [rate, setRate] = useState<number>(1.0); // 기본 속도 1.1
   const [selectedRate, setSelectedRate] = useState<string>('1.0');
+  // 창닫아도 재생
+  const noSleepRef = useRef<NoSleep | null>(null);
 
   // 초기 로딩 시 텍스트를 청크로 미리 분할하기
   useEffect(() => {
@@ -128,6 +131,19 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
       setCurrentChunkIndex(-1);
     };
   }, [isOpen]);
+
+  //창닫아도재생
+  useEffect(() => {
+    // 컴포넌트 마운트 시 NoSleep 인스턴스 생성
+    noSleepRef.current = new NoSleep();
+
+    // 컴포넌트 언마운트 시 정리
+    return () => {
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
+    };
+  }, []);
 
   // 읽기 시작 함수
   const startSpeaking = () => {
@@ -403,6 +419,14 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
   const handlePlay = () => {
     if (isSpeaking) return;
 
+    // 화면 깨우기 활성화
+    if (noSleepRef.current) {
+      noSleepRef.current
+        .enable()
+        .then(() => console.log('NoSleep 활성화됨'))
+        .catch((error) => console.error('NoSleep 활성화 오류:', error));
+    }
+
     // 청크가 비어 있으면 초기화
     if (textChunksRef.current.length === 0) {
       textChunksRef.current = splitTextIntoSafeChunks(text);
@@ -433,6 +457,12 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
   const handleStop = () => {
     stopSpeaking();
     setStatusMessage('정지됨');
+
+    // 화면 깨우기 비활성화
+    if (noSleepRef.current) {
+      noSleepRef.current.disable();
+      console.log('NoSleep 비활성화됨');
+    }
   };
 
   // 속도 변경 버튼 클릭 핸들러
@@ -487,9 +517,14 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
     if (isSpeaking) {
       stopSpeaking();
     }
+
+    // 화면 깨우기 비활성화
+    if (noSleepRef.current) {
+      noSleepRef.current.disable();
+    }
+
     onClose();
   };
-
   // 청크 렌더링 - 노래방 스타일 하이라이트 및 구분선 처리
   // 청크 렌더링 - 노래방 스타일 하이라이트 및 구분선 처리
   const renderChunks = () => {
