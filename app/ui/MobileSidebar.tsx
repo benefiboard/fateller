@@ -107,7 +107,9 @@ const MobileSidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
             <span className="ml-4 text-gray-900">서비스 소개</span>
           </Link>
 
-          <InstallButton />
+          <div className="w-full pt-4 mt-8 border-t border-gray-200">
+            <InstallButton />
+          </div>
 
           {(currentUser?.email === 'hjdh59@gmail.com' ||
             currentUser?.email === 'benefiboard@gmail.com') && (

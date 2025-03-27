@@ -76,6 +76,7 @@ export default function InstallButton({ className, children }: InstallButtonProp
         className ||
         'bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-medium py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition-all text-sm flex items-center'
       }
+      disabled={!canInstall} // 설치할 수 없으면 비활성화
     >
       {children || (
         <>
