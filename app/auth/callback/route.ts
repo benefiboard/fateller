@@ -39,11 +39,11 @@ export async function GET(request: Request) {
     if (!error && data.session) {
       // 세션 데이터를 쿠키에 저장 - sameSite 속성 추가
       cookieStore.set('access_token', data.session.access_token, {
-        httpOnly: true,
+        httpOnly: false, // 자바스크립트 접근 허용
         secure: process.env.NODE_ENV === 'production',
         maxAge: data.session.expires_in,
         path: '/',
-        sameSite: 'lax', // 추가: 익스텐션에서 접근 가능하도록
+        sameSite: 'none', // 크로스 사이트 허용
       });
 
       // userdata 테이블의 사용자 정보 확인
