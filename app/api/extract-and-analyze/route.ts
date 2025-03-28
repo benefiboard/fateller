@@ -1253,7 +1253,7 @@ export async function POST(request: NextRequest) {
         const article = reader.parse();
 
         if (!article || !article.textContent || article.textContent.length < 100) {
-          throw new Error('콘텐츠를 충분히 추출할 수 없습니다.');
+          throw new Error('웹사이트 추출 불가, 복사하여 직접 입력해주세요');
         }
 
         // 접근 제한 체크
