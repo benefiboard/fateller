@@ -10,15 +10,18 @@ import {
   Search,
   MessageCirclePlus,
   ChevronsUp,
+  CircleX,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 // UI 컴포넌트 임포트 - 필수 컴포넌트만 직접 임포트
 import Header from '../../ui/Header';
 import MemoItem from '../../ui/MemoItem';
+import MemoItemAtMain from '../../ui/MemoItemAtMain'; // 새로 만든 컴포넌트 임포트
 import Notification from '../../ui/Notification';
 import BottomNavigation from '../../ui/BottomNavigation';
 import SearchAndFilterBar from '../../ui/SearchAndFilterBar';
+import MemoContent from '../../ui/MemoContent';
 
 // 지연 로딩할 컴포넌트들
 const ComposerModal = dynamic(() => import('../../ui/ComposerModal'), {
@@ -90,6 +93,9 @@ const MemoPageContent: React.FC = () => {
   // 알림 표시 여부 상태
   const [showNotificationState, setShowNotificationState] = useState(false);
 
+  // 스크롤 위치를 저장할 ref 추가
+  const lastScrollPosition = useRef(0);
+
   // 유저 정보 - 메모이제이션으로 불필요한 계산 방지
   const currentUser = useUserStore((state) => state.currentUser);
 
@@ -120,7 +126,7 @@ const MemoPageContent: React.FC = () => {
     updateMemoWithAI,
     updateMemoDirect,
     deleteMemo,
-    saveThought, // 이 함수를 가져와야 함
+    saveThought,
     deleteThought,
     likeMemo,
     retweetMemo,
@@ -132,7 +138,6 @@ const MemoPageContent: React.FC = () => {
     category: selectedCategory,
     purpose: selectedPurpose,
     sortOption,
-    // initialPageSize 속성 제거
   });
 
   // 화면에 표시할 메모 필터링 - 메모이제이션 적용
@@ -151,6 +156,130 @@ const MemoPageContent: React.FC = () => {
 
   // 백그라운드 처리 훅
   const { processUrl, cancelTask, cancelAllTasks } = useBackgroundProcess();
+
+  // -------------------- 메모 상세 모달 관련 상태 추가 --------------------
+  // 선택된 메모 ID와 모달 가시성 상태
+  const [selectedMemoId, setSelectedMemoId] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  // 선택된 메모 객체 - 메모이제이션으로 최적화
+  const selectedMemo = useMemo(() => {
+    if (!selectedMemoId) return null;
+    return memos.find((m) => m.id === selectedMemoId) || null;
+  }, [selectedMemoId, memos]);
+
+  // 메모 선택 핸들러
+  const handleSelectMemo = useCallback((id: string) => {
+    setSelectedMemoId(id);
+    setIsModalVisible(true);
+    // body에 모달 열림 클래스 추가
+    document.body.classList.add('modal-open');
+    // URL 업데이트 (페이지 이동 없이)
+    window.history.pushState({}, '', `/memo/detail/${id}`);
+  }, []);
+
+  // 모달 닫기 핸들러
+  const handleCloseModal = useCallback(() => {
+    setIsModalVisible(false);
+    document.body.classList.remove('modal-open');
+
+    // URL 원래대로 복원 (지연 처리)
+    setTimeout(() => {
+      window.history.pushState({}, '', '/memo');
+    }, 10);
+  }, []);
+
+  // 모달이 열렸을 때 body 스크롤 잠금
+  // useEffect 부분 수정
+  useEffect(() => {
+    if (isModalVisible) {
+      // 현재 스크롤 위치 저장
+      lastScrollPosition.current = window.scrollY;
+
+      // body 스크롤 잠금
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${lastScrollPosition.current}px`;
+      document.body.style.overflow = 'hidden';
+
+      const preventOutsideTouch = (e: any) => {
+        if (!e.target.closest('.modal-content')) {
+          e.preventDefault();
+        }
+      };
+
+      document.addEventListener('touchmove', preventOutsideTouch, { passive: false });
+
+      return () => {
+        // 스타일 초기화
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.top = '';
+        document.body.style.overflow = '';
+
+        // 스크롤 위치 복원 (setTimeout으로 지연 처리)
+        setTimeout(() => {
+          window.scrollTo({
+            top: lastScrollPosition.current,
+            behavior: 'auto', // 'smooth'가 아닌 'auto'로 설정하여 즉시 이동
+          });
+        }, 0);
+
+        document.removeEventListener('touchmove', preventOutsideTouch);
+      };
+    }
+  }, [isModalVisible]);
+
+  // 브라우저 뒤로가기/앞으로가기 감지 이벤트 리스너
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      // URL에서 현재 경로 확인
+      const path = window.location.pathname;
+
+      // 메모 상세 URL 패턴인지 확인
+      const detailMatch = path.match(/\/memo\/detail\/(.+)/);
+
+      if (detailMatch) {
+        // 메모 상세 URL이면 모달 표시
+        const id = detailMatch[1];
+        setSelectedMemoId(id);
+        setIsModalVisible(true);
+        document.body.classList.add('modal-open');
+      } else {
+        // 아니면 모달 닫기
+        setIsModalVisible(false);
+        document.body.classList.remove('modal-open');
+      }
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener('popstate', handlePopState);
+
+    // 컴포넌트 언마운트 시 이벤트 리스너 제거
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  // URL에서 메모 ID 확인 (초기 로드 시)
+  useEffect(() => {
+    if (memos.length > 0) {
+      // URL에서 현재 경로 확인
+      const path = window.location.pathname;
+
+      // 메모 상세 URL 패턴인지 확인
+      const detailMatch = path.match(/\/memo\/detail\/(.+)/);
+
+      if (detailMatch) {
+        // 메모 상세 URL이면 모달 표시
+        const id = detailMatch[1];
+        setSelectedMemoId(id);
+        setIsModalVisible(true);
+        document.body.classList.add('modal-open');
+      }
+    }
+  }, [memos]);
+  // --------------------------------------------------------------------
 
   // 검색어 변경 핸들러
   const handleSearch = useCallback((term: string) => {
@@ -716,7 +845,7 @@ const MemoPageContent: React.FC = () => {
 
       {/* 메모 작성 버튼 */}
       {!showComposer && (
-        <div className="max-w-2xl mx-auto w-full fixed bottom-8 right-0 left-0 md:-right-16 lg:right-32 flex justify-end pr-4 z-10">
+        <div className="max-w-2xl mx-auto w-full fixed bottom-8 right-0 left-0 md:-right-16 lg:right-32 flex justify-end pr-4 z-[50]">
           <div className="flex flex-col gap-2">
             <button
               onClick={handleScrollToTop}
@@ -789,7 +918,7 @@ const MemoPageContent: React.FC = () => {
                 ref={index === visibleMemos.length - 1 ? lastMemoRef : undefined}
                 className="transition-opacity duration-300 opacity-100"
               >
-                <MemoItem
+                <MemoItemAtMain
                   memo={memo}
                   profile={profile}
                   memoState={
@@ -807,8 +936,9 @@ const MemoPageContent: React.FC = () => {
                   onEdit={handleEdit}
                   onAnalyze={handleAnalyze}
                   onDelete={handleDelete}
-                  onSaveThought={saveThought} // 이 함수를 전달해야 함
+                  onSaveThought={saveThought}
                   onDeleteThought={deleteThought}
+                  onSelectMemo={handleSelectMemo}
                 />
               </div>
             ))}
@@ -835,6 +965,45 @@ const MemoPageContent: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* 메모 상세 모달 - 개선된 이벤트 핸들링 */}
+      {isModalVisible && selectedMemo && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center sm:p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleCloseModal();
+          }}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-2xl w-full modal-content flex flex-col max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 모달 헤더 - 수정된 부분 */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+              <h3 className="font-semibold text-lg">메모 상세</h3>
+              <button onClick={handleCloseModal} className="p-2 rounded-full hover:bg-gray-100">
+                <CircleX className="text-gray-600" />
+              </button>
+            </div>
+
+            {/* 메모 내용 - 수정된 부분 */}
+            <div className="overflow-y-auto flex-1 p-4" style={{ overscrollBehavior: 'contain' }}>
+              <MemoContent
+                memo={selectedMemo}
+                expanded={true}
+                showLabeling={true}
+                showOriginal={false}
+                onToggleThread={() => {}}
+                onToggleLabeling={() => {}}
+                onToggleOriginal={() => {}}
+                isVisible={true}
+                onSaveThought={saveThought}
+                onDeleteThought={deleteThought}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 글로벌 알림 모달 - 동적 임포트된 컴포넌트 */}
       {showGlobalAlert && (
@@ -865,6 +1034,21 @@ const MemoPageContent: React.FC = () => {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+
+        /* 모달이 열렸을 때 body 스크롤 방지 */
+        body.modal-open {
+          overflow: hidden;
+          position: fixed;
+          width: 100%;
+          height: 100%;
+          touch-action: none;
+        }
+
+        /* 모달 컨테이너에 이벤트 전파 중단 스타일 */
+        .modal-container {
+          isolation: isolate;
+          touch-action: none;
         }
 
         /* 추가: 이미지 로딩 최적화를 위한 속성 */

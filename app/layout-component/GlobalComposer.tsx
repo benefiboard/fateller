@@ -47,7 +47,7 @@ export default function GlobalComposer(): JSX.Element {
   return (
     <>
       {/* 플로팅 액션 버튼들 */}
-      <div className="fixed flex flex-col gap-2 bottom-20 right-4 z-10 md:bottom-8">
+      <div className="fixed flex flex-col gap-2 bottom-20 right-4 z-[100] md:bottom-8">
         {showScrollTop && (
           <button
             onClick={handleScrollToTop}
