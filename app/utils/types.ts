@@ -63,6 +63,7 @@ export interface Memo {
   has_embedding?: boolean;
   purpose?: string;
   source_id?: string; // 추가: 소스 ID 연결
+  i_think?: string;
 }
 
 export interface NotificationType {
@@ -87,8 +88,10 @@ export interface MemoContentProps {
   onToggleOriginal: () => void;
   isVisible?: boolean; // 메모가 화면에 보이는지 여부
   hideImageInBlog?: boolean;
+  onSaveThought?: (memoId: string, thought: string) => Promise<void>; // 내 생각 저장 함수
+  onDeleteThought?: (memoId: string) => Promise<void>; // 내 생각 삭제 함수
+  hideThoughtButton?: boolean;
 }
-
 export interface MemoItemProps {
   memo: Memo;
   profile: Profile;
@@ -106,6 +109,8 @@ export interface MemoItemProps {
   onShare?: (memo: Memo) => void; // 공유 기능 추가
   onFindRelated?: (id: string) => void; // 관련 메모 찾기 기능 추가
   onGenerateInsight?: (id: string) => void; // 인사이트 생성 기능 추가
+  onSaveThought?: (memoId: string, thought: string) => Promise<void>; // 추가
+  onDeleteThought?: (memoId: string) => Promise<void>; // 추가
 }
 
 // 블로그 게시물 관련 타입

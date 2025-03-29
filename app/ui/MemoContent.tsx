@@ -11,13 +11,17 @@ import {
   Quote,
   Share,
   ChevronRight,
+  Edit,
+  Trash,
 } from 'lucide-react';
 import Link from 'next/link';
 import ShareButton from './ShareButton';
 import TTSButton from '../tts/TTSButton';
+import ThoughtButton from './ThoughtButton';
+import ThoughtDialog from './ThoughtDialog';
 
-// 탭 인덱스 타입 정의
-type TabIndex = 0 | 1 | 2 | 3; // 0: 아이디어, 1: 아이디어 맵, 2: 주요 내용, 3: 원문
+// 탭 인덱스 타입 정의 - 내 생각 탭 추가
+type TabIndex = 0 | 1 | 2 | 3 | 4; // 0: 아이디어, 1: 아이디어 맵, 2: 주요 내용, 3: 원문, 4: 내 생각
 
 interface IdeaPoint {
   [key: string]: any;
@@ -51,6 +55,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
   onToggleOriginal,
   isVisible = false,
   hideImageInBlog = false,
+  onSaveThought, // 새로 추가된 prop
+  onDeleteThought, // 새로 추가된 prop
+  hideThoughtButton = false,
 }) => {
   // 탭 관리를 위한 상태
   const [activeTab, setActiveTab] = useState<TabIndex>(0);
@@ -59,6 +66,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
   // 탭 변경 여부를 추적하는 상태 추가
   const [isTabChanging, setIsTabChanging] = useState(false);
+  // 내생각
+  const [localThought, setLocalThought] = useState<string | undefined>(memo.i_think);
+  const [isThoughtDialogOpen, setIsThoughtDialogOpen] = useState(false);
 
   // 현재 진행 중인 스크롤 작업이 있는지 추적
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -66,16 +76,70 @@ const MemoContent: React.FC<MemoContentProps> = ({
   // 컴포넌트 전체에 대한 ref 추가
   const componentRef = useRef<HTMLDivElement>(null);
 
-  // 각 탭에 대한 ref 추가
+  // 각 탭에 대한 ref 추가 - thought 추가
   const tabRefs = {
     idea: useRef<HTMLDivElement>(null),
     main: useRef<HTMLDivElement>(null),
     key: useRef<HTMLDivElement>(null),
     original: useRef<HTMLDivElement>(null),
+    thought: useRef<HTMLDivElement>(null), // 내 생각 탭 ref 추가
   };
 
   // 이전 터치 위치 추적 (Y축 스와이프 방지용)
   const touchStartRef = useRef({ x: 0, y: 0 });
+
+  console.log('MemoContent 렌더링:', memo.id, 'i_think:', memo.i_think);
+
+  // 내 생각 편집/삭제 핸들러
+  const handleSaveThoughtFromDialog = async (thought: string) => {
+    if (onSaveThought && memo.id) {
+      try {
+        await onSaveThought(memo.id, thought);
+        // 로컬 상태 즉시 업데이트
+        setLocalThought(thought);
+        // memo 객체 직접 수정 (약간 안전하지 않은 방식이지만 즉시 반영을 위해)
+        memo.i_think = thought;
+
+        return Promise.resolve();
+      } catch (error) {
+        console.error('저장 실패:', error);
+        return Promise.reject(error);
+      }
+    }
+    return Promise.resolve();
+  };
+
+  // handleDeleteThought 함수 업데이트
+  const handleDeleteThought = async () => {
+    if (onDeleteThought && memo.id) {
+      try {
+        await onDeleteThought(memo.id);
+
+        // 로컬 상태 명시적으로 업데이트 (중요!)
+        setLocalThought(undefined);
+
+        // memo 객체 직접 수정 (즉시 반영을 위해)
+        memo.i_think = undefined;
+
+        // 탭 전환 (선택 사항)
+        if (activeTab === 4) {
+          // 내 생각 탭이 활성화된 상태라면 다른 탭으로 변경
+          setActiveTab(0);
+        }
+
+        // 강제 리렌더링 (선택 사항)
+        setIsTabChanging(true);
+        setTimeout(() => setIsTabChanging(false), 50);
+
+        console.log('내 생각이 삭제되었습니다.');
+        return Promise.resolve();
+      } catch (error) {
+        console.error('삭제 실패:', error);
+        return Promise.reject(error);
+      }
+    }
+    return Promise.resolve();
+  };
 
   // 탭 변경 시 컴포넌트 상단으로 스크롤하는 함수
   const scrollToComponentTop = () => {
@@ -100,8 +164,8 @@ const MemoContent: React.FC<MemoContentProps> = ({
     }
   };
 
-  // 현재 탭에 따른 타입 가져오기
-  const getCurrentTabType = (): 'idea' | 'main' | 'key' | 'original' => {
+  // 현재 탭에 따른 타입 가져오기 - thought 타입 추가
+  const getCurrentTabType = (): 'idea' | 'main' | 'key' | 'original' | 'thought' => {
     switch (activeTab) {
       case 0:
         return 'idea';
@@ -110,7 +174,9 @@ const MemoContent: React.FC<MemoContentProps> = ({
       case 2:
         return 'main';
       case 3:
-        return 'original';
+        return 'thought'; // 내 생각으로 변경
+      case 4:
+        return 'original'; // 원문으로 변경
       default:
         return 'idea';
     }
@@ -242,30 +308,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
     const currentIndex = activeTab;
     const targetIndex = newTab;
 
-    if (
-      (currentIndex === 0 && targetIndex === 1) ||
-      (currentIndex === 1 && targetIndex === 2) ||
-      (currentIndex === 2 && targetIndex === 3) ||
-      (currentIndex === 3 && targetIndex === 0)
-    ) {
+    // 방향 로직 수정 - 모든 탭 전환을 고려
+    if (targetIndex > currentIndex) {
       setDirection(1); // 오른쪽으로 이동
-    } else if (
-      (currentIndex === 1 && targetIndex === 0) ||
-      (currentIndex === 2 && targetIndex === 1) ||
-      (currentIndex === 3 && targetIndex === 2) ||
-      (currentIndex === 0 && targetIndex === 3)
-    ) {
-      setDirection(-1); // 왼쪽으로 이동
     } else {
-      // 특이 케이스
-      const diff = targetIndex - currentIndex;
-      if (Math.abs(diff) === 2) {
-        if (currentIndex < targetIndex) {
-          setDirection(1);
-        } else {
-          setDirection(-1);
-        }
-      }
+      setDirection(-1); // 왼쪽으로 이동
     }
 
     setActiveTab(newTab);
@@ -273,22 +320,46 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
   // 스와이프로 다음 탭으로 이동
   const goToNextTab = () => {
-    // 탭 변경 상태 설정
     setIsTabChanging(true);
 
-    const nextTab = (activeTab === 3 ? 0 : activeTab + 1) as TabIndex;
+    if (memo.i_think) {
+      // 내 생각 탭이 있는 경우 (0,1,2,3,4)
+      const nextTab = activeTab >= 4 ? 0 : activeTab + 1;
+      setActiveTab(nextTab as TabIndex);
+    } else {
+      // 내 생각 탭이 없는 경우 - 3 건너뛰기 (0,1,2,4)
+      if (activeTab === 2) {
+        setActiveTab(4);
+      } else if (activeTab === 4) {
+        setActiveTab(0);
+      } else {
+        setActiveTab((activeTab + 1) as TabIndex);
+      }
+    }
+
     setDirection(1); // 오른쪽으로 이동
-    setActiveTab(nextTab);
   };
 
   // 스와이프로 이전 탭으로 이동
   const goToPrevTab = () => {
-    // 탭 변경 상태 설정
     setIsTabChanging(true);
 
-    const prevTab = (activeTab === 0 ? 3 : activeTab - 1) as TabIndex;
+    if (memo.i_think) {
+      // 내 생각 탭이 있는 경우 (0,1,2,3,4)
+      const prevTab = activeTab <= 0 ? 4 : activeTab - 1;
+      setActiveTab(prevTab as TabIndex);
+    } else {
+      // 내 생각 탭이 없는 경우 - 3 건너뛰기 (0,1,2,4)
+      if (activeTab === 0) {
+        setActiveTab(4);
+      } else if (activeTab === 4) {
+        setActiveTab(2);
+      } else {
+        setActiveTab((activeTab - 1) as TabIndex);
+      }
+    }
+
     setDirection(-1); // 왼쪽으로 이동
-    setActiveTab(prevTab);
   };
 
   // 원문 내용 표시 토글 함수
@@ -389,7 +460,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
     return text;
   };
 
-  // 전체 텍스트를 가져오는 함수 추가 - 개선된 버전
+  // 내 생각 탭 텍스트 가져오기 (새로 추가)
+  const getThoughtText = () => {
+    return memo.i_think || '';
+  };
+
+  // 전체 텍스트를 가져오는 함수 - 내 생각 탭 추가
   const getAllContentText = () => {
     // 1. 구분선과 아이디어 탭 내용
     const ideaText = `\n [ 아이디어 ] \n\n\n${getIdeaText()}\n\n`;
@@ -400,8 +476,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
     // 3. 구분선과 주요 내용 탭 내용
     const mainText = `\n [ 주요 내용 ] \n\n\n${getMainContentText()}`;
 
+    // 4. 내 생각 탭 내용 (있을 경우에만)
+    const thoughtText = memo.i_think ? `\n\n [ 내 생각 ] \n\n\n${getThoughtText()}\n\n` : '';
+
     // 모든 내용 합치기
-    return ideaText + ideaMapText + mainText;
+    return ideaText + ideaMapText + mainText + thoughtText;
   };
 
   // 슬라이드 애니메이션 variants - 수정됨
@@ -444,6 +523,12 @@ const MemoContent: React.FC<MemoContentProps> = ({
       }
     };
   }, []);
+
+  // memo.i_think가 변경될 때 localThought 동기화
+  useEffect(() => {
+    console.log('memo.i_think 변경 감지:', memo.i_think);
+    setLocalThought(memo.i_think);
+  }, [memo.i_think]);
 
   // 터치 이벤트 핸들러 - Y축 스와이프와 X축 스와이프 구분
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -760,7 +845,54 @@ const MemoContent: React.FC<MemoContentProps> = ({
           </div>
         );
 
-      case 3: // 원문
+      case 3: // 내 생각
+        return (
+          <div className="pt-4 min-h-96 pb-8 flex flex-col" ref={tabRefs.thought}>
+            {/* 헤더 */}
+            <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between">
+              <h2 className="tracking-tight text-base font-semibold text-gray-900">내 생각</h2>
+              <div className="flex items-center gap-1 text-gray-400">
+                <ShareButton
+                  memo={memo}
+                  tabType="thought"
+                  contentRef={tabRefs.thought}
+                  onShareSuccess={handleShareSuccess}
+                  onShareError={handleShareError}
+                />
+              </div>
+            </div>
+
+            {/* 내 생각 콘텐츠 */}
+            <div className="flex-1 p-4 my-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+              <p className="text-base text-gray-800 leading-relaxed whitespace-pre-wrap">
+                {renderHTML(memo.i_think || '')}
+              </p>
+            </div>
+
+            {/* 수정/삭제 버튼 추가 */}
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                onClick={() => setIsThoughtDialogOpen(true)}
+                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md flex items-center gap-2"
+              >
+                <Edit size={16} /> 수정하기
+              </button>
+
+              <button
+                onClick={() => {
+                  if (window.confirm('정말로 삭제하시겠습니까?')) {
+                    handleDeleteThought();
+                  }
+                }}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md flex items-center gap-2"
+              >
+                <Trash size={16} /> 삭제하기
+              </button>
+            </div>
+          </div>
+        );
+
+      case 4: // 원문 (원래 case 3의 내용)
         return (
           <div className="pt-4 min-h-96 flex flex-col" ref={tabRefs.original}>
             {/* 헤더 */}
@@ -873,10 +1005,27 @@ const MemoContent: React.FC<MemoContentProps> = ({
   return (
     <div ref={componentRef} onTouchStart={handleTouchStart} className="">
       {/* 전체듣기 */}
-      <div className="w-full flex justify-end items-center">
+      <div className="w-full flex justify-end items-center gap-2 py-2">
+        {/* hideThoughtButton이 false일 때만 ThoughtButton 렌더링 */}
+        {!hideThoughtButton && (
+          <>
+            <ThoughtButton
+              memoId={memo.id || ''}
+              initialThought={memo.i_think}
+              onSaveThought={(memoId, thought) => {
+                console.log('ThoughtButton에서 MemoContent로:', memoId, thought);
+                return handleSaveThoughtFromDialog(thought);
+              }}
+              onDeleteThought={handleDeleteThought}
+            />
+            <p className="text-gray-400">||</p>
+          </>
+        )}
+
         <TTSButton text={getAllContentText()} showLabel={true} />
       </div>
-      {/* 탭 네비게이션 - 애플 스타일 */}
+
+      {/* 탭 네비게이션 - 수정된 버전 */}
       <div className="mt-2 border-y border-gray-200">
         <div className="flex items-center justify-between">
           <button
@@ -912,10 +1061,25 @@ const MemoContent: React.FC<MemoContentProps> = ({
             주요 내용
           </button>
 
+          {/* 내 생각 탭 - 가용성 확인 */}
+          {(memo.i_think !== null && memo.i_think !== undefined) ||
+          (localThought !== null && localThought !== undefined) ? (
+            <button
+              onClick={() => changeTab(3)} /* 수정됨: 4에서 3으로 */
+              className={`relative px-3 py-2 text-sm transition-colors ${
+                activeTab === 3 /* 수정됨: 4에서 3으로 */
+                  ? 'font-bold text-gray-900 border-b-2 border-gray-900'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              내 생각
+            </button>
+          ) : null}
+
           <button
-            onClick={() => changeTab(3)}
+            onClick={() => changeTab(4)}
             className={`relative px-3 py-2 text-sm transition-colors ${
-              activeTab === 3
+              activeTab === 4
                 ? 'font-bold text-gray-900 border-b-2 border-gray-900'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
@@ -954,6 +1118,15 @@ const MemoContent: React.FC<MemoContentProps> = ({
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* ThoughtDialog 직접 추가 */}
+      <ThoughtDialog
+        isOpen={isThoughtDialogOpen}
+        onClose={() => setIsThoughtDialogOpen(false)}
+        initialThought={memo.i_think}
+        onSave={handleSaveThoughtFromDialog}
+        onDelete={handleDeleteThought}
+      />
     </div>
   );
 };

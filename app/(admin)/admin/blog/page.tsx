@@ -17,6 +17,8 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
+  EyeOff,
+  Eye,
 } from 'lucide-react';
 import createSupabaseBrowserClient from '@/lib/supabse/client';
 import { BlogPost, ContentSource, ContentSummary, BlogCategory } from '@/app/utils/types';
@@ -27,11 +29,18 @@ interface SourceWithSummaries extends ContentSource {
   summaries: ContentSummary[];
 }
 
-// 선택된 항목 타입 정의
+// 선택된 항목 타입 정의 - 카테고리 필드 추가
 interface SelectedItem {
   sourceId: string;
   summaryId: string;
   title: string;
+  category: string; // 카테고리 필드 추가
+}
+
+// 이미 블로그에 추가된 항목 타입 정의
+interface ExistingBlogItem {
+  source_id: string;
+  summary_id: string;
 }
 
 export default function AdminBlogPage() {
@@ -71,6 +80,10 @@ export default function AdminBlogPage() {
   const [totalBlogPosts, setTotalBlogPosts] = useState<number>(0);
   const [totalSources, setTotalSources] = useState<number>(0);
   const itemsPerPage = 15; // 페이지당 15개 항목
+
+  // 이미 블로그에 추가된 항목 상태 및 필터링 설정
+  const [existingBlogItems, setExistingBlogItems] = useState<ExistingBlogItem[]>([]);
+  const [hideExistingItems, setHideExistingItems] = useState<boolean>(true);
 
   const supabase = createSupabaseBrowserClient();
 
@@ -117,6 +130,22 @@ export default function AdminBlogPage() {
       if (error) throw error;
       setBlogPosts((data as BlogPost[]) || []);
 
+      // 기존 블로그 항목 데이터 수집 - 이 부분이 추가됨
+      const existingItems = (data as BlogPost[]).map((post) => ({
+        sourceId: post.source_id,
+        summaryId: post.summary_id,
+      }));
+
+      // 페이지네이션되지 않은 모든 블로그 게시물 정보 가져오기
+      const { data: allPosts, error: allPostsError } = await supabase
+        .from('blog_posts')
+        .select('source_id, summary_id');
+
+      if (allPostsError) throw allPostsError;
+
+      // 모든 기존 항목 설정
+      setExistingBlogItems((allPosts as ExistingBlogItem[]) || []);
+
       // 카테고리 목록 가져오기
       const uniqueCategories = Array.from(
         new Set(data?.map((post) => post.summary?.category).filter(Boolean))
@@ -128,6 +157,29 @@ export default function AdminBlogPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 콘텐츠 소스 필터링 함수 (이미 블로그에 추가된 항목 필터링)
+  const filterContentSources = (sources: SourceWithSummaries[]): SourceWithSummaries[] => {
+    if (!hideExistingItems) return sources;
+
+    return sources
+      .map((source) => {
+        // summaries 배열에서 이미 블로그에 추가된 항목 필터링
+        const filteredSummaries =
+          source.summaries?.filter(
+            (summary) =>
+              !existingBlogItems.some(
+                (item) => item.source_id === source.id && item.summary_id === summary.id
+              )
+          ) || [];
+
+        return {
+          ...source,
+          summaries: filteredSummaries,
+        };
+      })
+      .filter((source) => source.summaries && source.summaries.length > 0); // 필터링 후 summary가 없는 소스는 제외
   };
 
   // 원본 콘텐츠 및 요약 검색
@@ -164,7 +216,9 @@ export default function AdminBlogPage() {
       const { data, error } = await query;
 
       if (error) throw error;
-      setSources((data as SourceWithSummaries[]) || []);
+
+      // 결과를 필터링하여 설정 (이 부분이 수정됨)
+      setSources(filterContentSources(data as SourceWithSummaries[]) || []);
     } catch (error) {
       console.error('콘텐츠 검색 오류:', error);
       alert('콘텐츠를 검색하는 중 오류가 발생했습니다.');
@@ -229,7 +283,9 @@ export default function AdminBlogPage() {
         .range(from, to);
 
       if (error) throw error;
-      setSources((data as SourceWithSummaries[]) || []);
+
+      // 결과를 필터링하여 설정 (이 부분이 수정됨)
+      setSources(filterContentSources(data as SourceWithSummaries[]) || []);
     } catch (error) {
       console.error('사용자 ID로 콘텐츠 검색 오류:', error);
       alert('사용자 ID로 콘텐츠를 검색하는 중 오류가 발생했습니다.');
@@ -238,15 +294,20 @@ export default function AdminBlogPage() {
     }
   };
 
-  // 항목 선택 토글 (NEW)
-  const toggleSourceSelection = (sourceId: string, summaryId: string, title: string) => {
+  // 항목 선택 토글 (카테고리 매개변수 추가)
+  const toggleSourceSelection = (
+    sourceId: string,
+    summaryId: string,
+    title: string,
+    category: string
+  ) => {
     const itemIndex = selectedSourceItems.findIndex(
       (item) => item.sourceId === sourceId && item.summaryId === summaryId
     );
 
     if (itemIndex === -1) {
-      // 항목 추가
-      setSelectedSourceItems([...selectedSourceItems, { sourceId, summaryId, title }]);
+      // 항목 추가 (카테고리 포함)
+      setSelectedSourceItems([...selectedSourceItems, { sourceId, summaryId, title, category }]);
     } else {
       // 항목 제거
       setSelectedSourceItems(
@@ -257,7 +318,7 @@ export default function AdminBlogPage() {
     }
   };
 
-  // 전체 선택/해제 (NEW)
+  // 전체 선택/해제 (카테고리 추가)
   const toggleSelectAll = () => {
     if (selectedSourceItems.length === 0) {
       // 모든 항목 선택
@@ -269,6 +330,7 @@ export default function AdminBlogPage() {
               sourceId: source.id,
               summaryId: summary.id,
               title: summary.title,
+              category: summary.category, // 카테고리 추가
             });
           });
         }
@@ -308,8 +370,24 @@ export default function AdminBlogPage() {
 
       if (error) throw error;
 
+      // 추가된 항목을 existingBlogItems에 추가
+      setExistingBlogItems([
+        ...existingBlogItems,
+        { source_id: source.id, summary_id: summary.id },
+      ]);
+
       alert('블로그에 게시물이 추가되었습니다!');
       loadBlogPosts();
+
+      // 이미 추가된 항목 숨기기가 켜져 있으면 목록 새로고침
+      if (hideExistingItems) {
+        if (userIdSearch) {
+          searchContentSourcesByUserId();
+        } else if (sourceSearchTerm) {
+          searchContentSources();
+        }
+      }
+
       setActiveTab('posts');
     } catch (error) {
       console.error('블로그 게시물 추가 오류:', error);
@@ -317,7 +395,7 @@ export default function AdminBlogPage() {
     }
   };
 
-  // 여러 항목을 블로그에 추가 (NEW)
+  // 여러 항목을 블로그에 추가 (카테고리 포함)
   const addMultipleToBlog = async () => {
     if (selectedSourceItems.length === 0) {
       alert('선택된 항목이 없습니다.');
@@ -345,6 +423,7 @@ export default function AdminBlogPage() {
         return {
           source_id: item.sourceId,
           summary_id: item.summaryId,
+          category: item.category, // 카테고리 추가
           slug,
           published: true,
           featured: false,
@@ -355,6 +434,14 @@ export default function AdminBlogPage() {
       const { data, error } = await supabase.from('blog_posts').insert(blogPosts).select();
 
       if (error) throw error;
+
+      // 추가된 항목들을 existingBlogItems에 추가
+      const newExistingItems = selectedSourceItems.map((item) => ({
+        source_id: item.sourceId,
+        summary_id: item.summaryId,
+      }));
+
+      setExistingBlogItems([...existingBlogItems, ...newExistingItems]);
 
       alert(`${selectedSourceItems.length}개의 게시물이 블로그에 추가되었습니다!`);
       setSelectedSourceItems([]);
@@ -371,9 +458,25 @@ export default function AdminBlogPage() {
     if (!confirm('정말로 이 게시물을 블로그에서 삭제하시겠습니까?')) return;
 
     try {
+      // 삭제 전에 항목 정보 저장
+      const postToRemove = blogPosts.find((post) => post.id === id);
+
       const { error } = await supabase.from('blog_posts').delete().eq('id', id);
 
       if (error) throw error;
+
+      // existingBlogItems에서도 해당 항목 제거
+      if (postToRemove) {
+        setExistingBlogItems(
+          existingBlogItems.filter(
+            (item) =>
+              !(
+                item.source_id === postToRemove.source_id &&
+                item.summary_id === postToRemove.summary_id
+              )
+          )
+        );
+      }
 
       alert('게시물이 블로그에서 삭제되었습니다.');
       setBlogPosts(blogPosts.filter((post) => post.id !== id));
@@ -513,6 +616,17 @@ export default function AdminBlogPage() {
       }
     }
   }, [currentSourcePage]);
+
+  // 필터링 옵션 변경 시 데이터 다시 로드
+  useEffect(() => {
+    if (activeTab === 'sources') {
+      if (userIdSearch) {
+        searchContentSourcesByUserId();
+      } else if (sourceSearchTerm) {
+        searchContentSources();
+      }
+    }
+  }, [hideExistingItems]);
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -780,6 +894,35 @@ export default function AdminBlogPage() {
               </div>
             </div>
 
+            {/* 필터링 옵션 추가 - NEW */}
+            <div className="mb-6 flex items-center">
+              <button
+                onClick={() => setHideExistingItems(!hideExistingItems)}
+                className={`flex items-center px-3 py-2 text-sm border rounded-md ${
+                  hideExistingItems
+                    ? 'bg-gray-100 text-gray-700 border-gray-300'
+                    : 'bg-white text-gray-700 border-gray-300'
+                }`}
+              >
+                {hideExistingItems ? (
+                  <>
+                    <EyeOff className="h-4 w-4 mr-2" />
+                    이미 추가된 항목 숨기는 중
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4 mr-2" />
+                    모든 항목 표시 중
+                  </>
+                )}
+              </button>
+              <span className="ml-3 text-xs text-gray-500">
+                {hideExistingItems
+                  ? '이미 블로그에 추가된 항목은 표시되지 않습니다.'
+                  : '모든 항목이 표시됩니다.'}
+              </span>
+            </div>
+
             {/* 선택된 항목 관리 및 일괄 추가 버튼 - NEW */}
             {selectedSourceItems.length > 0 && (
               <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
@@ -850,7 +993,9 @@ export default function AdminBlogPage() {
                     <tr>
                       <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                         {sourceSearchTerm || userIdSearch
-                          ? '검색 결과가 없습니다'
+                          ? hideExistingItems
+                            ? '검색 결과가 없거나 모든 항목이 이미 블로그에 추가되었습니다.'
+                            : '검색 결과가 없습니다.'
                           : '검색어를 입력하여 원본 콘텐츠를 검색하세요'}
                       </td>
                     </tr>
@@ -869,7 +1014,12 @@ export default function AdminBlogPage() {
                                       item.sourceId === source.id && item.summaryId === summary.id
                                   )}
                                   onChange={() =>
-                                    toggleSourceSelection(source.id, summary.id, summary.title)
+                                    toggleSourceSelection(
+                                      source.id,
+                                      summary.id,
+                                      summary.title,
+                                      summary.category
+                                    )
                                   }
                                   className="w-4 h-4"
                                 />

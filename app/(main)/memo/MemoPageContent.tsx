@@ -120,6 +120,8 @@ const MemoPageContent: React.FC = () => {
     updateMemoWithAI,
     updateMemoDirect,
     deleteMemo,
+    saveThought, // 이 함수를 가져와야 함
+    deleteThought,
     likeMemo,
     retweetMemo,
     replyToMemo,
@@ -805,6 +807,8 @@ const MemoPageContent: React.FC = () => {
                   onEdit={handleEdit}
                   onAnalyze={handleAnalyze}
                   onDelete={handleDelete}
+                  onSaveThought={saveThought} // 이 함수를 전달해야 함
+                  onDeleteThought={deleteThought}
                 />
               </div>
             ))}

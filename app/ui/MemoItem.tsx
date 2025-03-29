@@ -43,6 +43,8 @@ const MemoItem: React.FC<MemoItemProps> = ({
   onShare,
   onFindRelated,
   onGenerateInsight,
+  onSaveThought, // 추가
+  onDeleteThought,
 }) => {
   // 옵션 드롭다운 상태
   const [showOptions, setShowOptions] = useState(false);
@@ -298,6 +300,8 @@ const MemoItem: React.FC<MemoItemProps> = ({
           onToggleLabeling={() => memo.id && onToggleLabeling(memo.id)}
           onToggleOriginal={() => memo.id && onToggleOriginal(memo.id)}
           isVisible={isVisible}
+          onSaveThought={onSaveThought} // 전달
+          onDeleteThought={onDeleteThought}
         />
       </div>
     </article>

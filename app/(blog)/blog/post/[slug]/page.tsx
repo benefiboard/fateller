@@ -227,6 +227,7 @@ export default function BlogPostPage() {
                   onToggleOriginal={() => {}}
                   isVisible={true}
                   hideImageInBlog={true}
+                  hideThoughtButton={true}
                 />
               </div>
             </div>

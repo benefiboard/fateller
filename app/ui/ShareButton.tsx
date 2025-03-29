@@ -17,7 +17,7 @@ interface ShareButtonProps {
   // 공유할 메모 데이터
   memo: any;
   // 현재 활성화된 탭 (idea, main, key, original)
-  tabType: 'idea' | 'main' | 'key' | 'original';
+  tabType: 'idea' | 'main' | 'key' | 'original' | 'thought';
   // 캡처할 요소의 ref
   contentRef: React.RefObject<HTMLElement>;
   // 버튼 스타일

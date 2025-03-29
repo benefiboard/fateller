@@ -133,6 +133,7 @@ export const useMemos = (options: SearchOptions = {}) => {
         original_url: memo.original_url,
         original_title: memo.original_title,
         original_image: memo.original_image,
+        i_think: memo.i_think,
         labeling: {
           category: memo.category,
           keywords: memo.keywords,
@@ -258,6 +259,7 @@ export const useMemos = (options: SearchOptions = {}) => {
         original_url: memo.original_url || '',
         original_title: memo.original_title || '',
         original_image: memo.original_image || '',
+        i_think: memo.i_think,
         labeling: {
           category: memo.category || '미분류',
           keywords: memo.keywords || [],
@@ -637,6 +639,7 @@ export const useMemos = (options: SearchOptions = {}) => {
         original_title: newMemo.original_title || options.originalTitle || '',
         original_image: newMemo.original_image || options.originalImage || '',
         original_url: newMemo.original_url || options.sourceUrl || '',
+        i_think: newMemo.i_think,
         labeling: {
           category: newMemo.category,
           keywords: newMemo.keywords,
@@ -958,6 +961,126 @@ export const useMemos = (options: SearchOptions = {}) => {
     }
   };
 
+  // saveThought 함수 수정
+  const saveThought = async (memoId: string, thought: string): Promise<void> => {
+    if (!user_id) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    console.log('useMemos.ts에서 저장:', { memoId, thought });
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Supabase에 업데이트
+      const { data, error } = await supabase
+        .from('memos')
+        .update({
+          i_think: thought,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', memoId)
+        .eq('user_id', user_id);
+
+      if (error) {
+        console.error('내 생각 저장 오류:', error);
+        throw new Error(`내 생각 저장 오류: ${error.message}`);
+      }
+
+      console.log('내 생각 저장 성공 결과:', data);
+
+      // 더 명확한 불변성을 보장하는 방식으로 상태 업데이트
+      setMemos((prevMemos) => {
+        // 원본 배열 복사
+        const newMemos = [...prevMemos];
+
+        // 메모 인덱스 찾기
+        const index = newMemos.findIndex((memo) => memo.id === memoId);
+
+        if (index !== -1) {
+          // 완전히 새로운 객체로 교체
+          newMemos[index] = {
+            ...newMemos[index],
+            i_think: thought,
+            time: formatTimeAgo(new Date()),
+          };
+        }
+
+        return newMemos;
+      });
+
+      // 성공 후 전체 메모 다시 로드 (선택 사항)
+      // await loadMemosWithFixedRange();
+    } catch (error: any) {
+      console.error('내 생각 저장 오류:', error);
+      setError(`내 생각을 저장하는 중 오류가 발생했습니다: ${error.message}`);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 내 생각 삭제 함수
+  const deleteThought = async (memoId: string): Promise<void> => {
+    if (!user_id) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log(`내 생각 삭제 시도: ${memoId}`);
+
+      const { data, error } = await supabase
+        .from('memos')
+        .update({
+          i_think: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', memoId)
+        .eq('user_id', user_id);
+
+      if (error) {
+        console.error('내 생각 삭제 오류:', error);
+        throw new Error(`내 생각 삭제 오류: ${error.message}`);
+      }
+
+      console.log('내 생각 삭제 성공');
+
+      // 명확하게 불변성을 유지하면서 상태 업데이트
+      setMemos((prevMemos) => {
+        // 원본 배열 복사
+        const newMemos = [...prevMemos];
+
+        // 메모 인덱스 찾기
+        const index = newMemos.findIndex((memo) => memo.id === memoId);
+
+        if (index !== -1) {
+          // 완전히 새로운 객체로 교체 - null로 설정 (undefined가 아닌)
+          newMemos[index] = {
+            ...newMemos[index],
+            i_think: undefined, // null로 명시적 설정 (undefined에서 수정)
+            time: formatTimeAgo(new Date()),
+          };
+        }
+
+        console.log(`메모 상태 업데이트 완료: 인덱스 ${index}, i_think는 이제 null`);
+        return newMemos;
+      });
+
+      // 이벤트 트리거로 강제 갱신 (선택 사항)
+      window.dispatchEvent(new Event('memo-updated'));
+    } catch (error: any) {
+      console.error('내 생각 삭제 오류:', error);
+      setError(`내 생각을 삭제하는 중 오류가 발생했습니다: ${error.message}`);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 좋아요 처리
   const likeMemo = async (memoId: string) => {
     if (!user_id) return;
@@ -1090,6 +1213,8 @@ export const useMemos = (options: SearchOptions = {}) => {
     updateMemoWithAI,
     updateMemoDirect,
     deleteMemo,
+    saveThought,
+    deleteThought,
     likeMemo,
     retweetMemo,
     replyToMemo,
