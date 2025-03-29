@@ -969,14 +969,13 @@ const MemoPageContent: React.FC = () => {
       {/* 메모 상세 모달 - 개선된 이벤트 핸들링 */}
       {isModalVisible && selectedMemo && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center sm:p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) handleCloseModal();
           }}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full modal-content flex flex-col"
-            style={{ maxHeight: '90vh' }}
+            className="bg-white rounded-lg shadow-xl max-w-2xl w-full modal-content flex flex-col max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 모달 헤더 - 수정된 부분 */}
