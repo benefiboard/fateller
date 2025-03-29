@@ -1,3 +1,5 @@
+//app/ui/MemoContent.tsx
+
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -64,7 +66,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
   const [direction, setDirection] = useState(0); // 슬라이드 방향 (-1: 왼쪽, 1: 오른쪽)
   const [showOriginalText, setShowOriginalText] = useState(false);
 
-  // 탭 변경 여부를 추적하는 상태 추가
+  // 탭 변경 여부를 추적하는 상태 추가F<Me
   const [isTabChanging, setIsTabChanging] = useState(false);
   // 내생각
   const [localThought, setLocalThought] = useState<string | undefined>(memo.i_think);
