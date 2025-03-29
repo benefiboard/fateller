@@ -799,7 +799,7 @@ const MemoPageContent: React.FC = () => {
       </Suspense>
 
       {/* 메모 목록 - 블로그 스타일 적용 */}
-      <div className="space-y-12 sm:space-y-8 p-4">
+      <div className="space-y-8 p-4">
         {visibleMemos.length === 0 && !isLoading ? (
           <div className="p-10 text-center text-gray-500">
             {searchTerm || selectedCategory ? (
@@ -842,7 +842,7 @@ const MemoPageContent: React.FC = () => {
                   </div>
 
                   {/* 우측 텍스트 */}
-                  <div className="flex-1 h-full flex flex-col  justify-between">
+                  <div className="flex-1 h-full flex flex-col  justify-between px-4 sm:px-0">
                     <div className="flex flex-wrap gap-1 mb-3">
                       <span className="inline-block px-2 py-1 text-sm font-medium bg-emerald-100 text-emerald-800 rounded-full">
                         {memo.labeling?.category || '미분류'}
