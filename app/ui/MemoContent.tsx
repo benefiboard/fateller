@@ -1032,7 +1032,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
         <div className="flex items-center justify-between">
           <button
             onClick={() => changeTab(0)}
-            className={`relative px-3 py-2 text-sm transition-colors ${
+            className={`relative p-2 sm:px-3 py-2 text-sm transition-colors ${
               activeTab === 0
                 ? 'font-bold text-gray-900 border-b-2 border-gray-900'
                 : 'text-gray-500 hover:text-gray-700'
@@ -1043,7 +1043,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
           <button
             onClick={() => changeTab(1)}
-            className={`relative px-3 py-2 text-sm transition-colors ${
+            className={`relative p-2 sm:px-3 py-2 text-sm transition-colors ${
               activeTab === 1
                 ? 'font-bold text-gray-900 border-b-2 border-gray-900'
                 : 'text-gray-500 hover:text-gray-700'
@@ -1054,7 +1054,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
           <button
             onClick={() => changeTab(2)}
-            className={`relative px-3 py-2 text-sm transition-colors ${
+            className={`relative p-2 sm:px-3 py-2 text-sm transition-colors ${
               activeTab === 2
                 ? 'font-bold text-gray-900 border-b-2 border-gray-900'
                 : 'text-gray-500 hover:text-gray-700'
@@ -1068,7 +1068,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
           (localThought !== null && localThought !== undefined) ? (
             <button
               onClick={() => changeTab(3)} /* 수정됨: 4에서 3으로 */
-              className={`relative px-3 py-2 text-sm transition-colors ${
+              className={`relative p-2 sm:px-3 py-2 text-sm transition-colors ${
                 activeTab === 3 /* 수정됨: 4에서 3으로 */
                   ? 'font-bold text-gray-900 border-b-2 border-gray-900'
                   : 'text-gray-500 hover:text-gray-700'
@@ -1080,7 +1080,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
           <button
             onClick={() => changeTab(4)}
-            className={`relative px-3 py-2 text-sm transition-colors ${
+            className={`relative p-2 sm:px-3 py-2 text-sm transition-colors ${
               activeTab === 4
                 ? 'font-bold text-gray-900 border-b-2 border-gray-900'
                 : 'text-gray-500 hover:text-gray-700'
