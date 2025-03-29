@@ -15,6 +15,8 @@ import {
   Quote,
   Pencil,
   Trash2,
+  MoveLeft,
+  Notebook,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -57,6 +59,16 @@ import useBackgroundProcess from '../../hooks/useBackgroundProcess';
 import { useUserStore } from '../../store/userStore';
 import { useSearchStore } from '../../store/searchStore';
 import { useCreditStore } from '@/app/store/creditStore';
+import { useMemoStore } from '@/app/store/memoStore';
+import { Memo } from '@/app/utils/types';
+import MemoContent from '@/app/ui/MemoContent';
+
+// TypeScript 에러 방지를 위해 window 인터페이스 확장
+declare global {
+  interface Window {
+    __memoDisplayCount?: number;
+  }
+}
 
 // 상단 알림 인터페이스
 interface TopAlert {
@@ -71,6 +83,16 @@ const INITIAL_MEMO_COUNT = 5;
 const MemoPageContent: React.FC = () => {
   // --- 상태 관리 최적화 ---
   // 필수 상태만 먼저, 그 외는 지연 초기화
+
+  // 메모 모달 상태 (선택된 메모를 보여주기 위한 상태)
+  const [selectedMemo, setSelectedMemo] = useState<Memo | null>(null);
+  // 알림 훅을 더 일찍 가져옵니다
+  const { notification, showNotification } = useNotification();
+
+  // 모달 닫기 핸들러
+  const handleCloseModal = () => {
+    setSelectedMemo(null);
+  };
 
   // 컴포저 모달 관련 상태 (사용자 상호작용 발생 시에만 필요)
   const [showComposer, setShowComposer] = useState(false);
@@ -251,6 +273,181 @@ const MemoPageContent: React.FC = () => {
     };
   }, []);
 
+  // useMemos에서 데이터를 가져온 후 바로 Zustand 스토어에 저장
+  useEffect(() => {
+    if (memos.length > 0) {
+      useMemoStore.getState().setMemos(memos);
+    }
+  }, [memos]);
+
+  // 모달 열릴 때 body 스크롤 방지
+  useEffect(() => {
+    if (selectedMemo) {
+      // 모달 열릴 때 body 스크롤 비활성화
+      document.body.style.overflow = 'hidden';
+    } else {
+      // 모달 닫힐 때 body 스크롤 복원
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedMemo]);
+
+  // 무한 스크롤을 위한 옵저버 - 최적화
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastMemoRef = useCallback(
+    (node: HTMLDivElement) => {
+      if (isLoading) return;
+
+      // 이전 observer 정리
+      if (observer.current) observer.current.disconnect();
+
+      // 새 observer 생성
+      observer.current = new IntersectionObserver((entries) => {
+        // 마지막 메모가 화면에 보이고 더 불러올 메모가 있으면 추가 로드
+        if (entries[0].isIntersecting && hasMore) {
+          // 화면에 표시할 메모 수를 먼저 늘리고
+          setDisplayCount((prev) => prev + INITIAL_MEMO_COUNT);
+
+          // 필요한 경우 추가 데이터 로드
+          if (memos.length < displayCount + INITIAL_MEMO_COUNT) {
+            loadMoreMemos();
+          }
+        }
+      });
+
+      // 마지막 메모 요소 관찰 시작
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, hasMore, loadMoreMemos, memos.length, displayCount]
+  );
+
+  // 최상단으로 스크롤하는 함수
+  const handleScrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // 메모 상태 훅
+  const { memoStates, toggleThread, toggleLabeling, toggleOriginal } = useMemosState(visibleMemos);
+
+  // 모달 열기 핸들러
+  const handleOpenComposer = useCallback(
+    (mode: 'direct' | 'analyze', memoId?: string) => {
+      if (!memoId && mode === 'direct') {
+        showNotification('새 메모는 AI 분석 모드로만 작성할 수 있습니다.', 'error');
+        return;
+      }
+
+      setEditMode(mode);
+      setEditingMemoId(memoId || null);
+      setShowComposer(true);
+    },
+    [showNotification]
+  );
+
+  // 모달 닫기 핸들러
+  const handleCloseComposer = useCallback(() => {
+    setShowComposer(false);
+    setEditingMemoId(null);
+  }, []);
+
+  // 메모 제출 처리
+  const handleSubmit = useCallback(
+    async (data: any) => {
+      try {
+        if (data.mode === 'analyze') {
+          if (editingMemoId) {
+            await updateMemoWithAI(editingMemoId, data.text, {
+              isUrl: data.isUrl,
+              sourceUrl: data.sourceUrl,
+              originalTitle: data.originalTitle || '',
+              originalImage: data.originalImage || '',
+              purpose: data.purpose || '일반',
+            });
+            showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
+          } else {
+            await createMemo(data.text, {
+              isUrl: data.isUrl,
+              sourceUrl: data.sourceUrl,
+              originalTitle: data.originalTitle || '',
+              originalImage: data.originalImage || '',
+              purpose: data.purpose || '일반',
+            });
+            showNotification('새 메모가 성공적으로 생성되었습니다.', 'success');
+          }
+        } else if (data.mode === 'direct' && editingMemoId) {
+          await updateMemoDirect(editingMemoId, {
+            title: data.title,
+            tweet_main: data.tweet_main,
+            thread: data.thread,
+            category: data.category,
+            keywords: data.keywords,
+            key_sentence: data.key_sentence,
+            purpose: data.purpose || '일반',
+          });
+          showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
+        }
+
+        handleCloseComposer();
+      } catch (error: any) {
+        showNotification(`오류가 발생했습니다: ${error.message}`, 'error');
+      }
+    },
+    [
+      createMemo,
+      editingMemoId,
+      handleCloseComposer,
+      showNotification,
+      updateMemoDirect,
+      updateMemoWithAI,
+    ]
+  );
+
+  // 메모 편집 핸들러
+  const handleEdit = useCallback(
+    (memo: any) => {
+      handleOpenComposer('direct', memo.id);
+    },
+    [handleOpenComposer]
+  );
+
+  // 메모 분석 핸들러
+  const handleAnalyze = useCallback(
+    (memo: any) => {
+      handleOpenComposer('analyze', memo.id);
+    },
+    [handleOpenComposer]
+  );
+
+  // 메모 삭제 핸들러
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        await deleteMemo(id);
+        showNotification('메모가 삭제되었습니다.', 'success');
+      } catch (error: any) {
+        showNotification(`삭제 중 오류가 발생했습니다: ${error.message}`, 'error');
+      }
+    },
+    [deleteMemo, showNotification]
+  );
+
+  const handlePurposeSelect = useCallback((purpose: string | null) => {
+    console.log('목적 선택:', purpose);
+    setSelectedPurpose(purpose);
+    setDisplayCount(INITIAL_MEMO_COUNT); // 필터 변경 시 표시 개수 초기화
+  }, []);
+
+  const searchVisible = useSearchStore((state) => state.searchVisible);
+
+  // 메모 클릭 핸들러 - 모달로 표시
+  const handleMemoClick = useCallback((e: React.MouseEvent, memo: Memo) => {
+    e.preventDefault(); // 링크 이동 방지
+    setSelectedMemo(memo); // 모달에 표시할 메모 설정
+    useMemoStore.getState().setCurrentMemo(memo);
+  }, []);
+
   // 백그라운드 처리 + 알림 함수
   const handleBackgroundProcessWithAlert = useCallback(
     async (data: any, alertMessage: string) => {
@@ -277,9 +474,6 @@ const MemoPageContent: React.FC = () => {
     });
     setShowGlobalAlert(true);
   }, []);
-
-  // 알림 훅을 더 일찍 가져옵니다
-  const { notification, showNotification } = useNotification();
 
   // 오류 처리 함수
   const handleProcessError = useCallback(
@@ -537,153 +731,6 @@ const MemoPageContent: React.FC = () => {
     ]
   );
 
-  // 무한 스크롤을 위한 옵저버 - 최적화
-  const observer = useRef<IntersectionObserver | null>(null);
-  const lastMemoRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (isLoading) return;
-
-      // 이전 observer 정리
-      if (observer.current) observer.current.disconnect();
-
-      // 새 observer 생성
-      observer.current = new IntersectionObserver((entries) => {
-        // 마지막 메모가 화면에 보이고 더 불러올 메모가 있으면 추가 로드
-        if (entries[0].isIntersecting && hasMore) {
-          // 화면에 표시할 메모 수를 먼저 늘리고
-          setDisplayCount((prev) => prev + INITIAL_MEMO_COUNT);
-
-          // 필요한 경우 추가 데이터 로드
-          if (memos.length < displayCount + INITIAL_MEMO_COUNT) {
-            loadMoreMemos();
-          }
-        }
-      });
-
-      // 마지막 메모 요소 관찰 시작
-      if (node) observer.current.observe(node);
-    },
-    [isLoading, hasMore, loadMoreMemos, memos.length, displayCount]
-  );
-
-  // 최상단으로 스크롤하는 함수
-  const handleScrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  // 메모 상태 훅
-  const { memoStates, toggleThread, toggleLabeling, toggleOriginal } = useMemosState(visibleMemos);
-
-  // 모달 열기 핸들러
-  const handleOpenComposer = useCallback(
-    (mode: 'direct' | 'analyze', memoId?: string) => {
-      if (!memoId && mode === 'direct') {
-        showNotification('새 메모는 AI 분석 모드로만 작성할 수 있습니다.', 'error');
-        return;
-      }
-
-      setEditMode(mode);
-      setEditingMemoId(memoId || null);
-      setShowComposer(true);
-    },
-    [showNotification]
-  );
-
-  // 모달 닫기 핸들러
-  const handleCloseComposer = useCallback(() => {
-    setShowComposer(false);
-    setEditingMemoId(null);
-  }, []);
-
-  // 메모 제출 처리
-  const handleSubmit = useCallback(
-    async (data: any) => {
-      try {
-        if (data.mode === 'analyze') {
-          if (editingMemoId) {
-            await updateMemoWithAI(editingMemoId, data.text, {
-              isUrl: data.isUrl,
-              sourceUrl: data.sourceUrl,
-              originalTitle: data.originalTitle || '',
-              originalImage: data.originalImage || '',
-              purpose: data.purpose || '일반',
-            });
-            showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
-          } else {
-            await createMemo(data.text, {
-              isUrl: data.isUrl,
-              sourceUrl: data.sourceUrl,
-              originalTitle: data.originalTitle || '',
-              originalImage: data.originalImage || '',
-              purpose: data.purpose || '일반',
-            });
-            showNotification('새 메모가 성공적으로 생성되었습니다.', 'success');
-          }
-        } else if (data.mode === 'direct' && editingMemoId) {
-          await updateMemoDirect(editingMemoId, {
-            title: data.title,
-            tweet_main: data.tweet_main,
-            thread: data.thread,
-            category: data.category,
-            keywords: data.keywords,
-            key_sentence: data.key_sentence,
-            purpose: data.purpose || '일반',
-          });
-          showNotification('메모가 성공적으로 업데이트되었습니다.', 'success');
-        }
-
-        handleCloseComposer();
-      } catch (error: any) {
-        showNotification(`오류가 발생했습니다: ${error.message}`, 'error');
-      }
-    },
-    [
-      createMemo,
-      editingMemoId,
-      handleCloseComposer,
-      showNotification,
-      updateMemoDirect,
-      updateMemoWithAI,
-    ]
-  );
-
-  // 메모 편집 핸들러
-  const handleEdit = useCallback(
-    (memo: any) => {
-      handleOpenComposer('direct', memo.id);
-    },
-    [handleOpenComposer]
-  );
-
-  // 메모 분석 핸들러
-  const handleAnalyze = useCallback(
-    (memo: any) => {
-      handleOpenComposer('analyze', memo.id);
-    },
-    [handleOpenComposer]
-  );
-
-  // 메모 삭제 핸들러
-  const handleDelete = useCallback(
-    async (id: string) => {
-      try {
-        await deleteMemo(id);
-        showNotification('메모가 삭제되었습니다.', 'success');
-      } catch (error: any) {
-        showNotification(`삭제 중 오류가 발생했습니다: ${error.message}`, 'error');
-      }
-    },
-    [deleteMemo, showNotification]
-  );
-
-  const handlePurposeSelect = useCallback((purpose: string | null) => {
-    console.log('목적 선택:', purpose);
-    setSelectedPurpose(purpose);
-    setDisplayCount(INITIAL_MEMO_COUNT); // 필터 변경 시 표시 개수 초기화
-  }, []);
-
-  const searchVisible = useSearchStore((state) => state.searchVisible);
-
   return (
     <div className="max-w-2xl mx-auto bg-white overflow-hidden shadow-md min-h-screen tracking-tighter leading-snug">
       {/* 상단 알림 */}
@@ -819,6 +866,7 @@ const MemoPageContent: React.FC = () => {
           <>
             {visibleMemos.map((memo, index) => (
               <div
+                id={`memo-${memo.id}`}
                 key={memo.id}
                 ref={index === visibleMemos.length - 1 ? lastMemoRef : undefined}
                 className="border border-gray-300 bg-gradient-to-r from-emerald-50/50 to-yellow-50/50 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
@@ -853,24 +901,24 @@ const MemoPageContent: React.FC = () => {
                     </div>
 
                     <h3 className="text-xl font-bold mb-3">
-                      <Link
-                        href={`/memo/${memo.id}`}
+                      <div
                         className="line-clamp-2 hover:text-emerald-600 cursor-pointer"
+                        onClick={(e) => handleMemoClick(e, memo)}
                       >
                         {memo.title || '제목 없음'}
-                      </Link>
+                      </div>
                     </h3>
 
                     <div className="flex justify-between items-center mb-4 sm:mb-0">
                       <span className="text-sm text-gray-500">{memo.time || '방금 전'}</span>
                       <div className="flex gap-2">
-                        <Link
-                          href={`/memo/${memo.id}`}
+                        <button
                           className="inline-flex items-center px-4 py-2 font-semibold bg-gray-800 text-gray-100 rounded-full hover:text-gray-400"
+                          onClick={(e) => handleMemoClick(e, memo)}
                         >
                           요약 보기
                           <ArrowRight className="h-4 w-4 ml-1" />
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -907,6 +955,70 @@ const MemoPageContent: React.FC = () => {
         />
       )}
 
+      {/* 메모 상세 모달 */}
+      {selectedMemo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          onClick={handleCloseModal}
+          style={{ isolation: 'isolate' }} // 터치 이벤트 방지
+        >
+          <div className="absolute inset-0 bg-black bg-opacity-80" />
+          <div
+            className="bg-white w-full max-w-2xl max-h-[100vh] sm:max-h-[90vh] overflow-y-auto z-50"
+            onClick={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()} // 스와이프 이벤트 차단
+            onTouchStart={(e) => e.stopPropagation()} // 터치 이벤트 차단
+          >
+            <div className="sticky top-0 z-10 bg-emerald-600 text-white p-4 flex items-center justify-between">
+              <button onClick={handleCloseModal} className="text-white flex items-center gap-2">
+                <MoveLeft />
+                메모 목록
+              </button>
+              <button onClick={handleCloseModal} className="text-white">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* 카테고리 */}
+              <div className="mb-4">
+                <span className="inline-block px-3 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 rounded-full">
+                  {selectedMemo.labeling?.category || '미분류'}
+                </span>
+              </div>
+
+              {/* 제목 */}
+              <h1 className="text-2xl font-bold mb-6">{selectedMemo.title}</h1>
+
+              {/* MemoContent 컴포넌트 */}
+              <div className="pb-4 flex flex-col border-b border-emerald-200">
+                <div className="flex items-center gap-2">
+                  <Notebook className="text-emerald-600 w-4 h-4" />
+                  <p className="text-sm text-emerald-600">요약내용</p>
+                  <hr className="flex-1 border-emerald-600/25" />
+                </div>
+
+                <div className="my-2">
+                  <MemoContent
+                    memo={selectedMemo}
+                    expanded={true}
+                    showLabeling={true}
+                    showOriginal={true}
+                    onToggleThread={() => {}}
+                    onToggleLabeling={() => {}}
+                    onToggleOriginal={() => {}}
+                    isVisible={true}
+                    hideImageInBlog={true}
+                    onSaveThought={saveThought}
+                    onDeleteThought={deleteThought}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CSS 애니메이션 정의 */}
       <style jsx global>{`
         @keyframes fadeIn {
@@ -918,6 +1030,24 @@ const MemoPageContent: React.FC = () => {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+
+        /* 메모 하이라이트 애니메이션 */
+        @keyframes highlightPulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+          }
+          70% {
+            box-shadow: 0 0 0 10px rgba(52, 211, 153, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+          }
+        }
+
+        .highlight-memo {
+          animation: highlightPulse 1.5s ease-out;
+          border-color: #10b981;
         }
 
         /* 추가: 이미지 로딩 최적화를 위한 속성 */

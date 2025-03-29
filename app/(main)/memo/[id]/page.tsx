@@ -8,32 +8,26 @@ import { Memo } from '@/app/utils/types';
 import { MoveLeft, Notebook, Quote } from 'lucide-react';
 import useMemos from '@/app/hooks/useMemos';
 import createSupabaseBrowserClient from '@/lib/supabse/client';
+import { useMemoStore } from '@/app/store/memoStore';
+import { useNavigationStore } from '@/app/store/navigationStore';
 
 export default function MemoDetailPage() {
   const { id } = useParams();
-  const [memo, setMemo] = useState<Memo | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const supabase = createSupabaseBrowserClient();
-
-  const {
-    memos,
-
-    error: memosError,
-    createMemo,
-    updateMemoWithAI,
-    updateMemoDirect,
-    deleteMemo,
-    saveThought,
-    deleteThought,
-    likeMemo,
-    retweetMemo,
-    replyToMemo,
-    loadMoreMemos,
-    hasMore,
-  } = useMemos({});
+  // Zustand 스토어에서 메모 데이터 가져오기
+  const memoFromStore = useMemoStore((state) => state.memos[id as string] || state.currentMemo);
+  const [memo, setMemo] = useState(memoFromStore);
 
   useEffect(() => {
+    // 스토어에 이미 데이터가 있으면 바로 표시
+    if (memoFromStore) {
+      setMemo(memoFromStore);
+      setIsLoading(false);
+      return;
+    }
+
+    // 없으면 API에서 가져오기
     async function loadMemo() {
       if (!id) return;
 
@@ -85,7 +79,36 @@ export default function MemoDetailPage() {
     }
 
     loadMemo();
-  }, [id, supabase]);
+  }, [id, memoFromStore]);
+
+  const supabase = createSupabaseBrowserClient();
+
+  const {
+    memos,
+
+    error: memosError,
+    createMemo,
+    updateMemoWithAI,
+    updateMemoDirect,
+    deleteMemo,
+    saveThought,
+    deleteThought,
+    likeMemo,
+    retweetMemo,
+    replyToMemo,
+    loadMoreMemos,
+    hasMore,
+  } = useMemos({});
+
+  // 목록으로 돌아가기 함수
+  const handleBackToList = () => {
+    // id가 string | string[] 타입이므로 문자열로 변환
+    const memoId = Array.isArray(id) ? id[0] : id;
+
+    if (memoId) {
+      useNavigationStore.getState().setLastViewedMemoId(memoId);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -117,6 +140,7 @@ export default function MemoDetailPage() {
           <Link
             href="/memo"
             className="text-white hover:text-emerald-100 inline-flex items-center gap-2"
+            onClick={handleBackToList}
           >
             <MoveLeft />
             메모 목록

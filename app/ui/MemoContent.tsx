@@ -143,26 +143,26 @@ const MemoContent: React.FC<MemoContentProps> = ({
     return Promise.resolve();
   };
 
-  // 탭 변경 시 컴포넌트 상단으로 스크롤하는 함수
+  // MemoContent.tsx에서 scrollToComponentTop 함수 수정
   const scrollToComponentTop = () => {
-    // 이미 진행 중인 스크롤 타임아웃이 있으면 취소
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
 
-    // 탭 변경 중일 때만 스크롤 실행
+    // 탭 변경 중일 때만 실행
     if (isTabChanging && componentRef.current) {
-      const yOffset = componentRef.current.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({
-        top: yOffset - 64, // 약간의 여백 추가
-        behavior: 'smooth',
-      });
+      // 가장 가까운 스크롤 가능한 부모 요소를 찾아 스크롤
+      const scrollableParent = componentRef.current.closest('.overflow-y-auto');
 
-      // 스크롤 작업 완료 후 탭 변경 상태 해제
+      if (scrollableParent) {
+        // 항상 스크롤을 맨 위로 설정
+        scrollableParent.scrollTop = 0;
+      }
+
       scrollTimeoutRef.current = setTimeout(() => {
         setIsTabChanging(false);
         scrollTimeoutRef.current = null;
-      }, 500); // 스크롤 애니메이션이 끝날 때까지 대기
+      }, 500);
     }
   };
 
@@ -545,7 +545,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
     switch (tabIndex) {
       case 0: // 아이디어
         return (
-          <div className="pt-4 " ref={tabRefs.idea}>
+          <div className="pt-4 min-h-96" ref={tabRefs.idea}>
             {/* 헤더 */}
             <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between gap-2">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">{memo.title}</h2>
@@ -611,7 +611,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
       case 1: // 아이디어 맵
         return (
-          <div className="pt-4 leading-relaxed" ref={tabRefs.key}>
+          <div className="pt-4 min-h-96 leading-relaxed" ref={tabRefs.key}>
             {/* 헤더 */}
             <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">아이디어 맵</h2>
@@ -811,7 +811,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
       case 2: // 주요 내용
         return (
-          <div className="pt-4 pb-8 leading-relaxed " ref={tabRefs.main}>
+          <div className="pt-4 pb-8  min-h-96 leading-relaxed " ref={tabRefs.main}>
             {/* 헤더 */}
             <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">주요 내용</h2>
@@ -1026,7 +1026,6 @@ const MemoContent: React.FC<MemoContentProps> = ({
 
         <TTSButton text={getAllContentText()} showLabel={true} />
       </div>
-
       {/* 탭 네비게이션 - 수정된 버전 */}
       <div className="mt-2 border-y border-gray-200">
         <div className="flex items-center justify-between">
@@ -1091,7 +1090,6 @@ const MemoContent: React.FC<MemoContentProps> = ({
         </div>
       </div>
 
-      {/* 슬라이드 컨텐츠 영역 */}
       <div className="relative overflow-hidden">
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
@@ -1101,13 +1099,17 @@ const MemoContent: React.FC<MemoContentProps> = ({
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.3 }}
-            className="w-full"
+            transition={{
+              duration: 0.3,
+              // 높이 변화도 애니메이션 추가
+              height: { duration: 0.3, ease: 'easeInOut' },
+            }}
+            className="w-full min-h-[400px]" // 최소 높이 추가
+            style={{ minHeight: '400px' }} // 일관성을 위해 style로도 설정
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.7}
             onDragEnd={(_, info) => {
-              // X축 스와이프 거리가 충분히 크면 탭 변경
               if (info.offset.x > 100) {
                 goToPrevTab();
               } else if (info.offset.x < -100) {
@@ -1120,7 +1122,6 @@ const MemoContent: React.FC<MemoContentProps> = ({
           </motion.div>
         </AnimatePresence>
       </div>
-
       {/* ThoughtDialog 직접 추가 */}
       <ThoughtDialog
         isOpen={isThoughtDialogOpen}
