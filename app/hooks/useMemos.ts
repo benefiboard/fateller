@@ -1183,6 +1183,75 @@ export const useMemos = (options: SearchOptions = {}) => {
     }
   };
 
+  // 단일 메모 가져오기
+  const getMemoById = async (memoId: string): Promise<Memo | null> => {
+    if (!user_id) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // 먼저 로컬 상태에서 확인
+      const localMemo = memos.find((memo) => memo.id === memoId);
+      if (localMemo) {
+        console.log('로컬 상태에서 메모를 찾았습니다:', memoId);
+        setIsLoading(false);
+        return localMemo;
+      }
+
+      // 로컬에 없으면 Supabase에서 가져오기
+      console.log('Supabase에서 메모 가져오기:', memoId);
+      const { data, error } = await supabase
+        .from('memos')
+        .select('*')
+        .eq('id', memoId)
+        .eq('user_id', user_id)
+        .single();
+
+      if (error) {
+        throw new Error(`메모 조회 오류: ${error.message}`);
+      }
+
+      if (!data) {
+        return null;
+      }
+
+      // 메모 데이터 형식 변환
+      const formattedMemo: Memo = {
+        id: data.id,
+        title: data.title,
+        tweet_main: data.tweet_main,
+        hashtags: data.hashtags || [],
+        thread: data.thread || [],
+        original_text: data.original_text || '',
+        original_url: data.original_url || '',
+        original_title: data.original_title || '',
+        original_image: data.original_image || '',
+        i_think: data.i_think,
+        labeling: {
+          category: data.category || '미분류',
+          keywords: data.keywords || [],
+          key_sentence: data.key_sentence || '',
+        },
+        time: formatTimeAgo(new Date(data.created_at)),
+        likes: data.likes || 0,
+        retweets: data.retweets || 0,
+        replies: data.replies || 0,
+        purpose: data.purpose || '일반',
+      };
+
+      return formattedMemo;
+    } catch (error: any) {
+      console.error('메모 조회 중 오류:', error);
+      setError(`메모를 조회하는 중 오류가 발생했습니다: ${error.message}`);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 초기 로딩
   useEffect(() => {
     if (user_id) {
@@ -1218,6 +1287,7 @@ export const useMemos = (options: SearchOptions = {}) => {
     likeMemo,
     retweetMemo,
     replyToMemo,
+    getMemoById,
   };
 };
 

@@ -10,8 +10,14 @@ import {
   Search,
   MessageCirclePlus,
   ChevronsUp,
+  MoreHorizontal,
+  ArrowRight,
+  Quote,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 
 // UI 컴포넌트 임포트 - 필수 컴포넌트만 직접 임포트
 import Header from '../../ui/Header';
@@ -90,6 +96,9 @@ const MemoPageContent: React.FC = () => {
   // 알림 표시 여부 상태
   const [showNotificationState, setShowNotificationState] = useState(false);
 
+  // 옵션 메뉴 관리를 위한 상태
+  const [showOptions, setShowOptions] = useState<string | null>(null);
+
   // 유저 정보 - 메모이제이션으로 불필요한 계산 방지
   const currentUser = useUserStore((state) => state.currentUser);
 
@@ -120,7 +129,7 @@ const MemoPageContent: React.FC = () => {
     updateMemoWithAI,
     updateMemoDirect,
     deleteMemo,
-    saveThought, // 이 함수를 가져와야 함
+    saveThought,
     deleteThought,
     likeMemo,
     retweetMemo,
@@ -132,7 +141,6 @@ const MemoPageContent: React.FC = () => {
     category: selectedCategory,
     purpose: selectedPurpose,
     sortOption,
-    // initialPageSize 속성 제거
   });
 
   // 화면에 표시할 메모 필터링 - 메모이제이션 적용
@@ -151,6 +159,32 @@ const MemoPageContent: React.FC = () => {
 
   // 백그라운드 처리 훅
   const { processUrl, cancelTask, cancelAllTasks } = useBackgroundProcess();
+
+  // URL에서 도메인을 추출하는 함수
+  const extractDomain = (url: string) => {
+    if (!url) return '웹 콘텐츠';
+
+    try {
+      // URL이 http나 https로 시작하지 않으면 추가
+      if (!url.match(/^https?:\/\//i)) {
+        url = 'https://' + url;
+      }
+
+      // URL 객체 생성
+      const urlObj = new URL(url);
+
+      // 호스트명에서 www. 제거(있는 경우)
+      return urlObj.hostname.replace(/^www\./i, '');
+    } catch (error) {
+      // URL 파싱에 실패한 경우 원래 문자열 반환
+      // 기본 정규식으로 도메인 추출 시도
+      const domainMatch = url.match(/^(?:https?:\/\/)?(?:www\.)?([^\/]+)/i);
+      if (domainMatch && domainMatch[1]) {
+        return domainMatch[1];
+      }
+      return url;
+    }
+  };
 
   // 검색어 변경 핸들러
   const handleSearch = useCallback((term: string) => {
@@ -764,8 +798,8 @@ const MemoPageContent: React.FC = () => {
         )}
       </Suspense>
 
-      {/* 메모 목록 - 최적화 버전 */}
-      <div className="divide-y divide-gray-200">
+      {/* 메모 목록 - 블로그 스타일 적용 */}
+      <div className="space-y-12 sm:space-y-8 p-4">
         {visibleMemos.length === 0 && !isLoading ? (
           <div className="p-10 text-center text-gray-500">
             {searchTerm || selectedCategory ? (
@@ -787,43 +821,62 @@ const MemoPageContent: React.FC = () => {
               <div
                 key={memo.id}
                 ref={index === visibleMemos.length - 1 ? lastMemoRef : undefined}
-                className="transition-opacity duration-300 opacity-100"
+                className="border border-gray-300 bg-gradient-to-r from-emerald-50/50 to-yellow-50/50 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
               >
-                <MemoItem
-                  memo={memo}
-                  profile={profile}
-                  memoState={
-                    memo.id
-                      ? memoStates[memo.id] || {
-                          expanded: false,
-                          showLabeling: false,
-                          showOriginal: false,
-                        }
-                      : { expanded: false, showLabeling: false, showOriginal: false }
-                  }
-                  onToggleThread={toggleThread}
-                  onToggleLabeling={toggleLabeling}
-                  onToggleOriginal={toggleOriginal}
-                  onEdit={handleEdit}
-                  onAnalyze={handleAnalyze}
-                  onDelete={handleDelete}
-                  onSaveThought={saveThought} // 이 함수를 전달해야 함
-                  onDeleteThought={deleteThought}
-                />
+                <div className="sm:p-4 sm:h-52 flex flex-col sm:flex-row sm:items-center gap-4">
+                  {/* 이미지 좌측 */}
+                  <div className="h-60 aspect-video  sm:w-auto sm:h-full">
+                    {memo.original_image ? (
+                      <img
+                        src={memo.original_image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full aspect-video flex flex-col items-center justify-center gap-4 p-4 border-4 border-gray-200">
+                        <Quote size={16} className="text-gray-400" />
+                        <p className="text-center">{memo.title || '제목 없음'}</p>
+                        <Quote size={16} className="text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 우측 텍스트 */}
+                  <div className="flex-1 h-full flex flex-col  justify-between">
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      <span className="inline-block px-2 py-1 text-sm font-medium bg-emerald-100 text-emerald-800 rounded-full">
+                        {memo.labeling?.category || '미분류'}
+                      </span>
+                      <span className="inline-block px-2 py-1 text-sm font-semibold text-gray-400 rounded-full italic">
+                        {memo.original_url ? extractDomain(memo.original_url) : '웹 콘텐츠'}
+                      </span>
+                    </div>
+
+                    <h3 className="text-xl font-bold mb-3">
+                      <Link
+                        href={`/memo/${memo.id}`}
+                        className="line-clamp-2 hover:text-emerald-600 cursor-pointer"
+                      >
+                        {memo.title || '제목 없음'}
+                      </Link>
+                    </h3>
+
+                    <div className="flex justify-between items-center mb-4 sm:mb-0">
+                      <span className="text-sm text-gray-500">{memo.time || '방금 전'}</span>
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/memo/${memo.id}`}
+                          className="inline-flex items-center px-4 py-2 font-semibold bg-gray-800 text-gray-100 rounded-full hover:text-gray-400"
+                        >
+                          요약 보기
+                          <ArrowRight className="h-4 w-4 ml-1" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
-
-            {/* 더 보기 버튼 - 메모가 더 있는 경우에만 표시 */}
-            {memos.length > displayCount && (
-              <div className="p-2 text-center">
-                <button
-                  onClick={() => setDisplayCount((prev) => prev + INITIAL_MEMO_COUNT)}
-                  className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full text-sm hover:bg-emerald-100 transition-colors"
-                >
-                  더 보기 ({displayCount}/{memos.length})
-                </button>
-              </div>
-            )}
 
             {/* 로딩 인디케이터 */}
             {isLoading && (
