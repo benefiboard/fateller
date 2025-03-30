@@ -63,6 +63,7 @@ import { useMemoStore } from '@/app/store/memoStore';
 import { Memo } from '@/app/utils/types';
 import MemoContent from '@/app/ui/MemoContent';
 import ModifyMemoButton from '@/app/ui/ModifyMemoButton';
+import OriginalContent from '@/app/ui/OriginalContent';
 
 // TypeScript 에러 방지를 위해 window 인터페이스 확장
 declare global {
@@ -87,12 +88,16 @@ const MemoPageContent: React.FC = () => {
 
   // 메모 모달 상태 (선택된 메모를 보여주기 위한 상태)
   const [selectedMemo, setSelectedMemo] = useState<Memo | null>(null);
+  const [selectedOriginalMemo, setSelectedOriginalMemo] = useState<Memo | null>(null);
   // 알림 훅을 더 일찍 가져옵니다
   const { notification, showNotification } = useNotification();
 
   // 모달 닫기 핸들러
   const handleCloseModal = () => {
     setSelectedMemo(null);
+  };
+  const handleCloseOriginalModal = () => {
+    setSelectedOriginalMemo(null);
   };
 
   // 컴포저 모달 관련 상태 (사용자 상호작용 발생 시에만 필요)
@@ -447,6 +452,10 @@ const MemoPageContent: React.FC = () => {
     e.preventDefault(); // 링크 이동 방지
     setSelectedMemo(memo); // 모달에 표시할 메모 설정
     useMemoStore.getState().setCurrentMemo(memo);
+  }, []);
+  const handleOriginalContentClick = useCallback((e: React.MouseEvent, memo: Memo) => {
+    e.preventDefault(); // 링크 이동 방지
+    setSelectedOriginalMemo(memo); // 모달에 표시할 메모 설정
   }, []);
 
   // 백그라운드 처리 + 알림 함수
@@ -921,9 +930,9 @@ const MemoPageContent: React.FC = () => {
                 ref={index === visibleMemos.length - 1 ? lastMemoRef : undefined}
                 className="border border-gray-300 bg-gradient-to-r from-emerald-50/50 to-yellow-50/50 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
               >
-                <div className="sm:p-4 sm:h-52 flex flex-col sm:flex-row sm:items-center gap-4">
-                  {/* 이미지 좌측 */}
-                  <div className="h-60 aspect-video  sm:w-auto sm:h-full">
+                <div className="p-0 sm:p-4 flex flex-col sm:flex-row sm:items-stretch sm:min-h-52">
+                  {/* 이미지 좌측 - 정확히 50% 너비로 설정 */}
+                  <div className="h-60 sm:h-auto sm:w-1/2 overflow-hidden bg-gradient-to-r from-emerald-200/25 to-yellow-200/25 aspect-video">
                     {memo.original_image ? (
                       <img
                         src={memo.original_image}
@@ -931,7 +940,7 @@ const MemoPageContent: React.FC = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full aspect-video flex flex-col items-center justify-center gap-4 p-4 border-4 border-gray-200">
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-4 border-4 border-gray-200">
                         <Quote size={16} className="text-gray-400" />
                         <p className="text-center">{memo.title || '제목 없음'}</p>
                         <Quote size={16} className="text-gray-400" />
@@ -939,42 +948,52 @@ const MemoPageContent: React.FC = () => {
                     )}
                   </div>
 
-                  {/* 우측 텍스트 */}
-                  <div className="flex-1 h-full flex flex-col  justify-between px-4 sm:px-0">
-                    <div className="flex flex-wrap mb-3 justify-between">
-                      <div className="flex items-center">
-                        <span className="inline-block px-2 py-1 text-sm font-medium bg-emerald-100 text-emerald-800 rounded-full">
-                          {memo.labeling?.category || '미분류'}
-                        </span>
-                        <span className="inline-block px-2 py-1 text-sm font-semibold text-gray-400 rounded-full italic">
-                          {memo.original_url ? extractDomain(memo.original_url) : '웹 콘텐츠'}
-                        </span>
+                  {/* 우측 텍스트 - 정확히 50% 너비로 설정 */}
+                  <div className="sm:w-1/2 h-full flex flex-col justify-between px-4 pt-4 sm:px-4  sm:min-h-52">
+                    <div className="flex flex-col h-full">
+                      <div className="flex flex-wrap mb-3 justify-between ">
+                        <div className="flex items-center">
+                          <span className="inline-block px-2 py-1 text-sm font-medium bg-emerald-100 text-emerald-800 rounded-full">
+                            {memo.labeling?.category || '미분류'}
+                          </span>
+                          <span className="inline-block px-2 py-1 text-sm font-semibold text-gray-600 rounded-full ">
+                            {memo.original_url ? extractDomain(memo.original_url) : '웹 콘텐츠'}
+                          </span>
+                        </div>
+                        <ModifyMemoButton
+                          memo={memo}
+                          buttonStyle="icon"
+                          onMemoUpdated={handleMemoUpdated}
+                        />
                       </div>
-                      <ModifyMemoButton
-                        memo={memo}
-                        buttonStyle="icon"
-                        onMemoUpdated={handleMemoUpdated}
-                      />
+
+                      <h3 className="text-xl font-bold mb-3">
+                        <div
+                          className="line-clamp-3 hover:text-emerald-600 cursor-pointer"
+                          onClick={(e) => handleMemoClick(e, memo)}
+                        >
+                          {memo.title || '제목 없음'}
+                        </div>
+                      </h3>
                     </div>
 
-                    <h3 className="text-xl font-bold mb-3">
-                      <div
-                        className="line-clamp-2 hover:text-emerald-600 cursor-pointer"
-                        onClick={(e) => handleMemoClick(e, memo)}
-                      >
-                        {memo.title || '제목 없음'}
-                      </div>
-                    </h3>
-
                     <div className="flex justify-between items-center mb-4 sm:mb-0">
-                      <span className="text-sm text-gray-500">{memo.time || '방금 전'}</span>
-                      <div className="flex gap-2">
+                      <span className="text-sm text-gray-500 pb-[2px]">
+                        {memo.time || '방금 전'}
+                      </span>
+                      <div className="flex items-center gap-2">
                         <button
-                          className="inline-flex items-center px-4 py-2 font-semibold bg-gray-800 text-gray-100 rounded-full hover:text-gray-400"
+                          className="inline-flex items-center font-semibold text-gray-600 rounded-full hover:text-gray-400"
+                          onClick={(e) => handleOriginalContentClick(e, memo)}
+                        >
+                          원문 보기
+                        </button>
+                        <p className="pb-1">|</p>
+                        <button
+                          className="inline-flex items-center font-semibold text-gray-800 rounded-full hover:text-gray-400"
                           onClick={(e) => handleMemoClick(e, memo)}
                         >
                           요약 보기
-                          <ArrowRight className="h-4 w-4 ml-1" />
                         </button>
                       </div>
                     </div>
@@ -1079,6 +1098,11 @@ const MemoPageContent: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* OriginalContent 모달 추가 (메모 상세 모달 바로 아래에 배치) */}
+      {selectedOriginalMemo && (
+        <OriginalContent memo={selectedOriginalMemo} onClose={handleCloseOriginalModal} />
       )}
 
       {/* CSS 애니메이션 정의 */}

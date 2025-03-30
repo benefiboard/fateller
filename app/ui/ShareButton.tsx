@@ -1,4 +1,4 @@
-// components/common/ShareButton.tsx - ref 참조 방식으로 수정
+// app/ui/ShareButton.tsx
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Share, Download, Copy, Link, Image, FileText, X, Check, Share2 } from 'lucide-react';

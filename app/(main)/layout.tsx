@@ -46,7 +46,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </main>
 
           {/* 오른쪽 사이드바 - 데스크탑에서만 보임 */}
-          <div className="hidden lg:block w-[350px] h-screen sticky top-0 pl-4">
+          <div className="hidden xl:block w-[350px] h-screen sticky top-0 pl-4">
             <RightSidebar />
           </div>
         </div>
