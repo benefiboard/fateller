@@ -445,7 +445,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
     text += `[제목]\n${memo.title}\n\n`;
 
     // 핵심 문장
-    text += `[핵심 내용]\n${memo.labeling.key_sentence}\n\n`;
+    text += `[핵심 내용]\n${memo.labeling?.key_sentence || '내용 없음'}\n\n`;
 
     return text;
   };

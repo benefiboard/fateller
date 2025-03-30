@@ -62,6 +62,7 @@ import { useCreditStore } from '@/app/store/creditStore';
 import { useMemoStore } from '@/app/store/memoStore';
 import { Memo } from '@/app/utils/types';
 import MemoContent from '@/app/ui/MemoContent';
+import ModifyMemoButton from '@/app/ui/ModifyMemoButton';
 
 // TypeScript 에러 방지를 위해 window 인터페이스 확장
 declare global {
@@ -731,6 +732,55 @@ const MemoPageContent: React.FC = () => {
     ]
   );
 
+  // MemoPageContent.tsx 내부의 handleMemoUpdated 함수 수정
+  const handleMemoUpdated = useCallback(
+    (updatedMemo?: Memo, isDeleted = false) => {
+      // 1. 메모가 삭제된 경우
+      if (isDeleted && updatedMemo?.id) {
+        // Zustand 스토어에서도 메모를 제거
+        const memoStore = useMemoStore.getState();
+        const updatedMemos = { ...memoStore.memos };
+        delete updatedMemos[updatedMemo.id];
+        memoStore.setMemos(Object.values(updatedMemos));
+
+        // 선택된 메모가 삭제된 메모인 경우 모달 닫기
+        if (selectedMemo?.id === updatedMemo.id) {
+          setSelectedMemo(null);
+        }
+
+        // 변경 사항이 즉시 반영되도록 전체 데이터 리로드를 실행할 수 있음
+        // 필요하다면 loadMemosWithFixedRange() 같은 함수 호출
+      }
+      // 2. 메모가 수정된 경우
+      else if (updatedMemo) {
+        // Zustand 스토어 업데이트
+        useMemoStore.getState().setMemos([updatedMemo]);
+
+        // 현재 선택된 메모가 업데이트된 메모인 경우 선택된 메모도 업데이트
+        if (selectedMemo?.id === updatedMemo.id) {
+          setSelectedMemo(updatedMemo);
+        }
+
+        // memos 배열에서 해당 메모를 찾아 업데이트하는 대신,
+        // 변경 사항이 즉시 반영되도록 전체 데이터 리로드
+        // 필요하다면 loadMemosWithFixedRange() 같은 함수 호출
+      }
+
+      // 데이터를 새로 가져오는 간단한 방법
+      // window.location.reload()를 사용하지 않고 상태만 업데이트
+      // useMemos 훅에서 검색 옵션을 변경하면 자동으로 데이터를 다시 로드함
+      if (updatedMemo) {
+        // 검색 옵션 중 하나를 살짝 바꿨다가 원래대로 되돌리는 트릭
+        const currentSort = sortOption;
+        setSortOption(currentSort === 'latest' ? 'oldest' : 'latest');
+        setTimeout(() => {
+          setSortOption(currentSort);
+        }, 10);
+      }
+    },
+    [selectedMemo, setSortOption, sortOption]
+  );
+
   return (
     <div className="max-w-2xl mx-auto bg-white overflow-hidden shadow-md min-h-screen tracking-tighter leading-snug">
       {/* 상단 알림 */}
@@ -891,13 +941,20 @@ const MemoPageContent: React.FC = () => {
 
                   {/* 우측 텍스트 */}
                   <div className="flex-1 h-full flex flex-col  justify-between px-4 sm:px-0">
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      <span className="inline-block px-2 py-1 text-sm font-medium bg-emerald-100 text-emerald-800 rounded-full">
-                        {memo.labeling?.category || '미분류'}
-                      </span>
-                      <span className="inline-block px-2 py-1 text-sm font-semibold text-gray-400 rounded-full italic">
-                        {memo.original_url ? extractDomain(memo.original_url) : '웹 콘텐츠'}
-                      </span>
+                    <div className="flex flex-wrap mb-3 justify-between">
+                      <div className="flex items-center">
+                        <span className="inline-block px-2 py-1 text-sm font-medium bg-emerald-100 text-emerald-800 rounded-full">
+                          {memo.labeling?.category || '미분류'}
+                        </span>
+                        <span className="inline-block px-2 py-1 text-sm font-semibold text-gray-400 rounded-full italic">
+                          {memo.original_url ? extractDomain(memo.original_url) : '웹 콘텐츠'}
+                        </span>
+                      </div>
+                      <ModifyMemoButton
+                        memo={memo}
+                        buttonStyle="icon"
+                        onMemoUpdated={handleMemoUpdated}
+                      />
                     </div>
 
                     <h3 className="text-xl font-bold mb-3">
@@ -981,10 +1038,15 @@ const MemoPageContent: React.FC = () => {
 
             <div className="p-6">
               {/* 카테고리 */}
-              <div className="mb-4">
+              <div className="mb-4 flex items-center justify-between">
                 <span className="inline-block px-3 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 rounded-full">
                   {selectedMemo.labeling?.category || '미분류'}
                 </span>
+                <ModifyMemoButton
+                  memo={selectedMemo}
+                  buttonStyle="text"
+                  onMemoUpdated={handleMemoUpdated}
+                />
               </div>
 
               {/* 제목 */}
