@@ -1093,13 +1093,14 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
-  const { text } = await request.json();
-
-  if (!text) {
-    return NextResponse.json({ error: '텍스트가 필요합니다' }, { status: 400 });
-  }
-
   try {
+    const body = await request.json();
+    const { text, clientExtractedContent, clientExtractedTitle, clientExtractedImage } = body;
+
+    if (!text) {
+      return NextResponse.json({ error: '텍스트가 필요합니다' }, { status: 400 });
+    }
+
     // URL 여부 확인
     let isUrl = false;
     try {
@@ -1148,7 +1149,47 @@ export async function POST(request: NextRequest) {
     let extractedTitle = '';
     let extractedImageUrl = '';
 
-    // 4. URL 타입별 처리
+    // 클라이언트에서 추출한 콘텐츠가 있는 경우 이를 사용 (여기에 추가)
+    if (clientExtractedContent) {
+      console.log('클라이언트에서 추출한 콘텐츠 사용');
+      extractedContent = clientExtractedContent;
+      extractedTitle = clientExtractedTitle || '';
+      extractedImageUrl = clientExtractedImage || '';
+
+      // 추출 성공 시 content_sources 테이블에 저장
+      const newSource = await saveContentSource({
+        canonicalUrl: canonicalUrl,
+        sourceType: 'website', // 클라이언트 추출은 일반 웹사이트로 간주
+        content: extractedContent,
+        title: extractedTitle,
+        imageUrl: extractedImageUrl,
+      });
+
+      console.log(`클라이언트 추출 콘텐츠 저장 완료 (ID: ${newSource.id})`);
+
+      // 결과 반환 (sourceId 포함)
+      const response = NextResponse.json({
+        content: extractedContent,
+        sourceUrl: text,
+        title: extractedTitle || '',
+        imageUrl: extractedImageUrl || '',
+        isExtracted: true,
+        type: 'website',
+        sourceId: newSource.id,
+        fromExtension: true,
+      });
+
+      // CORS 헤더 추가
+      const origin = request.headers.get('origin');
+      if (origin?.startsWith('chrome-extension://')) {
+        response.headers.set('Access-Control-Allow-Origin', origin);
+        response.headers.set('Access-Control-Allow-Credentials', 'true');
+      }
+
+      return response;
+    }
+
+    // 4. URL 타입별 처리 (클라이언트 추출 데이터가 없는 경우)
     if (urlType === 'youtube') {
       console.log('유튜브 콘텐츠 추출 시작');
 

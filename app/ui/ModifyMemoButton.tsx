@@ -145,12 +145,12 @@ const ModifyMemoButton: React.FC<ModifyMemoButtonProps> = ({
 
     switch (buttonStyle) {
       case 'text':
-        return 'flex items-center gap-1 text-gray-600 hover:text-emerald-600 px-2 py-1 rounded';
+        return 'flex items-center gap-1 text-emerald-600 font-semibold hover:text-emerald-600 px-2 py-1 rounded';
       case 'full':
         return 'w-full flex items-center justify-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-md hover:bg-emerald-100';
       case 'icon':
       default:
-        return 'text-gray-500 hover:text-emerald-400 p-1 rounded-full hover:bg-emerald-50';
+        return 'text-emerald-600 font-semibold hover:text-emerald-400 p-1 rounded-full hover:bg-emerald-50';
     }
   };
 
