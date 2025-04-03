@@ -2,11 +2,9 @@
 
 import { getUser } from '@/lib/supabse/server';
 import StoreInitializer from '../layout-component/StoreInitializer';
-import MysticSymbolsEffect from '../layout-component/BubbleEffect/MysticSymbolsEffect';
 import AnalyticsTracker from '../layout-component/AnalyticsTracker';
 import LeftSidebar from '../ui/LeftSidebar';
 import RightSidebar from '../ui/RightSidebar';
-import BottomNavigation from '../ui/BottomNavigation';
 import { PWAProviders } from '../layout-component/PWAProviders';
 import { headers } from 'next/headers';
 

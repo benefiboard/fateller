@@ -549,7 +549,7 @@ const MemoContent: React.FC<MemoContentProps> = ({
             {/* 헤더 */}
             <div className="border-l-4 border-emerald-800/50 pl-3 py-1 mb-3 flex items-center justify-between gap-2">
               <h2 className="tracking-tight text-base font-semibold text-gray-900">{memo.title}</h2>
-              <div className="flex items-center gap-1 text-gray-400 ">
+              <div className="min-w-10 flex items-center gap-1  ">
                 {/* <TTSButton text={getIdeaText()} />
                 <p>|</p> */}
                 <ShareButton
