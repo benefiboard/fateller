@@ -4,7 +4,20 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Brain, ArrowRight, Check, User, Clock, Shield } from 'lucide-react';
+import {
+  Brain,
+  ArrowRight,
+  Check,
+  User,
+  Clock,
+  Shield,
+  Chrome,
+  Youtube,
+  Volume2,
+  FileText,
+  Search,
+  PenTool,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '../store/userStore';
 
@@ -50,7 +63,13 @@ export default function Home() {
               )}
               <Link
                 href="/memo"
-                className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors"
+                className="xl:hidden bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                시작하기
+              </Link>
+              <Link
+                href="https://chromewebstore.google.com/detail/goiiicmhkjeehoghgbfnllklachblhpn?utm_source=item-share-cb"
+                className="hidden xl:block bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 시작하기
               </Link>
@@ -59,35 +78,56 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* 히어로 섹션 - 고객 중심 메시지로 개선 */}
+      {/* 히어로 섹션 - 크롬 익스텐션과 즉시 캡처 강조 */}
       <section className="py-12 md:py-20 lg:py-24">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12">
           <div className="text-center mb-12 md:mb-16">
             <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
               <span className="text-emerald-600 block sm:inline mb-2 sm:mb-0">
-                콘텐츠 정리의 부담,
+                한 번의 클릭으로,
               </span>
-              <span> 이제 벗어나세요</span>
+              <span> 소중한 콘텐츠를 영원히</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-              복잡한 웹 콘텐츠, 유튜브 영상, 외국어 자료가 자동으로 정리되어 시간과 에너지를
-              아껴드립니다
+              복잡한 웹 콘텐츠, 유튜브 영상, 외국어 자료를 <strong>탭 전환 없이</strong> 바로
+              저장하고 AI가 자동으로 정리해드립니다
             </p>
-            <Link href="/memo">
-              <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center text-lg">
+
+            {/* 익스텐션 강조 배지 추가 */}
+            <div className="flex flex-wrap justify-center items-center mb-6 gap-4">
+              <div className="bg-emerald-50 text-emerald-600 py-2 px-4 rounded-full flex items-center">
+                <Chrome className="h-6 w-6 mr-2" />
+                <span className="text-xl font-medium">크롬 익스텐션으로 즉시 저장</span>
+              </div>
+              <div className="bg-emerald-50 text-emerald-600 py-2 px-4 rounded-full flex items-center">
+                <Volume2 className="h-6 w-6 mr-2" />
+                <span className="text-xl font-medium">읽어주는 TTS 기능</span>
+              </div>
+            </div>
+
+            <Link href="https://chromewebstore.google.com/detail/goiiicmhkjeehoghgbfnllklachblhpn?utm_source=item-share-cb">
+              <button className="hidden xl:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium  items-center text-lg">
                 1분만에 시작하기
                 <ArrowRight className="ml-2 h-5 w-5" />
               </button>
             </Link>
-            <p className="text-sm text-gray-500 mt-4">무료 크레딧 10개로 바로 체험하세요</p>
+            <Link href="/memo">
+              <button className="xl:hidden bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center text-lg">
+                1분만에 시작하기
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </button>
+            </Link>
+            <p className="text-sm text-gray-500 mt-4">
+              하루 15크레딧 무료 (유튜브 영상 2시간 분량)
+            </p>
           </div>
 
-          {/* 대형 히어로 이미지/애니메이션 */}
+          {/* 익스텐션 작동 방식 시각화 */}
           <div className="relative w-full max-w-5xl mx-auto rounded-xl overflow-hidden shadow-2xl">
             <div className="aspect-[16/9] w-full relative">
               <Image
                 src="/landing/main.webp"
-                alt="콘텐츠 정리 개념 이미지"
+                alt="Brain Labeling 익스텐션 작동 방식"
                 fill
                 priority
                 sizes="(max-width: 1280px) 100vw, 1280px"
@@ -97,10 +137,89 @@ export default function Home() {
               />
               {/* 이미지 위에 오버레이 텍스트 추가 - 고객 중심 메시지 */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-                <p className="text-white text-lg md:text-xl font-medium">
-                  "하루에 보는 콘텐츠 중 정말 가치 있는 것은 몇 개인가요?"
-                </p>
+                <div className="flex items-center">
+                  <Chrome className="h-6 w-6 text-white mr-2" />
+                  <p className="text-white text-lg md:text-xl font-medium">
+                    "웹서핑, 유튜브 시청 중 우클릭 한 번으로 중요한 콘텐츠를 바로 저장하세요"
+                  </p>
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      {/* 노트북LM과의 직접 비교 섹션 추가 */}
+      <section className="py-16 md:py-20 bg-gray-900 text-white">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
+            Brain Labeling이 다른 점
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20">
+            <div className="border border-gray-700 rounded-xl p-6 bg-gray-800">
+              <h3 className="text-xl font-bold mb-4 text-center text-gray-300">
+                일반적인 문서 정리 도구
+              </h3>
+              <ul className="space-y-4">
+                <li className="flex items-start opacity-70">
+                  <FileText className="h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                  <span>문서 파일 업로드 과정 필요</span>
+                </li>
+                <li className="flex items-start opacity-70">
+                  <FileText className="h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                  <span>별도 앱으로 이동해야 정보 저장 가능</span>
+                </li>
+                <li className="flex items-start opacity-70">
+                  <FileText className="h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                  <span>텍스트 위주 문서 분석에 초점</span>
+                </li>
+                <li className="flex items-start opacity-70">
+                  <FileText className="h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                  <span>주로 연구나 학술 자료를 위한 도구</span>
+                </li>
+                <li className="flex items-start opacity-70">
+                  <FileText className="h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                  <span>요약만 제공, 시각적 구조화 부족</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="border border-emerald-600 rounded-xl p-6 bg-emerald-900/30">
+              <h3 className="text-xl font-bold mb-4 text-center text-emerald-400">
+                Brain Labeling
+              </h3>
+              <ul className="space-y-4">
+                <li className="flex items-start">
+                  <Check className="text-emerald-400 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                  <span>
+                    <strong>크롬 익스텐션으로 원클릭 저장</strong> - 웹서핑 흐름 유지
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <Check className="text-emerald-400 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                  <span>
+                    <strong>유튜브, 블로그, 웹사이트를 하나의 시스템</strong>에서 통합 관리
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <Check className="text-emerald-400 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                  <span>
+                    <strong>마인드맵 시각화</strong>로 콘텐츠 구조를 한눈에 파악
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <Check className="text-emerald-400 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                  <span>
+                    <strong>TTS 기능</strong>으로 이동 중에도 저장된 정보 청취 가능
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <Check className="text-emerald-400 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                  <span>
+                    <strong>일상 정보 관리</strong>부터 학습, 업무까지 폭넓게 활용
+                  </span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -197,6 +316,46 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* 크롬 익스텐션 특징 강조 섹션 추가 */}
+      <section className="py-16 md:py-20 bg-gradient-to-br from-emerald-500 to-emerald-700 text-white">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+            <div className="w-full md:w-1/2">
+              <Chrome className="h-16 w-16 mb-6 text-white" />
+              <h2 className="text-2xl md:text-3xl font-bold mb-6">
+                다른 앱으로 전환할 필요 없이
+                <br />
+                원클릭으로 콘텐츠를 저장하세요
+              </h2>
+              <p className="text-xl mb-8 text-emerald-100">
+                유용한 웹페이지를 보다가, 유튜브 영상을 시청하다가
+                <br />
+                맘에 드는 내용이 있으면 우클릭 한 번으로 바로 저장할 수 있습니다.
+              </p>
+              <div className="bg-white/20 p-4 rounded-lg">
+                <p className="font-medium">
+                  Brain Labeling 크롬 익스텐션으로 웹서핑 흐름을 끊지 않고
+                  <br />
+                  중요한 콘텐츠를 즉시 저장하세요.
+                </p>
+              </div>
+            </div>
+
+            <div className="w-full md:w-1/2 rounded-xl overflow-hidden shadow-xl">
+              <div className="aspect-[4/3] relative bg-gray-200">
+                <Image
+                  src="/landing/extension-demo.webp" // 익스텐션 사용 이미지로 변경 필요
+                  alt="Brain Labeling 크롬 익스텐션 데모"
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* 밀키트 비교 이미지 섹션 */}
       <section className="py-16 md:py-24 bg-emerald-50">
@@ -264,6 +423,46 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* TTS 기능 강조 섹션 추가 */}
+      <section className="py-16 md:py-20 bg-emerald-100">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+            <div className="w-full md:w-1/2 order-2 md:order-1">
+              <div className="rounded-xl overflow-hidden shadow-xl">
+                <div className="aspect-[4/3] relative bg-gray-200">
+                  <Image
+                    src="/landing/tts-demo.webp" // TTS 사용 이미지로 변경 필요
+                    alt="Brain Labeling TTS 기능 데모"
+                    fill
+                    loading="lazy"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full md:w-1/2 order-1 md:order-2">
+              <Volume2 className="h-16 w-16 mb-6 text-emerald-600" />
+              <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800">
+                이동 중에도 저장된 정보를
+                <br />
+                음성으로 들으세요
+              </h2>
+              <p className="text-xl mb-8 text-gray-600">
+                운전 중, 운동 중, 이동 중에도 저장한 콘텐츠를
+                <br />
+                TTS 기능으로 언제 어디서나 쉽게 들을수 있어요.
+              </p>
+              <div className="bg-emerald-200 p-4 rounded-lg">
+                <p className="font-medium text-emerald-800">
+                  "'짜투리 시간'을 '지식의 시간'으로 바꿔보세요."
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* 기능 이미지 쇼케이스 - 스토리텔링 접근 강화 */}
       <section className="py-16 md:py-24 bg-white">
@@ -290,6 +489,12 @@ export default function Home() {
                 <div>
                   <ul className="space-y-4">
                     <li className="flex items-start">
+                      <Chrome className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                      <span className="text-lg">
+                        <strong>크롬 익스텐션</strong> - 웹페이지, 유튜브에서 우클릭 한 번으로 저장
+                      </span>
+                    </li>
+                    <li className="flex items-start">
                       <Check className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
                       <span className="text-lg">
                         텍스트 직접 입력 - 생각과 아이디어를 바로 기록
@@ -300,8 +505,10 @@ export default function Home() {
                       <span className="text-lg">웹페이지 URL 입력 - 기사, 블로그 자동 추출</span>
                     </li>
                     <li className="flex items-start">
-                      <Check className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
-                      <span className="text-lg">유튜브 영상 링크 - 영상 내용 자동 분석</span>
+                      <Youtube className="text-red-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                      <span className="text-lg">
+                        <strong>유튜브 영상 링크</strong> - 영상 내용 자동 분석 및 요약
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -326,7 +533,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-
           {/* 기능 2: AI 분석 */}
           <div className="mb-24 bg-white rounded-xl overflow-hidden shadow-lg border-2 border-emerald-100">
             <div className="bg-emerald-600 text-white py-3 px-6">
@@ -368,6 +574,12 @@ export default function Home() {
                       <span className="text-lg">핵심 내용 추출 - 중요한 콘텐츠만 골라 요약</span>
                     </li>
                     <li className="flex items-start">
+                      <Brain className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                      <span className="text-lg">
+                        <strong>마인드맵 자동 생성</strong> - 콘텐츠 구조를 시각적으로 파악
+                      </span>
+                    </li>
+                    <li className="flex items-start">
                       <Check className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
                       <span className="text-lg">자동 태그와 카테고리 - 나중에 찾기 쉽게 정리</span>
                     </li>
@@ -392,16 +604,28 @@ export default function Home() {
                 <div>
                   <ul className="space-y-4">
                     <li className="flex items-start">
-                      <Check className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
-                      <span className="text-lg">아이디어맵 - 전체 구조를 한눈에 파악</span>
+                      <Brain className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                      <span className="text-lg">
+                        <strong>마인드맵</strong> - 전체 구조를 한눈에 파악
+                      </span>
                     </li>
                     <li className="flex items-start">
-                      <Check className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
-                      <span className="text-lg">단계별 정리 - 세부 내용을 체계적으로 탐색</span>
+                      <Volume2 className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                      <span className="text-lg">
+                        <strong>음성 청취</strong> - 저장된 정보를 TTS로 들으며 이동
+                      </span>
                     </li>
                     <li className="flex items-start">
-                      <Check className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
-                      <span className="text-lg">검색과 필터링 - 필요한 콘텐츠를 즉시 찾기</span>
+                      <Search className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                      <span className="text-lg">
+                        <strong>통합 검색</strong> - 모든 종류의 콘텐츠를 한 번에 찾기
+                      </span>
+                    </li>
+                    <li className="flex items-start">
+                      <PenTool className="text-emerald-600 h-6 w-6 mr-3 mt-1 flex-shrink-0" />
+                      <span className="text-lg">
+                        <strong>개인화</strong> - 자신만의 메모를 추가하여 지식 확장
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -428,154 +652,65 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* 활용 사례 갤러리 - 고객 중심 스토리 강화 */}
-      <section className="py-16 md:py-24 bg-gray-50">
+      {/* 크레딧 시스템 설명 섹션 추가 */}
+      <section className="py-16 md:py-20 bg-emerald-50">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
-            당신의 스토리에 함께합니다
-          </h2>
-          <p className="text-center text-gray-600 max-w-3xl mx-auto mb-16">
-            Brain Labeling은 다양한 목표를 가진 사용자들의 여정에 함께하는 가이드입니다
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">간단한 크레딧 시스템</h2>
+          <p className="text-center text-gray-600 max-w-3xl mx-auto mb-12">
+            복잡한 구독 모델이 아닌, 실제 사용량에 기반한 투명한 크레딧 시스템
           </p>
 
-          {/* 사례 이미지 갤러리 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-            {/* 사례 1 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
-              <div className="aspect-video relative bg-gray-200">
-                <Image
-                  src="/landing/4-1.webp"
-                  alt="웹 콘텐츠 요약 사례"
-                  fill
-                  loading="lazy"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <p className="text-white text-center p-6">
-                    "콘텐츠를 다 읽기 전에 가치를 판단할 수 있어 시간이 절약됩니다"
-                  </p>
-                </div>
-              </div>
-              <div className="p-6">
-                <h3 className="font-semibold text-lg mb-3">웹 콘텐츠 요약</h3>
-                <p className="text-gray-600">중요한 내용만 추출하여 가치 빠르게 판단하세요</p>
-              </div>
+          <div className="max-w-4xl mx-auto bg-white rounded-xl overflow-hidden shadow-lg">
+            <div className="bg-emerald-600 text-white p-6">
+              <h3 className="text-xl md:text-2xl font-bold">하루 15크레딧 무료 제공</h3>
+              <p className="text-emerald-100 mt-2">
+                매일 자동으로 충전되는 크레딧으로 부담 없이 시작하세요
+              </p>
             </div>
 
-            {/* 사례 2 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
-              <div className="aspect-video relative bg-gray-200">
-                <Image
-                  src="/landing/4-2.webp"
-                  alt="유튜브 영상 분석 사례"
-                  fill
-                  loading="lazy"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <p className="text-white text-center p-6">
-                    "1시간 영상을 3분 안에 핵심만 파악할 수 있게 되었어요"
-                  </p>
+            <div className="p-6 md:p-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="border border-emerald-200 rounded-lg p-5 text-center">
+                  <h4 className="font-bold text-xl mb-3 text-emerald-700">8분 유튜브 영상</h4>
+                  <p className="text-6xl font-bold text-emerald-600 mb-3">1</p>
+                  <p className="text-gray-600">크레딧</p>
                 </div>
-              </div>
-              <div className="p-6">
-                <h3 className="font-semibold text-lg mb-3">유튜브 영상 분석</h3>
-                <p className="text-gray-600">전체 영상을 보지 않고도 핵심 내용을 파악하세요</p>
-              </div>
-            </div>
 
-            {/* 사례 3 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
-              <div className="aspect-video relative bg-gray-200">
-                <Image
-                  src="/landing/4-3.webp"
-                  alt="외국어 콘텐츠 이해 사례"
-                  fill
-                  loading="lazy"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <p className="text-white text-center p-6">
-                    "외국어 콘텐츠도 이제 부담 없이 접할 수 있게 되었습니다"
-                  </p>
+                <div className="border border-emerald-200 rounded-lg p-5 text-center">
+                  <h4 className="font-bold text-xl mb-3 text-emerald-700">일반 웹 페이지</h4>
+                  <p className="text-6xl font-bold text-emerald-600 mb-3">1</p>
+                  <p className="text-gray-600">크레딧</p>
                 </div>
-              </div>
-              <div className="p-6">
-                <h3 className="font-semibold text-lg mb-3">외국어 콘텐츠 이해</h3>
-                <p className="text-gray-600">언어 장벽 없이 핵심 내용을 한글로 파악하세요</p>
-              </div>
-            </div>
 
-            {/* 사례 4 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
-              <div className="aspect-video relative bg-gray-200">
-                <Image
-                  src="/landing/4-4.webp"
-                  alt="회의 내용 정리 사례"
-                  fill
-                  loading="lazy"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <p className="text-white text-center p-6">
-                    "회의록 정리 시간이 90% 이상 단축되었습니다"
-                  </p>
+                <div className="border border-emerald-200 rounded-lg p-5 text-center">
+                  <h4 className="font-bold text-xl mb-3 text-emerald-700">20분 유튜브 영상</h4>
+                  <p className="text-6xl font-bold text-emerald-600 mb-3">3</p>
+                  <p className="text-gray-600">크레딧</p>
                 </div>
               </div>
-              <div className="p-6">
-                <h3 className="font-semibold text-lg mb-3">회의 내용 정리</h3>
-                <p className="text-gray-600">핵심 사항과 액션 아이템을 자동으로 추출하세요</p>
-              </div>
-            </div>
 
-            {/* 사례 5 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
-              <div className="aspect-video relative bg-gray-200">
-                <Image
-                  src="/landing/4-5.webp"
-                  alt="학습 자료 정리 사례"
-                  fill
-                  loading="lazy"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <p className="text-white text-center p-6">
-                    "복잡한 개념도 체계적으로 이해할 수 있게 되었어요"
-                  </p>
-                </div>
-              </div>
-              <div className="p-6">
-                <h3 className="font-semibold text-lg mb-3">학습 자료 정리</h3>
-                <p className="text-gray-600">복잡한 콘텐츠를 학습에 최적화된 형태로 변환하세요</p>
-              </div>
-            </div>
-
-            {/* 사례 6 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow transform hover:scale-105">
-              <div className="aspect-video relative bg-gray-200">
-                <Image
-                  src="/landing/4-6.webp"
-                  alt="콘텐츠 소비 효율화 사례"
-                  fill
-                  loading="lazy"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <p className="text-white text-center p-6">
-                    "소셜 미디어 대신 가치 있는 콘텐츠에 시간을 투자하게 되었어요"
-                  </p>
-                </div>
-              </div>
-              <div className="p-6">
-                <h3 className="font-semibold text-lg mb-3">콘텐츠 소비 효율화</h3>
-                <p className="text-gray-600">가치 있는 콘텐츠를 선별하여 시간을 절약하세요</p>
+              <div className="mt-8 p-4 bg-emerald-50 rounded-lg">
+                <h4 className="font-semibold text-lg mb-2 text-emerald-800">
+                  하루 15크레딧으로 가능한 일:
+                </h4>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <li className="flex items-center">
+                    <Check className="text-emerald-600 h-5 w-5 mr-2" />
+                    <span>8분 길이 유튜브 영상 15개 요약</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="text-emerald-600 h-5 w-5 mr-2" />
+                    <span>웹 기사 10개 + 30분 영상 1개</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="text-emerald-600 h-5 w-5 mr-2" />
+                    <span>1시간 강의 영상 5개</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="text-emerald-600 h-5 w-5 mr-2" />
+                    <span>외국어 웹사이트 7개 + 유튜브 영상 4개</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
@@ -602,7 +737,8 @@ export default function Home() {
               <p className="text-gray-700 text-lg leading-relaxed">
                 "노션을 세 번 시작하고 세 번 포기했습니다. Brain Labeling은 달랐어요. 첫째 날부터
                 가치를 느꼈고, 지금은 스마트폰을 열 때마다 인스타그램 대신 내 아이디어를 먼저
-                확인합니다."
+                확인합니다. 크롬 익스텐션으로 중요한 마케팅 사례를 바로 저장해 팀 전체의 생산성이
+                50% 향상되었습니다."
               </p>
             </div>
 
@@ -618,10 +754,221 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-gray-700 text-lg leading-relaxed">
-                "시간이 없어 읽지 못했던 수많은 아티클들. 이제는 Brain Labeling으로 핵심만 빠르게
-                파악하고, 진짜 가치 있는 내용만 깊이 읽습니다. 한 달 만에 읽은 책이 두 배로
-                늘었어요."
+                "다른 문서 정리 도구는 논문을 먼저 다운로드하고 업로드해야 했는데, Brain Labeling은
+                웹페이지에서 바로 저장하고 요약해줍니다. 시간이 없어 읽지 못했던 수많은 논문들을
+                이제는 핵심만 빠르게 파악하고, TTS 기능으로 통학 시간에 들으면서 공부합니다. 연구
+                생산성이 두 배 이상 늘었어요."
               </p>
+            </div>
+
+            {/* 추천사 3 */}
+            <div className="bg-gray-50 rounded-xl p-8 shadow-md transform transition hover:shadow-lg">
+              <div className="flex items-start mb-6">
+                <div className="w-16 h-16 rounded-full bg-emerald-200 flex items-center justify-center mr-4">
+                  <User className="text-emerald-600 h-8 w-8" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg">성민</h4>
+                  <p className="text-gray-500 mt-1">소프트웨어 개발자</p>
+                </div>
+              </div>
+              <p className="text-gray-700 text-lg leading-relaxed">
+                "영어 기술문서와 외국 유튜브 튜토리얼을 자주 봐야 하는데, Brain Labeling으로
+                한국어로 요약해서 보니 이해 속도가 3배 빨라졌습니다. 특히 마인드맵으로 개념 연결성을
+                한눈에 파악할 수 있어 학습 효율이 크게 올랐어요. 다른 도구들과 달리 정말
+                실용적입니다."
+              </p>
+            </div>
+
+            {/* 추천사 4 */}
+            <div className="bg-gray-50 rounded-xl p-8 shadow-md transform transition hover:shadow-lg">
+              <div className="flex items-start mb-6">
+                <div className="w-16 h-16 rounded-full bg-emerald-200 flex items-center justify-center mr-4">
+                  <User className="text-emerald-600 h-8 w-8" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg">지영</h4>
+                  <p className="text-gray-500 mt-1">콘텐츠 크리에이터</p>
+                </div>
+              </div>
+              <p className="text-gray-700 text-lg leading-relaxed">
+                "트렌드 리서치를 위해 하루에도 수십 개의 콘텐츠를 소비해야 하는데, Brain Labeling이
+                핵심만 추출해주니 소셜 미디어 스크롤링 시간이 70% 줄었어요. 크롬 익스텐션으로
+                발견하는 즉시 저장하고, 나중에 통합 검색으로 필요한 정보를 바로 찾을 수 있어 콘텐츠
+                제작 속도가 2배로 빨라졌습니다."
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      {/* 노트북LM과 비교 마케팅 섹션 */}
+      <section className="py-16 md:py-20 bg-gray-100">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
+            왜 Brain Labeling인가요?
+          </h2>
+          <p className="text-center text-gray-600 max-w-3xl mx-auto mb-12">
+            일상 속 콘텐츠 관리를 위한 최적의 선택
+          </p>
+
+          {/* 데스크톱 비교 테이블 - 모바일에서는 숨김 */}
+          <div className="hidden md:block">
+            <div className="bg-white rounded-xl overflow-hidden shadow-lg">
+              <div className="grid grid-cols-12">
+                {/* 헤더 */}
+                <div className="col-span-4 bg-gray-50 p-6 border-r border-gray-200">
+                  <h3 className="font-bold text-lg text-gray-400">비교 항목</h3>
+                </div>
+                <div className="col-span-4 p-6 border-r border-gray-200">
+                  <h3 className="font-bold text-lg text-gray-800">기존 도구</h3>
+                </div>
+                <div className="col-span-4 bg-emerald-50 p-6">
+                  <h3 className="font-bold text-lg text-emerald-600">Brain Labeling</h3>
+                </div>
+
+                {/* 항목 1 */}
+                <div className="col-span-4 bg-gray-50 p-6 border-t border-r border-gray-200">
+                  <p className="font-medium">정보 캡처 방식</p>
+                </div>
+                <div className="col-span-4 p-6 border-t border-r border-gray-200">
+                  <p>파일 업로드, URL 입력 필요</p>
+                </div>
+                <div className="col-span-4 bg-emerald-50 p-6 border-t border-gray-200">
+                  <p className="font-medium text-emerald-700">크롬 익스텐션으로 원클릭 저장</p>
+                </div>
+
+                {/* 항목 2 */}
+                <div className="col-span-4 bg-gray-50 p-6 border-t border-r border-gray-200">
+                  <p className="font-medium">콘텐츠 형식</p>
+                </div>
+                <div className="col-span-4 p-6 border-t border-r border-gray-200">
+                  <p>주로 문서 파일 위주</p>
+                </div>
+                <div className="col-span-4 bg-emerald-50 p-6 border-t border-gray-200">
+                  <p className="font-medium text-emerald-700">웹, 유튜브, 텍스트 모두 지원</p>
+                </div>
+
+                {/* 항목 3 */}
+                <div className="col-span-4 bg-gray-50 p-6 border-t border-r border-gray-200">
+                  <p className="font-medium">시각화</p>
+                </div>
+                <div className="col-span-4 p-6 border-t border-r border-gray-200">
+                  <p>텍스트 위주 요약</p>
+                </div>
+                <div className="col-span-4 bg-emerald-50 p-6 border-t border-gray-200">
+                  <p className="font-medium text-emerald-700">마인드맵으로 구조 시각화</p>
+                </div>
+
+                {/* 항목 4 */}
+                <div className="col-span-4 bg-gray-50 p-6 border-t border-r border-gray-200">
+                  <p className="font-medium">음성 기능</p>
+                </div>
+                <div className="col-span-4 p-6 border-t border-r border-gray-200">
+                  <p>제공되지 않음</p>
+                </div>
+                <div className="col-span-4 bg-emerald-50 p-6 border-t border-gray-200">
+                  <p className="font-medium text-emerald-700">TTS로 이동 중 청취 가능</p>
+                </div>
+
+                {/* 항목 5 */}
+                <div className="col-span-4 bg-gray-50 p-6 border-t border-r border-gray-200">
+                  <p className="font-medium">주요 사용 목적</p>
+                </div>
+                <div className="col-span-4 p-6 border-t border-r border-gray-200">
+                  <p>연구 및 학술 자료 분석</p>
+                </div>
+                <div className="col-span-4 bg-emerald-50 p-6 border-t border-gray-200">
+                  <p className="font-medium text-emerald-700">일상 콘텐츠부터 업무까지 다목적</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 모바일 비교 카드 - 데스크톱에서는 숨김 */}
+          <div className="md:hidden space-y-6">
+            {/* 항목 1 */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gray-50 p-4 border-b border-gray-200">
+                <p className="font-medium text-lg">정보 캡처 방식</p>
+              </div>
+              <div className="grid grid-cols-1 divide-y divide-gray-200">
+                <div className="p-4">
+                  <h4 className="font-medium text-gray-500 mb-1">기존 도구</h4>
+                  <p>파일 업로드, URL 입력 필요</p>
+                </div>
+                <div className="p-4 bg-emerald-50">
+                  <h4 className="font-medium text-emerald-800 mb-1">Brain Labeling</h4>
+                  <p className="text-emerald-700">크롬 익스텐션으로 원클릭 저장</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 항목 2 */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gray-50 p-4 border-b border-gray-200">
+                <p className="font-medium text-lg">콘텐츠 형식</p>
+              </div>
+              <div className="grid grid-cols-1 divide-y divide-gray-200">
+                <div className="p-4">
+                  <h4 className="font-medium text-gray-500 mb-1">기존 도구</h4>
+                  <p>주로 문서 파일 위주</p>
+                </div>
+                <div className="p-4 bg-emerald-50">
+                  <h4 className="font-medium text-emerald-800 mb-1">Brain Labeling</h4>
+                  <p className="text-emerald-700">웹, 유튜브, 텍스트 모두 지원</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 항목 3 */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gray-50 p-4 border-b border-gray-200">
+                <p className="font-medium text-lg">시각화</p>
+              </div>
+              <div className="grid grid-cols-1 divide-y divide-gray-200">
+                <div className="p-4">
+                  <h4 className="font-medium text-gray-500 mb-1">기존 도구</h4>
+                  <p>텍스트 위주 요약</p>
+                </div>
+                <div className="p-4 bg-emerald-50">
+                  <h4 className="font-medium text-emerald-800 mb-1">Brain Labeling</h4>
+                  <p className="text-emerald-700">마인드맵으로 구조 시각화</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 항목 4 */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gray-50 p-4 border-b border-gray-200">
+                <p className="font-medium text-lg">음성 기능</p>
+              </div>
+              <div className="grid grid-cols-1 divide-y divide-gray-200">
+                <div className="p-4">
+                  <h4 className="font-medium text-gray-500 mb-1">기존 도구</h4>
+                  <p>제공되지 않음</p>
+                </div>
+                <div className="p-4 bg-emerald-50">
+                  <h4 className="font-medium text-emerald-800 mb-1">Brain Labeling</h4>
+                  <p className="text-emerald-700">TTS로 이동 중 청취 가능</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 항목 5 */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gray-50 p-4 border-b border-gray-200">
+                <p className="font-medium text-lg">주요 사용 목적</p>
+              </div>
+              <div className="grid grid-cols-1 divide-y divide-gray-200">
+                <div className="p-4">
+                  <h4 className="font-medium text-gray-500 mb-1">기존 도구</h4>
+                  <p>연구 및 학술 자료 분석</p>
+                </div>
+                <div className="p-4 bg-emerald-50">
+                  <h4 className="font-medium text-emerald-800 mb-1">Brain Labeling</h4>
+                  <p className="text-emerald-700">일상 콘텐츠부터 업무까지 다목적</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -703,10 +1050,16 @@ export default function Home() {
           </div>
 
           <div className="mt-16 text-center">
+            <Link href="https://chromewebstore.google.com/detail/goiiicmhkjeehoghgbfnllklachblhpn?utm_source=item-share-cb">
+              <button className="hidden xl:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white px-12 py-6 rounded-lg font-medium  items-center text-2xl">
+                1분만에 시작하기
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </button>
+            </Link>
             <Link href="/memo">
-              <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-4 rounded-lg font-medium inline-flex items-center text-lg">
-                지금 바로 시작하기
-                <ArrowRight className="ml-2 h-6 w-6" />
+              <button className="xl:hidden bg-emerald-600 hover:bg-emerald-700 text-white px-12 py-6 rounded-lg font-medium inline-flex  items-center text-lg">
+                1분만에 시작하기
+                <ArrowRight className="ml-2 h-5 w-5" />
               </button>
             </Link>
           </div>
@@ -725,13 +1078,19 @@ export default function Home() {
             완성됩니다
           </p>
           <Link href="/memo">
-            <button className="bg-white hover:bg-emerald-50 text-emerald-600 px-10 py-5 rounded-lg font-medium inline-flex items-center text-xl">
+            <button className="xl:hidden bg-white hover:bg-emerald-50 text-emerald-600 px-10 py-5 rounded-lg font-medium inline-flex items-center text-xl">
+              나의 지식 여정 시작하기
+              <ArrowRight className="ml-3 h-6 w-6" />
+            </button>
+          </Link>
+          <Link href="https://chromewebstore.google.com/detail/goiiicmhkjeehoghgbfnllklachblhpn?utm_source=item-share-cb">
+            <button className="hidden xl:inline-flex bg-white hover:bg-emerald-50 text-emerald-600 px-10 py-5 rounded-lg font-medium items-center text-xl">
               나의 지식 여정 시작하기
               <ArrowRight className="ml-3 h-6 w-6" />
             </button>
           </Link>
           <p className="text-emerald-100 mt-6 text-lg">
-            매일 10개의 무료 크레딧으로 부담 없이 시작하세요
+            매일 15개의 무료 크레딧으로 부담 없이 시작하세요
           </p>
         </div>
       </section>
@@ -755,18 +1114,6 @@ export default function Home() {
             AI 기반의 메모 정리 서비스로 콘텐츠 과잉 시대의 지식 관리 문제를 해결합니다.
           </p>
           <div className="flex flex-wrap justify-center space-x-4 md:space-x-8 mb-6">
-            {/* <a href="#" className="hover:text-white my-2">
-              이용약관
-            </a>
-            <a href="#" className="hover:text-white my-2">
-              개인콘텐츠처리방침
-            </a>
-            <a href="#" className="hover:text-white my-2">
-              자주 묻는 질문
-            </a>
-            <a href="#" className="hover:text-white my-2">
-              문의하기
-            </a> */}
             contact : benefoboard@gmail.com
           </div>
           <p>© 2025 Brain Labeling. All rights reserved.</p>
