@@ -17,6 +17,7 @@ import {
   Trash2,
   MoveLeft,
   Notebook,
+  ClipboardType,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -64,6 +65,9 @@ import { Memo } from '@/app/utils/types';
 import MemoContent from '@/app/ui/MemoContent';
 import ModifyMemoButton from '@/app/ui/ModifyMemoButton';
 import OriginalContent from '@/app/ui/OriginalContent';
+import TTSDialog from '@/app/tts/TTSDialog';
+import TTSButton from '@/app/tts/TTSButton';
+import TTSButtonMainMemo from '@/app/tts/TTSButtonMainMemo';
 
 // TypeScript 에러 방지를 위해 window 인터페이스 확장
 declare global {
@@ -91,6 +95,9 @@ const MemoPageContent: React.FC = () => {
   const [selectedOriginalMemo, setSelectedOriginalMemo] = useState<Memo | null>(null);
   // 알림 훅을 더 일찍 가져옵니다
   const { notification, showNotification } = useNotification();
+  // TTS 다이얼로그 관련 상태 추가
+  const [showTTSDialog, setShowTTSDialog] = useState(false);
+  const [ttsContentMemo, setTTSContentMemo] = useState<Memo | null>(null);
 
   // 모달 닫기 핸들러
   const handleCloseModal = () => {
@@ -99,6 +106,13 @@ const MemoPageContent: React.FC = () => {
   const handleCloseOriginalModal = () => {
     setSelectedOriginalMemo(null);
   };
+
+  // 내용 재생 버튼 클릭 핸들러
+  const handleTTSPlay = useCallback((e: React.MouseEvent, memo: Memo) => {
+    e.preventDefault(); // 링크 이동 방지
+    setTTSContentMemo(memo); // TTS 재생할 메모 설정
+    setShowTTSDialog(true); // TTS 다이얼로그 표시
+  }, []);
 
   // 컴포저 모달 관련 상태 (사용자 상호작용 발생 시에만 필요)
   const [showComposer, setShowComposer] = useState(false);
@@ -474,6 +488,28 @@ const MemoPageContent: React.FC = () => {
     },
     [showTopAlert]
   );
+
+  const getAllContentText = (memo: Memo) => {
+    // 1. 아이디어 탭 내용
+    const ideaText = `\n [ 제목 ] \n\n\n${memo.title}\n\n`;
+
+    // 2. 핵심 문장
+    const keySentenceText = `\n [ 핵심 내용 ] \n\n\n${memo.labeling?.key_sentence || ''}\n\n`;
+
+    // 3. 주요 내용 탭
+    let mainText = `\n [ 주요 내용 ] \n\n\n`;
+    if (memo.thread && Array.isArray(memo.thread)) {
+      memo.thread.forEach((tweet, idx) => {
+        mainText += `${tweet}\n\n`;
+      });
+    }
+
+    // 4. 내 생각 탭 내용 (있을 경우에만)
+    const thoughtText = memo.i_think ? `\n\n [ 내 생각 ] \n\n\n${memo.i_think}\n\n` : '';
+
+    // 모든 내용 합치기
+    return ideaText + keySentenceText + mainText + thoughtText;
+  };
 
   // 글로벌 오류 알림 표시 함수
   const showGlobalExtractionAlert = useCallback((message: string, url: string) => {
@@ -982,19 +1018,27 @@ const MemoPageContent: React.FC = () => {
                         {memo.time || '방금 전'}
                       </span>
                       <div className="flex items-center gap-2">
-                        <button
+                        {/* <button
                           className="inline-flex items-center font-semibold text-gray-600 rounded-full hover:text-gray-400"
                           onClick={(e) => handleOriginalContentClick(e, memo)}
                         >
                           원문 보기
                         </button>
+                        <p className="pb-1">|</p> */}
+                        <TTSButtonMainMemo
+                          showLabel={true}
+                          text={getAllContentText(memo)}
+                          className="inline-flex items-center font-semibold text-gray-600 rounded-full hover:text-gray-400"
+                          originalImage={memo.original_image || ''}
+                        />
                         <p className="pb-1">|</p>
-                        <button
-                          className="inline-flex items-center font-semibold text-gray-800 rounded-full hover:text-gray-400"
+                        <div
+                          className="flex items-center gap-1 cursor-pointer hover:text-gray-400"
                           onClick={(e) => handleMemoClick(e, memo)}
                         >
-                          요약 보기
-                        </button>
+                          <ClipboardType className="text-gray-800 -mt-1 w-5 h-5" />
+                          <p className="text-gray-800 font-semibold">요약보기</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1104,6 +1148,16 @@ const MemoPageContent: React.FC = () => {
       {selectedOriginalMemo && (
         <OriginalContent memo={selectedOriginalMemo} onClose={handleCloseOriginalModal} />
       )}
+
+      {/* 컴포넌트 최하단에 TTSDialog 추가 */}
+      {/* {showTTSDialog && ttsContentMemo && (
+        <TTSDialog
+          isOpen={showTTSDialog}
+          onClose={() => setShowTTSDialog(false)}
+          initialText={ttsContentMemo.original_content || ttsContentMemo.tweet_main || ''}
+          originalImage={ttsContentMemo.original_image || ''}
+        />
+      )} */}
 
       {/* CSS 애니메이션 정의 */}
       <style jsx global>{`

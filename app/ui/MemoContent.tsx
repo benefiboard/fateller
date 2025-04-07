@@ -1024,7 +1024,11 @@ const MemoContent: React.FC<MemoContentProps> = ({
           </>
         )}
 
-        <TTSButton text={getAllContentText()} showLabel={true} />
+        <TTSButton
+          text={getAllContentText()}
+          showLabel={true}
+          originalImage={memo.original_image}
+        />
       </div>
       {/* 탭 네비게이션 - 수정된 버전 */}
       <div className="mt-2 border-y border-gray-200">

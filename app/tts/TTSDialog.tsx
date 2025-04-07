@@ -1,5 +1,3 @@
-//app/tts/TTSDialog.tsx
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -12,42 +10,105 @@ interface TTSDialogProps {
   isOpen: boolean;
   onClose: () => void;
   initialText?: string;
+  originalImage?: string;
 }
 
-export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDialogProps) {
+export default function TTSDialog({
+  isOpen,
+  onClose,
+  initialText = '',
+  originalImage = '',
+}: TTSDialogProps) {
   const [text] = useState<string>(initialText);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [currentChunkIndex, setCurrentChunkIndex] = useState<number>(-1);
+  const [currentTitle, setCurrentTitle] = useState<string>('');
+
+  // 화면 크기 감지를 위한 상태 추가
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
   const koreanVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
   const textChunksRef = useRef<string[]>([]);
   const currentChunkRef = useRef<number>(0);
   const shouldStopRef = useRef<boolean>(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const textDisplayRef = useRef<HTMLDivElement>(null);
+  const cinematicContainerRef = useRef<HTMLDivElement>(null);
+  const noSleepRef = useRef<NoSleep | null>(null);
+  const titlesRef = useRef<{ [key: number]: string }>({});
+
   // 속도 관련 상태
   const [rate, setRate] = useState<number>(() => {
     const savedRate = localStorage.getItem('tts-rate');
     return savedRate ? parseFloat(savedRate) : 1.0;
   });
   const [selectedRate, setSelectedRate] = useState<string>('1.0');
-  // 창닫아도 재생
-  const noSleepRef = useRef<NoSleep | null>(null);
+
+  // 컨트롤 UI 표시 여부
+  const [showControls, setShowControls] = useState<boolean>(true);
+
+  // 화면 크기 변화 감지 (모바일 여부 확인)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 770);
+    };
+
+    // 초기 확인
+    checkMobile();
+
+    window.addEventListener('resize', checkMobile);
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // 초기 로딩 시 텍스트를 청크로 미리 분할하기
   useEffect(() => {
     if (text && isOpen) {
-      textChunksRef.current = splitTextIntoSafeChunks(text);
+      const { chunks, titles } = splitTextIntoSafeChunks(text);
+      textChunksRef.current = chunks;
+      titlesRef.current = titles;
+
+      // 첫 번째 제목 설정 (있다면)
+      const firstTitleIndex = Object.keys(titles)
+        .map(Number)
+        .sort((a, b) => a - b)[0];
+      if (firstTitleIndex !== undefined) {
+        setCurrentTitle(titles[firstTitleIndex]);
+      }
     }
   }, [text, isOpen]);
+
+  // 자동 재생 설정
+  useEffect(() => {
+    if (isOpen) {
+      // 0.5초 후에 자동 재생
+      const timer = setTimeout(() => {
+        handlePlay();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   // Handle close on ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         handleClose();
+      } else if (e.key === ' ' && isOpen) {
+        // Space to toggle play/pause
+        if (isSpeaking) {
+          handlePause();
+        } else {
+          handlePlay();
+        }
+        e.preventDefault();
+      } else if (e.key === 'c' && isOpen) {
+        // Toggle controls visibility
+        setShowControls((prev) => !prev);
       }
     };
 
@@ -55,7 +116,7 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, isSpeaking]);
 
   // Prevent body scrolling when dialog is open
   useEffect(() => {
@@ -68,19 +129,6 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
       document.body.style.overflow = '';
     };
   }, [isOpen]);
-
-  // 현재 읽고 있는 청크가 변경될 때 해당 위치로 스크롤
-  useEffect(() => {
-    if (currentChunkIndex >= 0 && textDisplayRef.current) {
-      const chunkElements = textDisplayRef.current.querySelectorAll('.tts-chunk');
-      if (chunkElements[currentChunkIndex]) {
-        chunkElements[currentChunkIndex].scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-      }
-    }
-  }, [currentChunkIndex]);
 
   // Load available voices and find Korean voice
   useEffect(() => {
@@ -135,12 +183,9 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
     };
   }, [isOpen]);
 
-  //창닫아도재생
+  // NoSleep 초기화
   useEffect(() => {
-    // 컴포넌트 마운트 시 NoSleep 인스턴스 생성
     noSleepRef.current = new NoSleep();
-
-    // 컴포넌트 언마운트 시 정리
     return () => {
       if (noSleepRef.current) {
         noSleepRef.current.disable();
@@ -167,7 +212,6 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
   };
 
   // 다음 청크 읽기 함수
-  // 다음 청크 읽기 함수 (매개변수로 현재 속도를 받을 수 있도록 수정)
   const speakNextChunk = (currentRate = rate) => {
     // speechSynthesis가 누적된 발화가 있다면 모두 취소
     try {
@@ -183,10 +227,13 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
     if (currentIndex >= chunks.length || shouldStopRef.current) {
       if (!shouldStopRef.current) {
         setStatusMessage('읽기 완료');
+        // 완료 상태 설정 (특별한 값으로 설정)
+        setCurrentChunkIndex(-2);
+      } else {
+        setCurrentChunkIndex(-1);
       }
       setIsSpeaking(false);
       setIsPaused(false);
-      setCurrentChunkIndex(-1);
       return;
     }
 
@@ -195,9 +242,99 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
     const chunk = chunks[currentIndex];
     setStatusMessage(`읽는 중`);
 
+    // 현재 위치에 해당하는 제목이 있는지 확인하고 업데이트
+    let currentSectionTitle = '';
+    for (let i = currentIndex; i >= 0; i--) {
+      if (titlesRef.current[i]) {
+        setCurrentTitle(titlesRef.current[i]);
+        currentSectionTitle = titlesRef.current[i];
+        break;
+      }
+    }
+
+    // 대괄호로 감싸진 제목인지 확인
+    if (chunk.match(/^\[.*?\]/) || chunk.match(/^\[.*?\]$/)) {
+      // 대괄호 내부 텍스트 추출 및 정규화 (앞뒤 공백 제거)
+      const bracketContent = chunk.replace(/^\[|\]$/g, '').trim();
+      console.log('대괄호 내부 텍스트:', bracketContent);
+
+      // 정확히 4개의 특별 섹션만, 인덱스 시그니처 추가하여 타입 오류 해결
+      const exactSpecialSections: { [key: string]: string } = {
+        제목: '제목 입니다.',
+        '핵심 내용': '핵심 내용 입니다.',
+        '아이디어 맵': '아이디어 맵 입니다.',
+        '주요 내용': '주요 내용 입니다.',
+      };
+
+      // 정확히 일치하는 섹션인지 확인
+      let announcementText = exactSpecialSections[bracketContent];
+
+      if (announcementText) {
+        console.log('특별 섹션 정확히 일치:', bracketContent);
+
+        // 안내문 읽기
+        try {
+          const synth = window.speechSynthesis;
+          const utterance = new SpeechSynthesisUtterance(announcementText);
+
+          if (koreanVoiceRef.current) {
+            utterance.voice = koreanVoiceRef.current;
+            utterance.lang = 'ko-KR';
+          }
+
+          utterance.rate = currentRate;
+
+          let onEndCalled = false;
+
+          utterance.onend = () => {
+            if (onEndCalled) return;
+            onEndCalled = true;
+
+            // 다음 청크로 진행 - 1초 지연 추가 (섹션 전환 느낌을 주기 위해)
+            currentChunkRef.current = currentIndex + 1;
+            setTimeout(() => {
+              speakNextChunk(currentRate);
+            }, 1000); // 1초 지연으로 변경
+          };
+
+          utterance.onerror = () => {
+            if (onEndCalled) return;
+            onEndCalled = true;
+
+            // 오류 발생해도 다음으로 진행
+            currentChunkRef.current = currentIndex + 1;
+            setTimeout(() => {
+              speakNextChunk(currentRate);
+            }, 1000); // 1초 지연으로 변경
+          };
+
+          synth.speak(utterance);
+        } catch (error) {
+          console.error('특별 섹션 안내 발화 오류:', error);
+          currentChunkRef.current = currentIndex + 1;
+          setTimeout(() => {
+            speakNextChunk(currentRate);
+          }, 1000); // 1초 지연으로 변경
+        }
+
+        return;
+      } else {
+        // 정확히 일치하는 특별 섹션이 아니면 읽지 않고 다음 청크로 넘어감
+        console.log('특별 섹션 아님, 건너뜀:', bracketContent);
+        currentChunkRef.current = currentIndex + 1;
+        setTimeout(() => {
+          speakNextChunk(currentRate);
+        }, 50);
+        return;
+      }
+    }
+
+    // 불릿 포인트 기호 제거 (•, ◦)
+    let textToSpeak = chunk.replace(/[•◦]/g, '');
+
     try {
       const synth = window.speechSynthesis;
-      const utterance = new SpeechSynthesisUtterance(chunk);
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
 
       // 음성 설정
       if (koreanVoiceRef.current) {
@@ -281,7 +418,7 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
   const splitTextIntoSafeChunks = (text: string) => {
     // 빈 텍스트인 경우 빈 배열 반환
     if (!text || text.trim() === '') {
-      return [];
+      return { chunks: [], titles: {} };
     }
 
     // 텍스트 전처리 - 리스트 항목 앞에 공백 추가하여 더 잘 인식되도록 함
@@ -415,7 +552,20 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
       }
     }
 
-    return chunks;
+    // 각 청크의 인덱스에 해당하는 제목을 기록하는 객체 생성
+    const titles: { [key: number]: string } = {};
+
+    // 대괄호로 감싸진 제목 찾기
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const titleMatch = chunk.match(/^\[(.*?)\]$/);
+
+      if (titleMatch) {
+        titles[i] = titleMatch[1]; // 대괄호 내부 텍스트만 저장
+      }
+    }
+
+    return { chunks, titles };
   };
 
   // 재생 버튼 클릭 핸들러
@@ -432,7 +582,9 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
 
     // 청크가 비어 있으면 초기화
     if (textChunksRef.current.length === 0) {
-      textChunksRef.current = splitTextIntoSafeChunks(text);
+      const { chunks, titles } = splitTextIntoSafeChunks(text);
+      textChunksRef.current = chunks;
+      titlesRef.current = titles;
     }
 
     currentChunkRef.current = 0;
@@ -468,8 +620,7 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
     }
   };
 
-  // 속도 변경 버튼 클릭 핸들러
-  // 속도 변경 버튼 클릭 핸들러
+  // 속도 변경 핸들러
   const handleRateChange = (newRate: number, rateName: string) => {
     // 이전 속도와 동일하면 작업 중단
     if (newRate === rate) return;
@@ -532,185 +683,209 @@ export default function TTSDialog({ isOpen, onClose, initialText = '' }: TTSDial
 
     onClose();
   };
-  // 청크 렌더링 - 노래방 스타일 하이라이트 및 구분선 처리
-  // 청크 렌더링 - 노래방 스타일 하이라이트 및 구분선 처리
-  const renderChunks = () => {
-    if (textChunksRef.current.length === 0) {
-      return text;
+
+  // 컨트롤 토글 핸들러
+  const toggleControls = () => {
+    setShowControls((prev) => !prev);
+  };
+
+  // 현재 청크 렌더링
+  const renderCurrentChunk = () => {
+    // 완료 상태인 경우 완료 메시지 표시
+    if (currentChunkIndex === -2) {
+      return (
+        <div
+          className={`py-8 px-4 ${isMobile ? 'text-xl' : 'text-3xl'} text-emerald-400 text-center`}
+        >
+          읽기가 완료되었습니다
+        </div>
+      );
     }
 
-    return (
-      <div>
-        {textChunksRef.current.map((chunk, index) => {
-          // 아이디어 맵 또는 주요 내용 앞에 줄바꿈 3개 추가
-          const isSpecialSection =
-            chunk.includes('[ 아이디어 맵 ]') || chunk.includes('[ 주요 내용 ]');
+    // 현재 청크 인덱스가 유효하지 않으면 재생 안내 메시지 보여주기
+    if (currentChunkIndex < 0 || currentChunkIndex >= textChunksRef.current.length) {
+      return (
+        <div className={`text-center text-white ${isMobile ? 'text-xl' : 'text-3xl'} font-medium`}>
+          {isSpeaking ? '재생 중...' : '재생 버튼을 눌러 시작하세요'}
+        </div>
+      );
+    }
 
-          return (
-            <React.Fragment key={index}>
-              {/* 특별 섹션 앞에 공백 추가 */}
-              {isSpecialSection && (
-                <div className="h-12"></div> // 약 3줄 정도의 공백을 위한 높이
-              )}
+    const chunk = textChunksRef.current[currentChunkIndex];
 
-              {/* [제목], [키워드] 등 대괄호로 감싸진 라벨 처리 */}
-              {chunk.match(/^\[.*?\]/) && chunk.length < 20 ? (
-                <div
-                  className={`tts-chunk p-1 mb-1 rounded leading-relaxed font-bold text-gray-700 ${
-                    index === currentChunkIndex ? 'bg-emerald-600 text-white' : 'bg-gray-100'
-                  }`}
-                >
-                  {chunk}
-                </div>
-              ) : (
-                // 일반 텍스트
-                <div
-                  className={`tts-chunk p-1 mb-1 rounded leading-relaxed ${
-                    index === currentChunkIndex ? 'bg-emerald-600 text-white' : ''
-                  }`}
-                >
-                  {chunk}
-                </div>
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
-    );
+    // 특수 섹션 체크 (제목 등)
+    const isTitle = chunk.match(/^\[.*?\]/) && chunk.length < 20;
+
+    // 대괄호로 감싸진 제목이면 표시하지 않음 (제목은 상단에 별도로 표시)
+    if (isTitle) {
+      return null;
+    }
+
+    // 불릿 포인트 기호 제거 (•, ◦)
+    const processedChunk = chunk.replace(/[•◦]/g, '');
+
+    return <div className={`py-8  ${isMobile ? 'text-xl' : 'text-3xl'}`}>{processedChunk}</div>;
   };
 
   // Don't render anything if not open
   if (!isOpen) return null;
 
-  // Use createPortal to render dialog outside of parent component's DOM hierarchy
+  // Use createPortal to render the cinematic view
   return typeof document !== 'undefined'
     ? ReactDOM.createPortal(
         <div
-          className="tracking-tighter fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 isolate"
-          onMouseDown={(e) => {
-            // Only close if clicking the backdrop, not the dialog content
-            if (e.target === e.currentTarget) {
-              handleClose();
-            }
-            // Stop propagation to prevent interactions with underlying page
-            e.stopPropagation();
-          }}
-          onClick={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
+          className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
+          onClick={toggleControls}
         >
+          {/* 16:9 컨테이너 - 모바일에서는 높이 조정 */}
           <div
-            ref={dialogRef}
-            className="bg-white rounded-xl shadow-lg overflow-hidden max-w-md w-full mx-4 animate-fade-in"
-            onMouseDown={(e) => e.stopPropagation()}
+            ref={cinematicContainerRef}
+            className={`w-full ${
+              isMobile ? 'aspect-auto min-h-[60vh]' : 'max-w-6xl aspect-video'
+            } bg-black relative border-t border-b border-gray-800 overflow-hidden flex items-center justify-center`}
+            style={
+              originalImage
+                ? {
+                    backgroundImage: `url(${originalImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    backgroundBlendMode: 'overlay',
+                  }
+                : {}
+            }
           >
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">아이디어 읽기</h2>
-                <button
-                  onClick={handleClose}
-                  className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-
-              <div className="mb-4">
-                {/* <label
-                  htmlFor="text-display"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  읽을 텍스트
-                </label> */}
-                <div
-                  ref={textDisplayRef}
-                  id="text-display"
-                  className="w-full px-3 py-2 mt-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 overflow-y-auto max-h-[480px] sm:max-h-[640px]"
-                >
-                  {renderChunks()}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {!isSpeaking && (
-                  <button
-                    onClick={handlePlay}
-                    disabled={!text.trim()}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
-                  >
-                    <span className="flex items-center">
-                      <Volume2 className="h-5 w-5 mr-1" />
-                      재생
-                    </span>
-                  </button>
-                )}
-
-                {isSpeaking && (
-                  <>
-                    <button
-                      onClick={handlePause}
-                      className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-                    >
-                      <span className="flex items-center">
-                        {isPaused ? (
-                          <>
-                            <PlayCircle className="h-5 w-5 mr-1" />
-                            계속
-                          </>
-                        ) : (
-                          <>
-                            <PauseCircle className="h-5 w-5 mr-1" />
-                            일시정지
-                          </>
-                        )}
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={handleStop}
-                      className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                    >
-                      <span className="flex items-center">
-                        <CircleStop className="h-5 w-5 mr-1" />
-                        정지
-                      </span>
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* 속도 조절 버튼 */}
-              <div className="mt-4 flex items-center">
-                <span className="text-sm mr-3 text-gray-600">재생 속도:</span>
-
-                <div className="flex-1 flex items-center">
-                  <input
-                    type="range"
-                    min="0.8"
-                    max="1.8"
-                    step="0.1"
-                    value={rate}
-                    onChange={(e) => {
-                      const newRate = parseFloat(e.target.value);
-                      handleRateChange(newRate, newRate.toString());
+            {/* 제목 표시 부분 - 모바일에서는 크기 조정 */}
+            {currentTitle && (
+              <div
+                className={`absolute inset-x-0 ${isMobile ? 'top-6' : 'top-12'} animate-fade-in`}
+              >
+                <div className="mx-auto max-w-3xl px-4">
+                  <h2
+                    className={`text-gray-100 font-bold ${
+                      isMobile ? 'text-2xl p-2' : 'text-4xl p-4'
+                    } text-center rounded-lg`}
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.9)',
                     }}
-                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
-                  />
-
-                  <span className="ml-3 text-sm font-medium text-emerald-600 min-w-[40px] text-right">
-                    {rate.toFixed(1)}x
-                  </span>
+                  >
+                    {currentTitle}
+                  </h2>
                 </div>
               </div>
+            )}
 
-              {statusMessage && (
-                <div className="mt-4">
-                  <p className="text-sm text-gray-600">{statusMessage}</p>
+            {/* 영화 자막 스타일의 텍스트 - 모바일에서는 위치 조정 */}
+            <div
+              className={`absolute inset-x-0 ${
+                isMobile ? 'bottom-6' : 'bottom-12'
+              } animate-fade-in`}
+            >
+              <div className={`mx-auto ${isMobile ? 'max-w-full px-2' : 'max-w-3xl px-4'}`}>
+                {/* 반투명 배경 추가 + 텍스트 스타일 개선 */}
+                <div
+                  className="text-white font-bold leading-relaxed tracking-wide py-4 px-6 rounded-lg"
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)', // 반투명 검은색 배경
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)', // 약간의 그림자 효과
+                    border: '1px solid rgba(255, 255, 255, 0.2)', // 미세한 테두리로 구분감 강화
+                  }}
+                >
+                  {renderCurrentChunk()}
+                </div>
+              </div>
+            </div>
+
+            {/* 닫기 버튼 - 항상 표시 (모바일에서는 크기 축소) */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClose();
+              }}
+              className={`absolute rounded-full bg-gray-800 ${
+                isMobile ? 'top-2 right-2' : 'top-4 right-4'
+              } text-gray-100 hover:text-white focus:outline-none z-10 p-2`}
+            >
+              <X className={isMobile ? 'h-6 w-6' : 'h-8 w-8'} />
+            </button>
+          </div>
+
+          {/* 컨트롤 패널 - 토글 가능 (모바일에서는 세로 배치) */}
+          {showControls && (
+            <div
+              className={`bg-gray-900 bg-opacity-70 w-full ${
+                isMobile ? 'max-w-full' : 'max-w-6xl'
+              } p-4 flex ${isMobile ? 'flex-col' : 'flex-wrap'} gap-4 items-center justify-center`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {!isSpeaking ? (
+                <button
+                  onClick={handlePlay}
+                  disabled={!text.trim()}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-6 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 flex items-center"
+                >
+                  <PlayCircle className={`${isMobile ? 'h-5 w-5 mr-1' : 'h-6 w-6 mr-2'}`} />
+                  재생
+                </button>
+              ) : (
+                <div className={`flex ${isMobile ? 'w-full justify-center' : ''} gap-3`}>
+                  <button
+                    onClick={handlePause}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-6 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 flex items-center"
+                  >
+                    {isPaused ? (
+                      <>
+                        <PlayCircle className={`${isMobile ? 'h-5 w-5 mr-1' : 'h-6 w-6 mr-2'}`} />
+                        계속
+                      </>
+                    ) : (
+                      <>
+                        <PauseCircle className={`${isMobile ? 'h-5 w-5 mr-1' : 'h-6 w-6 mr-2'}`} />
+                        일시정지
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleStop}
+                    className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-6 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center"
+                  >
+                    <CircleStop className={`${isMobile ? 'h-5 w-5 mr-1' : 'h-6 w-6 mr-2'}`} />
+                    정지
+                  </button>
                 </div>
               )}
+
+              {/* 속도 조절 - 모바일에서는 너비 조정 */}
+              <div className={`flex items-center ${isMobile ? 'w-full justify-center' : ''} gap-3`}>
+                <span className="text-white">속도:</span>
+                <input
+                  type="range"
+                  min="0.8"
+                  max="1.8"
+                  step="0.1"
+                  value={rate}
+                  onChange={(e) => {
+                    const newRate = parseFloat(e.target.value);
+                    handleRateChange(newRate, newRate.toString());
+                  }}
+                  className={`${
+                    isMobile ? 'w-24' : 'w-32'
+                  } h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500`}
+                />
+                <span className="text-emerald-400 font-medium min-w-[40px] text-center">
+                  {rate.toFixed(1)}x
+                </span>
+              </div>
+
+              {/* 진행상황 표시 */}
+              <div className={`text-gray-300 text-sm ${isMobile ? 'w-full text-center' : ''}`}>
+                {currentChunkIndex >= 0 && textChunksRef.current.length > 0
+                  ? `${currentChunkIndex + 1} / ${textChunksRef.current.length}`
+                  : statusMessage}
+              </div>
             </div>
-          </div>
+          )}
         </div>,
         document.body
       )
