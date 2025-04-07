@@ -750,7 +750,7 @@ export default function TTSDialog({
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat',
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
                     backgroundBlendMode: 'overlay',
                   }
                 : {}

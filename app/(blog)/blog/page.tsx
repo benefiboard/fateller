@@ -14,9 +14,11 @@ import {
   Filter,
   Quote,
   Notebook,
+  ClipboardType,
 } from 'lucide-react';
 import createSupabaseBrowserClient from '@/lib/supabse/client';
 import { BlogPost, BlogCategory } from '@/app/utils/types';
+import TTSButtonMainMemo from '@/app/tts/TTSButtonMainMemo';
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -43,7 +45,7 @@ export default function BlogPage() {
             `
             *,
             source:source_id(id, title, canonical_url, source_type, image_url),
-            summary:summary_id(id, title, category, key_sentence, keywords, purpose)
+           summary:summary_id(id, title, category, key_sentence, keywords, purpose, thread)
           `
           )
           .eq('published', true);
@@ -206,6 +208,38 @@ export default function BlogPage() {
       }
       return url;
     }
+  };
+
+  // BlogPage 함수 내부에 추가
+  const getAllContentText = (post: BlogPost) => {
+    // 1. 제목
+    const ideaText = `\n [ 제목 ] \n\n\n${
+      post.summary?.title || post.source?.title || '제목 없음'
+    }\n\n`;
+
+    // 2. 핵심 문장
+    const keySentenceText = `\n [ 핵심 내용 ] \n\n\n${post.summary?.key_sentence || ''}\n\n`;
+
+    // 3. 주요 내용 (summary.thread 사용)
+    let mainText = `\n [ 주요 내용 ] \n\n\n`;
+
+    // thread 데이터 확인
+    if (post.summary?.thread) {
+      if (Array.isArray(post.summary.thread)) {
+        // 배열인 경우
+        post.summary.thread.forEach((tweet, idx) => {
+          mainText += `${tweet}\n\n`;
+        });
+      } else {
+        // 문자열인 경우
+        mainText += post.summary.thread;
+      }
+    } else {
+      mainText += '주요 내용이 없습니다.';
+    }
+
+    // 모든 내용 합치기
+    return ideaText + keySentenceText + mainText;
   };
 
   return (
@@ -440,85 +474,99 @@ export default function BlogPage() {
               </div>
             ) : (
               <div className="space-y-12 sm:space-y-8">
-                {posts.map((post) => (
-                  <>
-                    <div
-                      key={post.id}
-                      className="border border-gray-300 bg-gradient-to-r from-emerald-50/50 to-yellow-50/50 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-                    >
-                      <div className=" sm:p-6  sm:h-52 flex flex-col  sm:flex-row sm:items-center gap-4 ">
-                        {/* 이미지 좌측 */}
-                        <div className="h-60 aspect-video sm:w-auto sm:h-full">
-                          {post.source?.image_url ? (
-                            <img
-                              src={post.source?.image_url}
-                              alt=""
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className=" w-full aspect-video  flex flex-col items-center justify-center gap-4 p-4 border-4 border-gray-200">
-                              <Quote size={16} className="text-gray-400" />
-                              <p className="text-center">{post.summary?.title || '제목 없음'}</p>
-                              <Quote size={16} className="text-gray-400" />
-                            </div>
-                          )}
-                        </div>
+                {posts.map((post) => {
+                  // 각 post 객체 구조 확인
+                  console.log('Blog Post 구조:', post);
 
-                        {/* 우측 텍스트 */}
-                        <div className="flex-1 h-full flex flex-col justify-between px-4">
-                          <div className="flex flex-wrap gap-1 mb-3">
-                            <span className="inline-block px-2 py-1 text-sm font-medium bg-emerald-100 text-emerald-800 rounded-full">
-                              {post.category || post.summary?.category || '미분류'}
-                            </span>
-                            {/* <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                  return (
+                    <>
+                      <div
+                        key={post.id}
+                        className="border border-gray-300 bg-gradient-to-r from-emerald-50/50 to-yellow-50/50 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                      >
+                        <div className=" sm:p-6  sm:h-52 flex flex-col  sm:flex-row sm:items-center gap-4 ">
+                          {/* 이미지 좌측 */}
+                          <div className="h-60 aspect-video sm:w-auto sm:h-full">
+                            {post.source?.image_url ? (
+                              <img
+                                src={post.source?.image_url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className=" w-full aspect-video  flex flex-col items-center justify-center gap-4 p-4 border-4 border-gray-200">
+                                <Quote size={16} className="text-gray-400" />
+                                <p className="text-center">{post.summary?.title || '제목 없음'}</p>
+                                <Quote size={16} className="text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 우측 텍스트 */}
+                          <div className="flex-1 h-full flex flex-col justify-between px-4">
+                            <div className="flex flex-wrap gap-1 mb-3">
+                              <span className="inline-block px-2 py-1 text-sm font-medium bg-emerald-100 text-emerald-800 rounded-full">
+                                {post.category || post.summary?.category || '미분류'}
+                              </span>
+                              {/* <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                               {post.source?.source_type || '웹 콘텐츠'}
                             </span> */}
-                            <span className="inline-block px-2 py-1 text-sm font-semibold text-gray-400 rounded-full italic">
-                              {post.source?.canonical_url
-                                ? extractDomain(post.source.canonical_url)
-                                : '웹 콘텐츠'}
-                            </span>
-                          </div>
-
-                          <h3 className="text-xl font-bold mb-3">
-                            <Link
-                              href={`/blog/post/${post.slug}`}
-                              className="line-clamp-3 hover:text-emerald-600"
-                            >
-                              {post.summary?.title || post.source?.title || '제목 없음'}
-                            </Link>
-                          </h3>
-
-                          <p className="hidden text-gray-600 mb-4 ">
-                            {post.summary?.key_sentence || '내용 없음'}
-                          </p>
-
-                          <div className="hidden  flex-wrap gap-2 sm:mb-4">
-                            {post.summary?.keywords?.slice(0, 5).map((keyword, idx) => (
-                              <span key={idx} className="text-sm text-gray-500">
-                                #{keyword}
+                              <span className="inline-block px-2 py-1 text-sm font-semibold text-gray-400 rounded-full italic">
+                                {post.source?.canonical_url
+                                  ? extractDomain(post.source.canonical_url)
+                                  : '웹 콘텐츠'}
                               </span>
-                            ))}
-                          </div>
+                            </div>
 
-                          <div className="flex justify-between items-center mb-4 sm:mb-0">
-                            <span className="text-sm text-gray-500">
-                              {new Date(post.published_at).toLocaleDateString()}
-                            </span>
-                            <Link
-                              href={`/blog/post/${post.slug}`}
-                              className="inline-flex items-center px-4 py-2 font-semibold bg-gray-800  text-gray-100 rounded-full  hover:text-gray-400"
-                            >
-                              요약 내용 보기
-                              <ArrowRight className="h-4 w-4 ml-1" />
-                            </Link>
+                            <h3 className="text-xl font-bold mb-3">
+                              <Link
+                                href={`/blog/post/${post.slug}`}
+                                className="line-clamp-3 hover:text-emerald-600"
+                              >
+                                {post.summary?.title || post.source?.title || '제목 없음'}
+                              </Link>
+                            </h3>
+
+                            <p className="hidden text-gray-600 mb-4 ">
+                              {post.summary?.key_sentence || '내용 없음'}
+                            </p>
+
+                            <div className="hidden  flex-wrap gap-2 sm:mb-4">
+                              {post.summary?.keywords?.slice(0, 5).map((keyword, idx) => (
+                                <span key={idx} className="text-sm text-gray-500">
+                                  #{keyword}
+                                </span>
+                              ))}
+                            </div>
+
+                            <div className="flex justify-between items-center mb-4 sm:mb-0">
+                              <span className="text-sm text-gray-500">
+                                {new Date(post.published_at).toLocaleDateString()}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <TTSButtonMainMemo
+                                  showLabel={true}
+                                  text={getAllContentText(post)}
+                                  className="inline-flex items-center font-semibold text-gray-600 rounded-full hover:text-gray-400"
+                                  originalImage={post.source?.image_url || ''}
+                                />
+                                <p className="pb-1">|</p>
+                                <Link
+                                  href={`/blog/post/${post.slug}`}
+                                  className="flex items-center gap-1 cursor-pointer hover:text-gray-400"
+                                >
+                                  <ClipboardType className="text-gray-800 -mt-1 w-5 h-5" />
+                                  <p className="text-gray-800 font-semibold">요약보기</p>
+                                </Link>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                    {/* <hr className="sm:hidden border border-gray-300 w-4/5 mx-auto" /> */}
-                  </>
-                ))}
+                      {/* <hr className="sm:hidden border border-gray-300 w-4/5 mx-auto" /> */}
+                    </>
+                  );
+                })}
               </div>
             )}
           </div>
