@@ -12,6 +12,7 @@ import {
   ChevronUp,
   Network,
   Loader2,
+  Chrome,
 } from 'lucide-react';
 
 // 커스텀 훅 import
@@ -285,6 +286,15 @@ const RightSidebar = () => {
           데이터 로딩 중 오류가 발생했습니다: {error}
         </div>
       )}
+
+      <hr className="border border-emerald-600/50 " />
+
+      <Link href="https://chromewebstore.google.com/detail/goiiicmhkjeehoghgbfnllklachblhpn?utm_source=item-share-cb">
+        <div className="mt-4 bg-emerald-600 p-4 rounded-xl text-white flex items-center gap-1 shadow-lg">
+          <Chrome size={24} className=" text-white" />
+          <p>크롬 익스텐션 설치하고 편하게 이용!!</p>
+        </div>
+      </Link>
 
       {/* 푸터 정보 */}
       <div className="text-sm text-gray-500 flex flex-wrap mt-6 gap-2">

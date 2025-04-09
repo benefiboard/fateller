@@ -45,7 +45,7 @@ export default function BlogPage() {
             `
             *,
             source:source_id(id, title, canonical_url, source_type, image_url),
-           summary:summary_id(id, title, category, key_sentence, keywords, purpose, thread)
+           summary:summary_id(id, title, category, key_sentence, keywords, purpose, thread, tweet_main)
           `
           )
           .eq('published', true);
@@ -211,7 +211,10 @@ export default function BlogPage() {
   };
 
   // BlogPage 함수 내부에 추가
+  // BlogPage의 getAllContentText 함수
   const getAllContentText = (post: BlogPost) => {
+    console.log('BlogPost object in getAllContentText:', post);
+
     // 1. 제목
     const ideaText = `\n [ 제목 ] \n\n\n${
       post.summary?.title || post.source?.title || '제목 없음'
@@ -220,14 +223,57 @@ export default function BlogPage() {
     // 2. 핵심 문장
     const keySentenceText = `\n [ 핵심 내용 ] \n\n\n${post.summary?.key_sentence || ''}\n\n`;
 
-    // 3. 주요 내용 (summary.thread 사용)
+    // 3. 아이디어 맵 - tweet_main은 이미 객체로 파싱되어 있음
+    let ideaMapText = `\n [ 아이디어 맵 ] \n\n\n`;
+    if (post.summary?.tweet_main) {
+      try {
+        // post.summary.tweet_main은 이미 객체이므로 JSON.parse 필요 없음
+        const tweetMain = post.summary.tweet_main;
+
+        if (tweetMain.sections && Array.isArray(tweetMain.sections)) {
+          tweetMain.sections.forEach((section: any, sectionIndex: number) => {
+            // 섹션 헤딩 추가 - 번호 형식 없이 원본 그대로
+            ideaMapText += `(${sectionIndex + 1}) ${section.heading}\n\n`;
+
+            // 섹션의 포인트들 - 원본 형식 그대로
+            if (section.points && Array.isArray(section.points)) {
+              section.points.forEach((point: string) => {
+                ideaMapText += `• ${point}\n`;
+              });
+              ideaMapText += '\n';
+            }
+
+            // 서브섹션 처리 (있는 경우)
+            if (section.sub_sections && Array.isArray(section.sub_sections)) {
+              section.sub_sections.forEach((subSection: any, subIndex: number) => {
+                // 서브섹션 헤딩 - 원본 형식 그대로
+                ideaMapText += `  ※ ${subSection.sub_heading}\n\n`;
+
+                // 서브섹션의 포인트들 - 원본 형식 그대로
+                if (subSection.sub_points && Array.isArray(subSection.sub_points)) {
+                  subSection.sub_points.forEach((subPoint: any) => {
+                    ideaMapText += `    ◦ ${subPoint}\n`;
+                  });
+                  ideaMapText += '\n';
+                }
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Failed to process tweet_main data:', error);
+        ideaMapText += 'tweet_main 데이터 처리 오류\n\n';
+      }
+    }
+
+    // 4. 주요 내용 (summary.thread 사용)
     let mainText = `\n [ 주요 내용 ] \n\n\n`;
 
     // thread 데이터 확인
     if (post.summary?.thread) {
       if (Array.isArray(post.summary.thread)) {
         // 배열인 경우
-        post.summary.thread.forEach((tweet, idx) => {
+        post.summary.thread.forEach((tweet) => {
           mainText += `${tweet}\n\n`;
         });
       } else {
@@ -238,8 +284,8 @@ export default function BlogPage() {
       mainText += '주요 내용이 없습니다.';
     }
 
-    // 모든 내용 합치기
-    return ideaText + keySentenceText + mainText;
+    // 모든 내용 합치기 - MemoPageContent.tsx와 동일한 순서와 형식
+    return ideaText + keySentenceText + ideaMapText + mainText;
   };
 
   return (

@@ -490,17 +490,60 @@ const MemoPageContent: React.FC = () => {
   );
 
   const getAllContentText = (memo: Memo) => {
+    console.log('Memo object in getAllContentText:', memo);
+
+    
     // 1. 아이디어 탭 내용
     const ideaText = `\n [ 제목 ] \n\n\n${memo.title}\n\n`;
 
     // 2. 핵심 문장
     const keySentenceText = `\n [ 핵심 내용 ] \n\n\n${memo.labeling?.key_sentence || ''}\n\n`;
 
+    let ideaMapText = `\n [ 아이디어 맵 ] \n\n\n`;
+    if (memo.tweet_main && typeof memo.tweet_main === 'string') {
+      try {
+        const parsedTweetMain = JSON.parse(memo.tweet_main);
+        if (parsedTweetMain.sections && Array.isArray(parsedTweetMain.sections)) {
+          parsedTweetMain.sections.forEach((section: any, sectionIndex: number) => {
+            // 메인 섹션 헤딩 - 번호를 포함하여 강조
+            ideaMapText += `(${sectionIndex + 1}) ${section.heading}\n\n`;
+
+            // 섹션의 포인트들 (bullet points로 표시)
+            if (section.points && Array.isArray(section.points)) {
+              section.points.forEach((point: string) => {
+                ideaMapText += `• ${point}\n`;
+              });
+              ideaMapText += '\n';
+            }
+
+            // 서브섹션 처리 (있는 경우)
+            if (section.sub_sections && Array.isArray(section.sub_sections)) {
+              section.sub_sections.forEach((subSection: any, subIndex: number) => {
+                // 서브섹션 헤딩 - 들여쓰기와 함께 표시
+                ideaMapText += `  ※ ${subSection.sub_heading}\n\n`;
+
+                // 서브섹션의 포인트들 (더 깊은 들여쓰기로 표시)
+                if (subSection.sub_points && Array.isArray(subSection.sub_points)) {
+                  subSection.sub_points.forEach((subPoint: string) => {
+                    ideaMapText += `    ◦ ${subPoint}\n`;
+                  });
+                  ideaMapText += '\n';
+                }
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Failed to parse tweet_main JSON:', error);
+        ideaMapText += 'JSON 파싱 오류\n\n';
+      }
+    }
+
     // 3. 주요 내용 탭
     let mainText = `\n [ 주요 내용 ] \n\n\n`;
     if (memo.thread && Array.isArray(memo.thread)) {
-      memo.thread.forEach((tweet, idx) => {
-        mainText += `${tweet}\n\n`;
+      memo.thread.forEach((threadOne, idx) => {
+        mainText += `${threadOne}\n\n`;
       });
     }
 
@@ -508,7 +551,7 @@ const MemoPageContent: React.FC = () => {
     const thoughtText = memo.i_think ? `\n\n [ 내 생각 ] \n\n\n${memo.i_think}\n\n` : '';
 
     // 모든 내용 합치기
-    return ideaText + keySentenceText + mainText + thoughtText;
+    return ideaText + keySentenceText + ideaMapText + mainText + thoughtText;
   };
 
   // 글로벌 오류 알림 표시 함수

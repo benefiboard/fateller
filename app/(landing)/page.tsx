@@ -63,13 +63,7 @@ export default function Home() {
               )}
               <Link
                 href="/memo"
-                className="xl:hidden bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                시작하기
-              </Link>
-              <Link
-                href="https://chromewebstore.google.com/detail/goiiicmhkjeehoghgbfnllklachblhpn?utm_source=item-share-cb"
-                className="hidden xl:block bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors"
+                className=" bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 시작하기
               </Link>
@@ -105,14 +99,8 @@ export default function Home() {
               </div>
             </div>
 
-            <Link href="https://chromewebstore.google.com/detail/goiiicmhkjeehoghgbfnllklachblhpn?utm_source=item-share-cb">
-              <button className="hidden xl:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium  items-center text-lg">
-                1분만에 시작하기
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </button>
-            </Link>
             <Link href="/memo">
-              <button className="xl:hidden bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center text-lg">
+              <button className=" bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center text-lg">
                 1분만에 시작하기
                 <ArrowRight className="ml-2 h-5 w-5" />
               </button>
@@ -1050,14 +1038,8 @@ export default function Home() {
           </div>
 
           <div className="mt-16 text-center">
-            <Link href="https://chromewebstore.google.com/detail/goiiicmhkjeehoghgbfnllklachblhpn?utm_source=item-share-cb">
-              <button className="hidden xl:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white px-12 py-6 rounded-lg font-medium  items-center text-2xl">
-                1분만에 시작하기
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </button>
-            </Link>
             <Link href="/memo">
-              <button className="xl:hidden bg-emerald-600 hover:bg-emerald-700 text-white px-12 py-6 rounded-lg font-medium inline-flex  items-center text-lg">
+              <button className=" bg-emerald-600 hover:bg-emerald-700 text-white px-12 py-6 rounded-lg font-medium inline-flex  items-center text-lg">
                 1분만에 시작하기
                 <ArrowRight className="ml-2 h-5 w-5" />
               </button>
@@ -1078,17 +1060,12 @@ export default function Home() {
             완성됩니다
           </p>
           <Link href="/memo">
-            <button className="xl:hidden bg-white hover:bg-emerald-50 text-emerald-600 px-10 py-5 rounded-lg font-medium inline-flex items-center text-xl">
+            <button className=" bg-white hover:bg-emerald-50 text-emerald-600 px-10 py-5 rounded-lg font-medium inline-flex items-center text-xl">
               나의 지식 여정 시작하기
               <ArrowRight className="ml-3 h-6 w-6" />
             </button>
           </Link>
-          <Link href="https://chromewebstore.google.com/detail/goiiicmhkjeehoghgbfnllklachblhpn?utm_source=item-share-cb">
-            <button className="hidden xl:inline-flex bg-white hover:bg-emerald-50 text-emerald-600 px-10 py-5 rounded-lg font-medium items-center text-xl">
-              나의 지식 여정 시작하기
-              <ArrowRight className="ml-3 h-6 w-6" />
-            </button>
-          </Link>
+
           <p className="text-emerald-100 mt-6 text-lg">
             매일 15개의 무료 크레딧으로 부담 없이 시작하세요
           </p>

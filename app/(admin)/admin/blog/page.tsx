@@ -238,12 +238,13 @@ export default function AdminBlogPage() {
 
     setSourcesLoading(true);
     try {
-      // 1. 먼저 user_id로 memos 테이블에서 source_id 목록 조회
+      // 1. 먼저 user_id로 memos 테이블에서 source_id와 created_at 함께 조회
       const { data: memoData, error: memoError } = await supabase
         .from('memos')
-        .select('source_id')
+        .select('source_id, created_at')
         .eq('user_id', idToSearch)
-        .not('source_id', 'is', null);
+        .not('source_id', 'is', null)
+        .order('created_at', { ascending: false }); // 메모 생성일 기준으로 최신순 정렬
 
       if (memoError) throw memoError;
 
@@ -254,38 +255,55 @@ export default function AdminBlogPage() {
         return;
       }
 
-      // 2. source_id 목록 추출 (중복 제거)
-      const sourceIds = Array.from(new Set(memoData.map((memo) => memo.source_id)));
+      // 2. source_id 목록 추출 (중복 제거 - 최신 생성일 기준으로)
+      // 같은 source_id가 있을 경우 최신 메모의 순서를 유지
+      const sourceIdMap = new Map();
+      memoData.forEach((memo) => {
+        if (!sourceIdMap.has(memo.source_id)) {
+          sourceIdMap.set(memo.source_id, memo.created_at);
+        }
+      });
 
-      // 페이지당 15개씩 나누기 위한 총 소스 수 계산
-      const { count } = await supabase
-        .from('content_sources')
-        .select('id', { count: 'exact', head: true })
-        .in('id', sourceIds);
+      // 최신순으로 정렬된 source_id 배열 생성
+      const sourceIds = Array.from(sourceIdMap.keys());
 
-      setTotalSources(count || 0);
+      // 페이지네이션을 위한 총 건수 계산
+      setTotalSources(sourceIds.length);
 
       // 페이지네이션 범위 계산
       const from = (currentSourcePage - 1) * itemsPerPage;
-      const to = from + itemsPerPage - 1;
+      const to = Math.min(from + itemsPerPage - 1, sourceIds.length - 1);
 
-      // 3. 추출한 source_id로 content_sources 검색 (페이지네이션 적용)
+      // 현재 페이지에 표시할 ID 목록
+      const pageSourceIds = sourceIds.slice(from, to + 1);
+
+      if (pageSourceIds.length === 0) {
+        setSources([]);
+        setSourcesLoading(false);
+        return;
+      }
+
+      // 3. 현재 페이지 ID들로 content_sources 조회
       const { data, error } = await supabase
         .from('content_sources')
         .select(
           `
-          *,
-          summaries:content_summaries(id, title, category, key_sentence, keywords, purpose)
-        `
+        *,
+        summaries:content_summaries(id, title, category, key_sentence, keywords, purpose)
+      `
         )
-        .in('id', sourceIds)
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .in('id', pageSourceIds);
 
       if (error) throw error;
 
-      // 결과를 필터링하여 설정 (이 부분이 수정됨)
-      setSources(filterContentSources(data as SourceWithSummaries[]) || []);
+      // 4. 소스 데이터를 메모의 순서(최신순)대로 정렬
+      const sortedData = [...(data as SourceWithSummaries[])].sort((a, b) => {
+        // pageSourceIds 배열의 순서대로 정렬 (이미 최신순으로 정렬됨)
+        return pageSourceIds.indexOf(a.id) - pageSourceIds.indexOf(b.id);
+      });
+
+      // 결과를 필터링하여 설정
+      setSources(filterContentSources(sortedData) || []);
     } catch (error) {
       console.error('사용자 ID로 콘텐츠 검색 오류:', error);
       alert('사용자 ID로 콘텐츠를 검색하는 중 오류가 발생했습니다.');
